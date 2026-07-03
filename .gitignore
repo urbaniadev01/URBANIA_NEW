@@ -1,0 +1,10 @@
+# Código fuente de los proyectos — repos independientes, no pertenecen a este vault
+/API/
+/Web/
+/App/
+
+# Obsidian
+/.obsidian/
+
+# Grafo de codebase-memory (si se indexa desde este vault en algún momento)
+/.codebase-memory/

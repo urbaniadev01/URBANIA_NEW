@@ -1,0 +1,51 @@
+---
+tipo: feature
+proyecto: shared
+feature: AUTH
+actualizado: 2026-07-03
+---
+
+# AUTH — Plan de bloques
+
+> Orden de ejecución, dependencias y gates. Este documento es el índice de bloques del feature — el
+> estado real de cada uno vive en su propia tarjeta (ver [[../../_system/01_PRINCIPLES#1. Un dato, un dueño]]);
+> `_state/BOARD.md` es el rollup global que agrega esto junto con el resto del vault.
+
+## Orden
+
+```
+AUTH-B01 (api, registro)  ─┐
+                             ├─ independientes entre sí, ambos ready desde el inicio
+AUTH-B02 (api, login)     ─┘
+        │
+        ├──> AUTH-B03 (api, refresh)          depende de B02
+        ├──> AUTH-B04 (api, logout)            depende de B02
+        └──> AUTH-B05 (api, RBAC middleware)   depende de B02
+                │
+AUTH-B01 ──lock──> AUTH-B07 (web, pantalla registro)
+AUTH-B02 ──lock──> AUTH-B06 (web, pantalla login)
+
+AUTH-B05 ──> AUTH-B08 (api, MFA — sin detallar todavía)
+AUTH-B02 ──> AUTH-B09 (api, recuperación de contraseña — sin detallar todavía)
+```
+
+## Tabla
+
+| ID | Proyecto | Depende de | Estado | Tarjeta |
+|---|---|---|---|---|
+| AUTH-B01 | api | — | ready | [[blocks/AUTH-B01-registro-por-invitacion]] |
+| AUTH-B02 | api | — | ready | [[blocks/AUTH-B02-login]] |
+| AUTH-B03 | api | AUTH-B02 | backlog | [[blocks/AUTH-B03-refresh-token]] |
+| AUTH-B04 | api | AUTH-B02 | backlog | [[blocks/AUTH-B04-logout]] |
+| AUTH-B05 | api | AUTH-B02 | backlog | [[blocks/AUTH-B05-rbac-middleware]] |
+| AUTH-B06 | web | AUTH-B02 (lock) | backlog | [[blocks/AUTH-B06-pantalla-login]] |
+| AUTH-B07 | web | AUTH-B01 (lock) | backlog | [[blocks/AUTH-B07-pantalla-registro]] |
+| AUTH-B08 | api | AUTH-B05 | backlog (sin detallar) | [[blocks/AUTH-B08-mfa-enrollment]] |
+| AUTH-B09 | api | AUTH-B02 | backlog (sin detallar) | [[blocks/AUTH-B09-recuperacion-password]] |
+
+## Nota sobre "backlog" en B03–B07
+
+`backlog` aquí no significa "sin diseñar" — las tarjetas de B03 a B07 están completas y listas. Solo
+esperan a que su dependencia llegue a `done` para que el orquestador las mueva a `ready` (regla
+mecánica de [[../../_system/04_CROSS_PROJECT]] §3 para B06/B07, y de dependencia simple de bloque
+para B03/B04/B05). B08 y B09 sí están sin detallar todavía — se completan cuando les toque el turno.

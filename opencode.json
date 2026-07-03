@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "mcp": {
+    "urbania-db": {
+      "type": "local",
+      "command": ["powershell", "-NoProfile", "-File", ".opencode/start-db-mcp.ps1"],
+      "enabled": true
+    },
+    "codebase-memory": {
+      "type": "local",
+      "command": ["codebase-memory-mcp"],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "@playwright/mcp@latest"],
+      "enabled": true
+    }
+  }
+}
