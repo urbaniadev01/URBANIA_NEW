@@ -19,9 +19,18 @@ actualizado: 2026-07-03
 | Feature | Estado de diseño | Panorama |
 |---|---|---|
 | AUTH | approved | [[../features/AUTH/PANORAMA]] |
+| WEB_BOOTSTRAP | approved | [[../features/WEB_BOOTSTRAP/PANORAMA]] |
 
-> Vacío salvo AUTH — este vault arranca en punto 0. Cada feature nueva se agrega aquí al crear su
-> `PANORAMA.md` (estado inicial `draft`), siguiendo [[../_system/00_START_HERE]] Paso 4.
+> `WEB_BOOTSTRAP` no es una feature de negocio — es el setup técnico de librería de componentes de
+> Web (ver [[../web/adr/ADR-WEB-001-libreria-componentes]]), documentado con el mismo mecanismo por
+> consistencia. Cada feature nueva se agrega aquí al crear su `PANORAMA.md` (estado inicial
+> `draft`), siguiendo [[../_system/00_START_HERE]] Paso 4.
+
+## Bloques — WEB_BOOTSTRAP
+
+| ID | Proyecto(s) | Estado | Depende de | Tarjeta |
+|---|---|---|---|---|
+| WEB_BOOTSTRAP-B01 | web | ready | — | [[../features/WEB_BOOTSTRAP/blocks/WEB_BOOTSTRAP-B01-instalar-shadcn-tailwind]] |
 
 ## Bloques — AUTH
 
@@ -32,8 +41,8 @@ actualizado: 2026-07-03
 | AUTH-B03 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B03-refresh-token]] |
 | AUTH-B04 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B04-logout]] |
 | AUTH-B05 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B05-rbac-middleware]] |
-| AUTH-B06 | web | backlog | AUTH-B02 (lock) | [[../features/AUTH/blocks/AUTH-B06-pantalla-login]] |
-| AUTH-B07 | web | backlog | AUTH-B01 (lock) | [[../features/AUTH/blocks/AUTH-B07-pantalla-registro]] |
+| AUTH-B06 | web | backlog | AUTH-B02 (lock), WEB_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B06-pantalla-login]] |
+| AUTH-B07 | web | backlog | AUTH-B01 (lock), WEB_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B07-pantalla-registro]] |
 | AUTH-B08 | api | backlog (sin detallar) | AUTH-B05 | [[../features/AUTH/blocks/AUTH-B08-mfa-enrollment]] |
 | AUTH-B09 | api | backlog (sin detallar) | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B09-recuperacion-password]] |
 

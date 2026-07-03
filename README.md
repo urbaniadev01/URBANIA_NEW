@@ -37,6 +37,7 @@ app/        ← diferido — un solo marcador hasta que arranque
 
 ## Código fuente
 
-Este vault documenta, no aloja código. El código de API y Web vive en carpetas de proyecto
-separadas (mismo patrón que el vault anterior: `API/`, `WEB/` como repos independientes) — ver
-`AGENTS.md` §1 para la separación exacta una vez que esas carpetas existan.
+Este vault documenta, no aloja código. El código de API y Web vive bajo `code/` (`code/api/`,
+`code/web/`) como repos independientes — **no** como carpetas hermanas `API/`/`WEB/` en la raíz,
+porque en Windows (case-insensitive) esas rutas colisionarían con `api/`/`web/` de este vault. Ver
+`.gitignore` y `CLAUDE.md` "Código fuente".

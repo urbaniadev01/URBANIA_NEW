@@ -44,6 +44,13 @@ funcionando.
 - [ ] Si el bloque consumió un endpoint: confirmar contra `_state/contracts/CONTRACT_LOCKS.md` que
       la integración respeta exactamente el contrato congelado (no una suposición de lo que el
       endpoint "debería" devolver).
+- [ ] Si el bloque introdujo o modificó una pantalla: `web/features/<feature-slug>/<FEATURE>-<pantalla>.md`
+      creado/actualizado desde `_system/templates/WEB_SCREEN.md` — es la referencia durable de esa
+      pantalla; la tarjeta del bloque describe la tarea, este documento describe el resultado y
+      sigue siendo consultable después de que el bloque se cierre.
+- [ ] Componentes usados provienen de la librería base instalada en `WEB_BOOTSTRAP-B01` (ver
+      `web/WEB_VISUAL_STANDARDS.md` §3) — un componente custom nuevo es la excepción, no el primer
+      camino.
 - [ ] `web/WEB_API_CLIENT.md` actualizado si el bloque agregó un cliente/hook nuevo hacia un
       endpoint que ese documento indexa.
 

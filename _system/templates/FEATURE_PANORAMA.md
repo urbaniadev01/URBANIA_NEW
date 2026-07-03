@@ -57,8 +57,8 @@ puente entre el diseño y el contrato.
 
 ## 7. Plan de bloques
 
-Una vez `estado_diseño: approved`, el detalle de bloques vive en [[BLOCKS]] — este panorama no
-enumera bloques individuales, solo referencia que existen.
+Una vez `estado_diseño: approved`, el detalle de bloques vive en `BLOCKS.md` (mismo directorio que
+este panorama) — este panorama no enumera bloques individuales, solo referencia que existen.
 
 ## 8. Checklist de aprobación (gate)
 

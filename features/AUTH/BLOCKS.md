@@ -22,8 +22,10 @@ AUTH-B02 (api, login)     ─┘
         ├──> AUTH-B04 (api, logout)            depende de B02
         └──> AUTH-B05 (api, RBAC middleware)   depende de B02
                 │
-AUTH-B01 ──lock──> AUTH-B07 (web, pantalla registro)
-AUTH-B02 ──lock──> AUTH-B06 (web, pantalla login)
+AUTH-B01 ──lock──┬─> AUTH-B07 (web, pantalla registro)
+AUTH-B02 ──lock──┼─> AUTH-B06 (web, pantalla login)
+WEB_BOOTSTRAP-B01 ┘   (ambos bloques de Web dependen también de la librería de componentes instalada
+                       — ver features/WEB_BOOTSTRAP/)
 
 AUTH-B05 ──> AUTH-B08 (api, MFA — sin detallar todavía)
 AUTH-B02 ──> AUTH-B09 (api, recuperación de contraseña — sin detallar todavía)
@@ -38,8 +40,8 @@ AUTH-B02 ──> AUTH-B09 (api, recuperación de contraseña — sin detallar to
 | AUTH-B03 | api | AUTH-B02 | backlog | [[blocks/AUTH-B03-refresh-token]] |
 | AUTH-B04 | api | AUTH-B02 | backlog | [[blocks/AUTH-B04-logout]] |
 | AUTH-B05 | api | AUTH-B02 | backlog | [[blocks/AUTH-B05-rbac-middleware]] |
-| AUTH-B06 | web | AUTH-B02 (lock) | backlog | [[blocks/AUTH-B06-pantalla-login]] |
-| AUTH-B07 | web | AUTH-B01 (lock) | backlog | [[blocks/AUTH-B07-pantalla-registro]] |
+| AUTH-B06 | web | AUTH-B02 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/AUTH-B06-pantalla-login]] |
+| AUTH-B07 | web | AUTH-B01 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/AUTH-B07-pantalla-registro]] |
 | AUTH-B08 | api | AUTH-B05 | backlog (sin detallar) | [[blocks/AUTH-B08-mfa-enrollment]] |
 | AUTH-B09 | api | AUTH-B02 | backlog (sin detallar) | [[blocks/AUTH-B09-recuperacion-password]] |
 

@@ -5,7 +5,7 @@ feature: AUTH
 id: AUTH-B06
 proyectos: [web]
 estado: backlog
-depende_de: [AUTH-B02]
+depende_de: [AUTH-B02, WEB_BOOTSTRAP-B01]
 contrato: consume
 actualizado: 2026-07-03
 ---
@@ -52,6 +52,9 @@ en `_state/contracts/CONTRACT_LOCKS.md` — ver [[../../../_system/04_CROSS_PROJ
 - [ ] Confirmar que el `access_token` nunca aparece en `localStorage`/`sessionStorage` (inspección
       del storage del navegador durante la verificación, evidencia pegada).
 - [ ] Tipos de request/response usados coinciden exactamente con `LOCK-AUTH-02`.
+- [ ] `web/features/auth/AUTH-login.md` creado desde `_system/templates/WEB_SCREEN.md`.
+- [ ] Componentes usados son los instalados en `WEB_BOOTSTRAP-B01` (form, input, button, toast para
+      errores) — sin componentes custom nuevos salvo justificación explícita en "Notas".
 
 ## Evidencia
 
@@ -59,4 +62,7 @@ _Vacío._
 
 ## Notas
 
-_Vacío._
+Depende también de `WEB_BOOTSTRAP-B01` (librería de componentes instalada) — ver
+[[../../WEB_BOOTSTRAP/PANORAMA]] y [[../../../web/adr/ADR-WEB-001-libreria-componentes]]. Esta
+pantalla es un caso estándar de formulario — no requiere referencia visual previa (ver
+`web/WEB_VISUAL_STANDARDS.md` §2).

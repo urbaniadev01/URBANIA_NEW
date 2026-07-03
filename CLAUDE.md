@@ -58,10 +58,14 @@ app/        ← deferred — single marker file until this track starts
 
 ## Source code / Código fuente
 
-**EN:** When the source folders (`API/`, `WEB/`) exist alongside this vault, they are independent
-git repos (gitignored from this vault, see `.gitignore`) — never commit source code changes from the
+**EN:** When the source folders exist, they live under `code/` (`code/api/`, `code/web/`) — not as
+sibling folders named `API/`/`WEB/` at the vault root. On a case-insensitive filesystem (Windows),
+`API/` and `api/` (this vault's docs) are the same path — they cannot coexist. Source folders are
+independent git repos (gitignored, see `.gitignore`) — never commit source code changes from the
 vault root.
 
-**ES:** Cuando las carpetas de código (`API/`, `WEB/`) existan junto a este vault, son repos git
-independientes (ignoradas por `.gitignore`) — nunca se commitea código fuente desde la raíz del
-vault.
+**ES:** Cuando las carpetas de código existan, viven bajo `code/` (`code/api/`, `code/web/`) — no
+como carpetas hermanas `API/`/`WEB/` en la raíz del vault. En un sistema de archivos
+case-insensitive (Windows), `API/` y `api/` (la documentación de este vault) son la misma ruta — no
+pueden coexistir. Las carpetas de código son repos git independientes (ignoradas por `.gitignore`)
+— nunca se commitea código fuente desde la raíz del vault.

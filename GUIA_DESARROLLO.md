@@ -14,7 +14,8 @@
 
 Urbania es un sistema de administración de conjuntos residenciales (API en Laravel + Web en React).
 Este vault (`URBANIA_NEW`) es la documentación que gobierna cómo se construye — no contiene código.
-El código vive en carpetas hermanas (`API/`, `WEB/`) que son repos git independientes.
+El código vive bajo `code/` (`code/api/`, `code/web/`), repos git independientes — no como
+carpetas hermanas en mayúsculas, para no colisionar con `api/`/`web/` de este vault en Windows.
 
 **La idea central que tenés que entender antes de todo lo demás:** el trabajo no se organiza en
 "features completas" ni en "sesiones libres" — se organiza en **bloques**: unidades de trabajo
@@ -148,6 +149,17 @@ Si todo lo anterior está bien: editás vos mismo el frontmatter de `PANORAMA.md
 `estado_diseño: draft` → `estado_diseño: approved`. Esto es una edición de un campo, la hacés a mano
 en el editor — no hace falta pedírselo al agente (y si se lo pedís, tiene que quedar explícito en la
 tarjeta que fue una delegación puntual tuya, no una decisión que tomó el agente solo).
+
+### C.3-bis — Si la feature tiene pantallas de Web
+
+Urbania Web es un panel administrativo (ver
+[[web/adr/ADR-WEB-001-libreria-componentes]]) — por defecto **no** hace falta preparar un mockup,
+imagen o HTML de referencia antes de aprobar el panorama. Los componentes ya están resueltos
+(shadcn/ui, instalados en `WEB_BOOTSTRAP-B01`); la tabla de "Criterios de aceptación" de cada bloque
+de pantalla es la especificación completa. Reservá una referencia visual solo para una pantalla
+genuinamente novedosa (un dashboard con datos, un layout que no es CRUD/formulario estándar) — y en
+ese caso, va como una nota/imagen dentro del propio `WEB_SCREEN.md` de esa pantalla cuando se cree,
+no como un documento de diseño aparte ni como un paso previo obligatorio.
 
 ### C.4 — Partir en bloques
 

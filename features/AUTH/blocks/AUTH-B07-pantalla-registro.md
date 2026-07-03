@@ -5,7 +5,7 @@ feature: AUTH
 id: AUTH-B07
 proyectos: [web]
 estado: backlog
-depende_de: [AUTH-B01]
+depende_de: [AUTH-B01, WEB_BOOTSTRAP-B01]
 contrato: consume
 actualizado: 2026-07-03
 ---
@@ -48,6 +48,9 @@ Pantalla `/register/:token`: lee el token de invitación de la URL, formulario d
 - [ ] `pnpm ci` ejecutado — salida completa pegada.
 - [ ] Verificación funcional real (Playwright) de los 4 casos.
 - [ ] Tipos de request/response coinciden exactamente con `LOCK-AUTH-01`.
+- [ ] `web/features/auth/AUTH-registro.md` creado desde `_system/templates/WEB_SCREEN.md`.
+- [ ] Componentes usados son los instalados en `WEB_BOOTSTRAP-B01` — sin componentes custom nuevos
+      salvo justificación explícita en "Notas".
 
 ## Evidencia
 
@@ -55,4 +58,7 @@ _Vacío._
 
 ## Notas
 
-_Vacío._
+Depende también de `WEB_BOOTSTRAP-B01` (librería de componentes instalada) — ver
+[[../../WEB_BOOTSTRAP/PANORAMA]] y [[../../../web/adr/ADR-WEB-001-libreria-componentes]]. Esta
+pantalla es un caso estándar de formulario — no requiere referencia visual previa (ver
+`web/WEB_VISUAL_STANDARDS.md` §2).

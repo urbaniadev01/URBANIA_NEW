@@ -1,0 +1,68 @@
+---
+tipo: contrato
+proyecto: api
+actualizado: 2026-07-03
+---
+
+# API_CONTRACT — Convenciones REST (fuente de verdad de las reglas, no del catálogo)
+
+> El catálogo de endpoints implementados vive distribuido en `api/endpoints/<FEATURE>.md` y se
+> congela por bloque en `_state/contracts/CONTRACT_LOCKS.md` — este documento fija las **reglas**
+> que todo endpoint, de cualquier feature, debe cumplir.
+
+## 1. Versionado y base
+
+Todas las rutas bajo `/api/v1/`. Un cambio incompatible de un endpoint ya congelado (lock activo)
+requiere un bloque nuevo bajo el protocolo de [[../_system/04_CROSS_PROJECT]] §5 — nunca se
+reversiona `/api/v1` completo por un solo endpoint.
+
+## 2. Formato de error — único en todo el API
+
+```json
+{
+  "error": {
+    "code": "INVITATION_TOKEN_INVALID",
+    "message": "El token de invitación no es válido o ya fue usado.",
+    "trace_id": "01930000-0000-7000-8000-000000000000"
+  }
+}
+```
+
+- `code`: `SCREAMING_SNAKE_CASE`, estable — Web puede tomar decisiones de UI basadas en `code`, nunca
+  en `message` (que es texto para humano y puede cambiar de redacción).
+- `trace_id`: UUID v7 único de la request, presente en logs del servidor para correlación.
+- Ningún endpoint devuelve un error con una forma distinta a esta — si un caso nuevo lo tienta, el
+  código va aquí y el `code` se agrega a la tabla de §3.
+
+## 3. Códigos de error — tabla maestra
+
+> Se completa a medida que los bloques los introducen — cada `code` nuevo se agrega aquí como parte
+> del DoD del bloque que lo creó (ver [[../_system/05_DEFINITION_OF_DONE]] §2).
+
+| Código | HTTP | Significado |
+|---|---|---|
+| _(vacío — el primer código lo agrega `AUTH-B01`)_ | | |
+
+## 4. Paginación (para endpoints de listado)
+
+Cursor-based por defecto (`?cursor=...&limit=...`), no offset — evita resultados inconsistentes
+cuando la tabla cambia entre páginas. Respuesta envuelta:
+
+```json
+{ "data": [...], "meta": { "next_cursor": "..." } }
+```
+
+## 5. Rate limiting
+
+Todo endpoint de autenticación (`login`, `register`, `forgot-password`) lleva throttle explícito por
+IP + identificador (email/token) — se documenta el límite exacto en la tarjeta del bloque que lo
+crea y en `api/endpoints/<FEATURE>.md`.
+
+## 6. Cómo se agrega un endpoint nuevo
+
+1. Se define en la tarjeta del bloque que lo produce (criterios de aceptación = casos de
+   request/response, incluidos los negativos).
+2. Al implementarlo, se documenta el detalle completo en `api/endpoints/<FEATURE>.md` (usar
+   `_system/templates/API_ENDPOINT.md`).
+3. Se congela en `_state/contracts/CONTRACT_LOCKS.md` como parte del DoD del bloque.
+4. Si introduce un `code` de error nuevo, se agrega a la tabla de §3.
