@@ -19,25 +19,31 @@ actualizado: 2026-07-03
 | Feature | Estado de diseño | Panorama |
 |---|---|---|
 | AUTH | approved | [[../features/AUTH/PANORAMA]] |
+| API_BOOTSTRAP | approved | [[../features/API_BOOTSTRAP/PANORAMA]] |
 | WEB_BOOTSTRAP | approved | [[../features/WEB_BOOTSTRAP/PANORAMA]] |
 
-> `WEB_BOOTSTRAP` no es una feature de negocio — es el setup técnico de librería de componentes de
-> Web (ver [[../web/adr/ADR-WEB-001-libreria-componentes]]), documentado con el mismo mecanismo por
-> consistencia. Cada feature nueva se agrega aquí al crear su `PANORAMA.md` (estado inicial
-> `draft`), siguiendo [[../_system/00_START_HERE]] Paso 4.
+> `API_BOOTSTRAP` y `WEB_BOOTSTRAP` no son features de negocio — son el setup técnico que crea
+> `code/api/` y `code/web/` (ver `.gitignore` y [[../web/adr/ADR-WEB-001-libreria-componentes]]),
+> documentados con el mismo mecanismo por consistencia. Cada feature nueva se agrega aquí al crear
+> su `PANORAMA.md` (estado inicial `draft`), siguiendo [[../_system/00_START_HERE]] Paso 4.
 
-## Bloques — WEB_BOOTSTRAP
+## Bloques — API_BOOTSTRAP / WEB_BOOTSTRAP
 
 | ID | Proyecto(s) | Estado | Depende de | Tarjeta |
 |---|---|---|---|---|
-| WEB_BOOTSTRAP-B01 | web | ready | — | [[../features/WEB_BOOTSTRAP/blocks/WEB_BOOTSTRAP-B01-instalar-shadcn-tailwind]] |
+| API_BOOTSTRAP-B01 | api | **ready** | — | [[../features/API_BOOTSTRAP/blocks/API_BOOTSTRAP-B01-crear-esqueleto-laravel]] |
+| WEB_BOOTSTRAP-B01 | web | **ready** | — | [[../features/WEB_BOOTSTRAP/blocks/WEB_BOOTSTRAP-B01-instalar-shadcn-tailwind]] |
+
+> Estos dos son los únicos bloques `ready` del vault hoy — son los que crean `code/api/` y
+> `code/web/` como proyectos reales. Todo lo demás depende, directa o indirectamente, de que estos
+> dos lleguen a `done`.
 
 ## Bloques — AUTH
 
 | ID | Proyecto(s) | Estado | Depende de | Tarjeta |
 |---|---|---|---|---|
-| AUTH-B01 | api | ready | — | [[../features/AUTH/blocks/AUTH-B01-registro-por-invitacion]] |
-| AUTH-B02 | api | ready | — | [[../features/AUTH/blocks/AUTH-B02-login]] |
+| AUTH-B01 | api | backlog | API_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B01-registro-por-invitacion]] |
+| AUTH-B02 | api | backlog | API_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B02-login]] |
 | AUTH-B03 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B03-refresh-token]] |
 | AUTH-B04 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B04-logout]] |
 | AUTH-B05 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B05-rbac-middleware]] |

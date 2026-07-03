@@ -71,6 +71,14 @@ cambiando la tarjeta para que coincida con el board.
 
 ---
 
+## 3-bis. Los dos primeros bloques reales — arrancar de cero
+
+Antes de que exista una sola línea de `AUTH`, hacen falta los proyectos mismos. `code/api/` y
+`code/web/` no existen todavía — los crean `API_BOOTSTRAP-B01` y `WEB_BOOTSTRAP-B01`
+(`features/API_BOOTSTRAP/`, `features/WEB_BOOTSTRAP/`), que son los únicos dos bloques en `ready`
+del vault hoy. Son independientes entre sí — podés ejecutarlos en cualquier orden o en paralelo.
+Todo lo demás (`AUTH-B01` en adelante) depende, directa o indirectamente, de que estos dos terminen.
+
 ## 4. Flujo A — Empezar una sesión de trabajo (lo que hacés casi siempre)
 
 Este es tu punto de partida el 90% de las veces.

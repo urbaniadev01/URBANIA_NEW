@@ -10,6 +10,14 @@ actualizado: 2026-07-03
 > [[../_system/00_START_HERE]] Paso 1). Este documento no repite la metodología general — solo
 > ubica los documentos técnicos de este proyecto y las reglas de oro específicas de Laravel/DDD.
 
+## 0. Dónde vive el código
+
+El proyecto Laravel vive en `code/api/` (repo git independiente de este vault, gitignored — ver
+`.gitignore`). Todo comando de esta página se ejecuta desde ahí, no desde la raíz del vault. Si
+`code/api/` todavía no existe, el bloque a ejecutar es
+`features/API_BOOTSTRAP/blocks/API_BOOTSTRAP-B01-crear-esqueleto-laravel.md` — ningún otro bloque de
+API tiene dónde ejecutarse antes de que ese exista.
+
 ## 1. Documentos técnicos de este proyecto
 
 | Documento | Cuándo consultarlo |

@@ -9,6 +9,14 @@ actualizado: 2026-07-03
 > Punto de entrada cuando ya se sabe que la tarea es 100% local a Web (ver
 > [[../_system/00_START_HERE]] Paso 1).
 
+## 0. Dónde vive el código
+
+El proyecto Vite vive en `code/web/` (repo git independiente de este vault, gitignored — ver
+`.gitignore`). Todo comando de esta página se ejecuta desde ahí, no desde la raíz del vault. Si
+`code/web/` todavía no existe, el bloque a ejecutar es
+`features/WEB_BOOTSTRAP/blocks/WEB_BOOTSTRAP-B01-instalar-shadcn-tailwind.md` — ningún otro bloque
+de Web tiene dónde ejecutarse antes de que ese exista.
+
 ## 1. Documentos técnicos de este proyecto
 
 | Documento | Cuándo consultarlo |

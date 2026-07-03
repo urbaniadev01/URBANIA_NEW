@@ -4,8 +4,8 @@ proyecto: api
 feature: AUTH
 id: AUTH-B02
 proyectos: [api]
-estado: ready
-depende_de: []
+estado: backlog
+depende_de: [API_BOOTSTRAP-B01]
 contrato: produce
 actualizado: 2026-07-03
 ---
@@ -68,4 +68,6 @@ _Vacío — se completa al ejecutar este bloque._
 
 ## Notas
 
-_Vacío._
+Depende de `API_BOOTSTRAP-B01` (el proyecto Laravel tiene que existir en `code/api/` antes de poder
+implementar nada acá) — ver [[../../API_BOOTSTRAP/PANORAMA]]. Independiente de `AUTH-B01` entre sí
+— ambos solo dependen del bootstrap.

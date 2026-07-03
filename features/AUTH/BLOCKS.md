@@ -14,18 +14,18 @@ actualizado: 2026-07-03
 ## Orden
 
 ```
-AUTH-B01 (api, registro)  ─┐
-                             ├─ independientes entre sí, ambos ready desde el inicio
-AUTH-B02 (api, login)     ─┘
-        │
-        ├──> AUTH-B03 (api, refresh)          depende de B02
-        ├──> AUTH-B04 (api, logout)            depende de B02
-        └──> AUTH-B05 (api, RBAC middleware)   depende de B02
-                │
-AUTH-B01 ──lock──┬─> AUTH-B07 (web, pantalla registro)
-AUTH-B02 ──lock──┼─> AUTH-B06 (web, pantalla login)
-WEB_BOOTSTRAP-B01 ┘   (ambos bloques de Web dependen también de la librería de componentes instalada
-                       — ver features/WEB_BOOTSTRAP/)
+API_BOOTSTRAP-B01 (api, crea code/api/)   WEB_BOOTSTRAP-B01 (web, crea code/web/)
+        │                                          │
+        ├──> AUTH-B01 (api, registro) ─┐           │
+        └──> AUTH-B02 (api, login)   ──┼───────────┤
+                    │                  │            │
+                    ├──> AUTH-B03 (api, refresh)          depende de B02
+                    ├──> AUTH-B04 (api, logout)            depende de B02
+                    └──> AUTH-B05 (api, RBAC middleware)   depende de B02
+
+AUTH-B01 ──lock──┬──────────────┴──> AUTH-B07 (web, pantalla registro)
+AUTH-B02 ──lock──┴──────────────┬──> AUTH-B06 (web, pantalla login)
+                     WEB_BOOTSTRAP-B01 ┘
 
 AUTH-B05 ──> AUTH-B08 (api, MFA — sin detallar todavía)
 AUTH-B02 ──> AUTH-B09 (api, recuperación de contraseña — sin detallar todavía)
@@ -35,8 +35,8 @@ AUTH-B02 ──> AUTH-B09 (api, recuperación de contraseña — sin detallar to
 
 | ID | Proyecto | Depende de | Estado | Tarjeta |
 |---|---|---|---|---|
-| AUTH-B01 | api | — | ready | [[blocks/AUTH-B01-registro-por-invitacion]] |
-| AUTH-B02 | api | — | ready | [[blocks/AUTH-B02-login]] |
+| AUTH-B01 | api | API_BOOTSTRAP-B01 | backlog | [[blocks/AUTH-B01-registro-por-invitacion]] |
+| AUTH-B02 | api | API_BOOTSTRAP-B01 | backlog | [[blocks/AUTH-B02-login]] |
 | AUTH-B03 | api | AUTH-B02 | backlog | [[blocks/AUTH-B03-refresh-token]] |
 | AUTH-B04 | api | AUTH-B02 | backlog | [[blocks/AUTH-B04-logout]] |
 | AUTH-B05 | api | AUTH-B02 | backlog | [[blocks/AUTH-B05-rbac-middleware]] |
@@ -45,9 +45,13 @@ AUTH-B02 ──> AUTH-B09 (api, recuperación de contraseña — sin detallar to
 | AUTH-B08 | api | AUTH-B05 | backlog (sin detallar) | [[blocks/AUTH-B08-mfa-enrollment]] |
 | AUTH-B09 | api | AUTH-B02 | backlog (sin detallar) | [[blocks/AUTH-B09-recuperacion-password]] |
 
-## Nota sobre "backlog" en B03–B07
+> Los bloques `ready` para arrancar hoy son `API_BOOTSTRAP-B01` y `WEB_BOOTSTRAP-B01` (ver
+> [[../API_BOOTSTRAP/BLOCKS]] y [[../WEB_BOOTSTRAP/BLOCKS]]) — son los que crean `code/api/` y
+> `code/web/`. Ningún bloque de `AUTH` tiene dónde ejecutarse antes de que esos dos existan.
 
-`backlog` aquí no significa "sin diseñar" — las tarjetas de B03 a B07 están completas y listas. Solo
+## Nota sobre "backlog" en B01–B07
+
+`backlog` aquí no significa "sin diseñar" — todas estas tarjetas están completas y listas. Solo
 esperan a que su dependencia llegue a `done` para que el orquestador las mueva a `ready` (regla
 mecánica de [[../../_system/04_CROSS_PROJECT]] §3 para B06/B07, y de dependencia simple de bloque
-para B03/B04/B05). B08 y B09 sí están sin detallar todavía — se completan cuando les toque el turno.
+para el resto). B08 y B09 sí están sin detallar todavía — se completan cuando les toque el turno.
