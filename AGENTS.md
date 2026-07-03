@@ -6,9 +6,7 @@ actualizado: 2026-07-03
 
 # AGENTS — Punto de entrada del vault
 
-> Leer esto primero, siempre. Es intencionalmente corto — el árbol de decisión completo vive en
-> `_system/00_START_HERE.md`; este archivo solo confirma que estás en el lugar correcto y te manda
-> ahí.
+> Leer esto primero, siempre. Es intencionalmente corto — el árbol de decisión completo vive en `_system/00_START_HERE.md`; este archivo solo confirma que estás en el lugar correcto y te manda ahí.
 
 ## Qué es este vault
 
@@ -25,6 +23,10 @@ cualquier agente al recibir una tarea.
 No hay más que leer aquí. Si llegaste a este archivo buscando reglas de negocio, convenciones
 técnicas, o el estado de una feature específica, no están aquí — siguen el mapa desde
 `00_START_HERE.md`.
+
+> [!note] `GUIA_DESARROLLO.md`
+> Existe un manual del desarrollador en `GUIA_DESARROLLO.md` — es lectura humana, no de agente. Si
+> un agente llega ahí buscando su propio flujo, el read-set real sigue siendo `_system/`.
 
 ## Mapa rápido (por si ya sabes qué buscas)
 

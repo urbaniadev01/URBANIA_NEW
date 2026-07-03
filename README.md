@@ -11,6 +11,10 @@ Empieza en [`AGENTS.md`](AGENTS.md) — no en este README.
 
 ## Si eres una persona
 
+- **Cómo trabajar día a día, paso a paso:** [`GUIA_DESARROLLO.md`](GUIA_DESARROLLO.md) — el manual
+  del desarrollador. Empieza acá si sos nuevo en el proyecto; explica exactamente cómo interactuar
+  con OpenCode en cada situación (consultar estado, diseñar y aprobar una feature, ejecutar un
+  bloque, revisar evidencia, manejar un bloqueo, etc.).
 - **Qué cambió y por qué:** `_system/01_PRINCIPLES.md` explica, principio por principio, qué
   problema del vault anterior resuelve cada regla nueva.
 - **Cómo se organiza el trabajo ahora:** un feature se diseña una vez (`features/<F>/PANORAMA.md`) y
