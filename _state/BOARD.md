@@ -1,7 +1,7 @@
 ---
 tipo: estado
 proyecto: shared
-actualizado: 2026-07-03
+actualizado: 2026-07-04
 ---
 
 # BOARD — Tablero único de estado
@@ -31,19 +31,18 @@ actualizado: 2026-07-03
 
 | ID | Proyecto(s) | Estado | Depende de | Tarjeta |
 |---|---|---|---|---|
-| API_BOOTSTRAP-B01 | api | **ready** | — | [[../features/API_BOOTSTRAP/blocks/API_BOOTSTRAP-B01-crear-esqueleto-laravel]] |
+| API_BOOTSTRAP-B01 | api | **done** | — | [[../features/API_BOOTSTRAP/blocks/API_BOOTSTRAP-B01-crear-esqueleto-laravel]] |
 | WEB_BOOTSTRAP-B01 | web | **ready** | — | [[../features/WEB_BOOTSTRAP/blocks/WEB_BOOTSTRAP-B01-instalar-shadcn-tailwind]] |
 
-> Estos dos son los únicos bloques `ready` del vault hoy — son los que crean `code/api/` y
-> `code/web/` como proyectos reales. Todo lo demás depende, directa o indirectamente, de que estos
-> dos lleguen a `done`.
+> API_BOOTSTRAP-B01 ya está `done`. En este momento hay 3 bloques `ready` en el vault:
+> `WEB_BOOTSTRAP-B01` (web), `AUTH-B01` (api) y `AUTH-B02` (api).
 
 ## Bloques — AUTH
 
 | ID | Proyecto(s) | Estado | Depende de | Tarjeta |
 |---|---|---|---|---|
-| AUTH-B01 | api | backlog | API_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B01-registro-por-invitacion]] |
-| AUTH-B02 | api | backlog | API_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B02-login]] |
+| AUTH-B01 | api | **ready** | API_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B01-registro-por-invitacion]] |
+| AUTH-B02 | api | **ready** | API_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B02-login]] |
 | AUTH-B03 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B03-refresh-token]] |
 | AUTH-B04 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B04-logout]] |
 | AUTH-B05 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B05-rbac-middleware]] |

@@ -50,6 +50,14 @@ No aplica.
   tabla, form (los que `AUTH-B06`/`AUTH-B07` van a necesitar de entrada).
 - Definir el tema base (paleta, tipografía, espaciado) en la configuración de Tailwind — documentado
   en `web/WEB_VISUAL_STANDARDS.md`.
+- Mecanismo de DevTools (infraestructura, no pantalla de negocio): indicador fijo mínimo, montado
+  solo cuando `import.meta.env.DEV`, excluido del build de producción — ver
+  `web/WEB_ARCHITECTURE.md` §5. Es el punto donde bloques futuros (empezando por los de `AUTH`)
+  agregan acciones de conveniencia reales (ej. traer el último token de invitación).
+- Convención de layouts por superficie (admin/residente vs. vigilante, etc.) documentada en
+  `web/WEB_ARCHITECTURE.md` §4 — no se crean los layouts todavía (no hay pantalla real en este
+  bloque), solo queda registrada la decisión para que el primer bloque de UI que la necesite no
+  tenga que re-decidirla.
 
 ## 7. Plan de bloques
 

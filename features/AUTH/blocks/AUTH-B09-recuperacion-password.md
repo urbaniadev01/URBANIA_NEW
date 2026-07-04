@@ -22,3 +22,7 @@ cuando le toque el turno, siguiendo la misma plantilla que `AUTH-B01`–`AUTH-B0
 Tarjeta intencionalmente incompleta — `estado: backlog` refleja que no está lista para ejecutarse,
 no solo que espera dependencia. No mover a `ready` sin completar Alcance, Criterios de aceptación y
 Definition of Done primero.
+
+Al detallar este bloque: agregar el mismo patrón de endpoint dev que `AUTH-B01` (ver
+`api/API_ARCHITECTURE.md` §9) para el token de reset — ej. `GET /dev/password-resets/last?email=...`,
+bajo la misma convención `routes/dev.php` (solo `local`/`testing`, fuera de `/api/v1/`).

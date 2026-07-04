@@ -4,7 +4,7 @@ proyecto: api
 feature: AUTH
 id: AUTH-B01
 proyectos: [api]
-estado: backlog
+estado: ready
 depende_de: [API_BOOTSTRAP-B01]
 contrato: produce
 actualizado: 2026-07-03
@@ -29,6 +29,10 @@ fundacionales de identidad (`organizations`, `users`, `contacts`, `invitations`)
 - Creación de `user` (estado `active`, password hasheado) + `contact` asociado
   (`contacts.user_id`), en la misma organización que la invitación, dentro de una única transacción.
 - Marcar la invitación consumida (`estado: consumida`) al completar el registro.
+- `GET /dev/invitations/last?email=...` bajo la convención de `routes/dev.php`
+  (`api/API_ARCHITECTURE.md` §9): devuelve el `invitation_token` vigente más reciente para ese
+  email. Solo existe cuando `app()->environment('local', 'testing')`. Fuera de `/api/v1/`, no se
+  congela en `CONTRACT_LOCKS.md` (no es parte del contrato del producto).
 
 **No incluye (explícitamente fuera de este bloque):**
 - Endpoint para *crear* invitaciones — no existe todavía en este vault (pertenece a una feature
@@ -51,6 +55,8 @@ fundacionales de identidad (`organizations`, `users`, `contacts`, `invitations`)
 | 6 | Email de la invitación ya asociado a un `user` existente | `POST /auth/register` | `409 EMAIL_ALREADY_REGISTERED` |
 | 7 | Password que no cumple la política mínima (largo, complejidad) | `POST /auth/register` | `422 VALIDATION_ERROR` |
 | 8 | Más de N intentos de registro desde la misma IP en la ventana configurada | `POST /auth/register` | `429` (throttle) |
+| 9 | Invitación vigente creada, `APP_ENV=local` o `testing` | `GET /dev/invitations/last?email=...` | `200` con el `invitation_token` en texto plano |
+| 10 | Mismo caso 9 pero `APP_ENV=production` | `GET /dev/invitations/last?email=...` | `404` — la ruta no existe en ese entorno |
 
 > Los casos 2–8 son el mecanismo directo contra el hueco de seguridad que motivó este rediseño: un
 > registro que solo valida "el campo no está vacío" pasa el caso 1 pero falla 3, 4 y 5.
@@ -63,8 +69,8 @@ Este bloque **produce** el contrato de `POST /auth/register`. Al completar el Do
 ## Definition of Done
 
 - [ ] `composer ci` ejecutado — salida completa pegada abajo.
-- [ ] Test feature/security por cada fila de la tabla de criterios de aceptación (8 casos) — no solo
-      el caso 1.
+- [ ] Test feature/security por cada fila de la tabla de criterios de aceptación (10 casos) — no
+      solo el caso 1, incluidos los dos casos del endpoint `/dev/*` (9 y 10).
 - [ ] Migraciones con `down()` reversible — salida de `migrate` → `migrate:rollback` → `migrate`
       pegada.
 - [ ] Verificación funcional real: request/response reales (curl o equivalente) pegados para al

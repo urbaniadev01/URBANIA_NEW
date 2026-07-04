@@ -4,7 +4,7 @@ proyecto: api
 feature: AUTH
 id: AUTH-B02
 proyectos: [api]
-estado: backlog
+estado: ready
 depende_de: [API_BOOTSTRAP-B01]
 contrato: produce
 actualizado: 2026-07-03

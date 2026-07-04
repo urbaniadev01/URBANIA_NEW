@@ -1,7 +1,7 @@
 ---
 tipo: referencia
 proyecto: web
-actualizado: 2026-07-03
+actualizado: 2026-07-04
 ---
 
 # WEB_VISUAL_STANDARDS — Sistema de diseño (base)
@@ -12,11 +12,70 @@ actualizado: 2026-07-03
 
 ## 1. Base — shadcn/ui + Tailwind CSS
 
-Se instala y configura en el bloque `WEB_BOOTSTRAP-B01`
-(ver [[../features/WEB_BOOTSTRAP/PANORAMA]]) — es el único bloque que fija tokens base (color,
-tipografía, espaciado, tema) para todo el proyecto. Ningún bloque de feature posterior redefine
-tokens base por su cuenta; si un color/espaciado no está en el tema, se agrega al tema en ese mismo
-bloque, no como un valor suelto en el componente.
+Instalado y configurado en `WEB_BOOTSTRAP-B01`. Este bloque es el único que fija tokens base
+(color, tipografía, espaciado, tema) para todo el proyecto. Ningún bloque de feature posterior
+redefine tokens base por su cuenta; si un color/espaciado no está en el tema, se agrega al tema en
+ese mismo bloque, no como un valor suelto en el componente.
+
+### 1.1 Componentes instalados (`src/components/ui/`)
+
+| Componente | Archivo | Base | Notas |
+|---|---|---|---|
+| `Button` | `button.tsx` | `@radix-ui/react-slot` | Variantes: default, destructive, outline, secondary, ghost, link. Tamaños: default, sm, lg, icon. Soporta `asChild`. |
+| `Input` | `input.tsx` | HTML nativo | Estilizado con anillo de foco, estados disabled/placeholder. |
+| `Label` | `label.tsx` | `@radix-ui/react-label` | Peer-disabled-aware. |
+| `Form` + `FormField` + `FormItem` + `FormLabel` + `FormControl` + `FormDescription` + `FormMessage` | `form.tsx` | `react-hook-form` + `zod` | Wrapper completo de RHF con validación Zod. `FormControl` usa `Slot` de Radix. |
+| `Card` + `CardHeader` + `CardTitle` + `CardDescription` + `CardContent` + `CardFooter` | `card.tsx` | HTML nativo | Superficie con borde, sombra y padding consistente. |
+| `Dialog` + `DialogTrigger` + `DialogContent` + `DialogHeader` + `DialogFooter` + `DialogTitle` + `DialogDescription` + `DialogClose` | `dialog.tsx` | `@radix-ui/react-dialog` | Modal con overlay, animaciones, cierre con Escape, foco atrapado. |
+| `Table` + `TableHeader` + `TableBody` + `TableFooter` + `TableRow` + `TableHead` + `TableCell` + `TableCaption` | `table.tsx` | HTML nativo | Tabla con filas hoverables, cabecera muted. |
+| `Alert` + `AlertTitle` + `AlertDescription` | `alert.tsx` | HTML nativo | Variantes: default, destructive. |
+| `Toaster` | `sonner.tsx` | `sonner` | Toast notifications con tema del design system. |
+
+### 1.2 Tema — Design tokens (`src/index.css`)
+
+**Paleta de color** (HSL — shadcn/ui CSS variables):
+
+| Token | HSL | Hex aprox. | Uso |
+|---|---|---|---|
+| `--background` | `0 0% 100%` | `#ffffff` | Fondo principal de la app |
+| `--foreground` | `222.2 84% 4.9%` | `#0a0f1a` | Texto principal |
+| `--card` | `0 0% 100%` | `#ffffff` | Superficie de tarjetas |
+| `--card-foreground` | `222.2 84% 4.9%` | `#0a0f1a` | Texto en tarjetas |
+| `--popover` | `0 0% 100%` | `#ffffff` | Popovers/dropdowns |
+| `--popover-foreground` | `222.2 84% 4.9%` | `#0a0f1a` | Texto en popovers |
+| `--primary` | `221.2 83.2% 53.3%` | `#2563eb` | Acción principal, azul profesional |
+| `--primary-foreground` | `210 40% 98%` | `#f8fafc` | Texto sobre primario |
+| `--secondary` | `210 40% 96.1%` | `#f1f5f9` | Superficie secundaria |
+| `--secondary-foreground` | `222.2 47.4% 11.2%` | `#1e293b` | Texto sobre secundario |
+| `--muted` | `210 40% 96.1%` | `#f1f5f9` | Superficie atenuada |
+| `--muted-foreground` | `215.4 16.3% 46.9%` | `#64748b` | Texto atenuado / placeholders |
+| `--accent` | `210 40% 96.1%` | `#f1f5f9` | Acento sutil |
+| `--accent-foreground` | `222.2 47.4% 11.2%` | `#1e293b` | Texto sobre acento |
+| `--destructive` | `0 84.2% 60.2%` | `#ef4444` | Acción destructiva / error |
+| `--destructive-foreground` | `210 40% 98%` | `#f8fafc` | Texto sobre destructivo |
+| `--border` | `214.3 31.8% 91.4%` | `#e2e8f0` | Bordes e inputs |
+| `--input` | `214.3 31.8% 91.4%` | `#e2e8f0` | Bordes de inputs |
+| `--ring` | `221.2 83.2% 53.3%` | `#2563eb` | Anillo de foco (igual que primary) |
+
+**Tipografía:**
+
+| Rol | Stack |
+|---|---|
+| UI / cuerpo | `Inter`, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif |
+| Código / datos tabulares | "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace |
+
+Ambas familias se cargan desde Google Fonts en `index.html`.
+
+**Espaciado y radios:**
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--radius` | `0.5rem` (8px) | Radio base de bordes |
+| `rounded-lg` | `var(--radius)` = 8px | Tarjetas, modales |
+| `rounded-md` | `calc(var(--radius) - 2px)` = 6px | Botones, inputs |
+| `rounded-sm` | `calc(var(--radius) - 4px)` = 4px | Elementos pequeños |
+| Container padding | `2rem` | Padding lateral del container |
+| Container max-width | `1400px` (2xl) | Ancho máximo del contenido |
 
 ## 2. Política de referencia visual — por defecto NO hace falta
 

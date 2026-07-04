@@ -35,12 +35,20 @@ UI futuro) compongan pantallas sin tener que resolver infraestructura. Implement
 - Definir tema base en la configuración de Tailwind (paleta, tipografía, espaciado, radios) —
   valores concretos, no placeholders.
 - Documentar el tema y la lista de componentes instalados en `web/WEB_VISUAL_STANDARDS.md`.
+- Componente `<DevIndicator />` montado en `src/app/` solo cuando `import.meta.env.DEV` — badge fijo
+  sin interactividad todavía (confirma visualmente "estás en modo desarrollo"), excluido del bundle
+  de producción. Ver `web/WEB_ARCHITECTURE.md` §5.
 - `git init` en `code/web/` como repo independiente (nunca dentro del repo del vault).
 
 **No incluye:**
 - Ninguna pantalla real (eso es `AUTH-B06`/`AUTH-B07` en adelante).
 - Componentes que ningún bloque planeado todavía necesita — se agregan cuando un bloque los
   requiera, vía CLI, no por anticipado.
+- Layouts por superficie (admin/residente vs. vigilante) — la convención queda documentada en
+  `web/WEB_ARCHITECTURE.md` §4, pero los archivos reales nacen con el primer bloque de UI que
+  necesite más de un layout.
+- Cualquier acción real de DevTools (ej. traer un token) — eso lo agrega el bloque que primero lo
+  necesite (`AUTH-B06`/`AUTH-B07` en adelante), sobre el punto de montaje ya instalado aquí.
 
 ## Criterios de aceptación
 
@@ -50,6 +58,8 @@ UI futuro) compongan pantallas sin tener que resolver infraestructura. Implement
 | 2 | Proyecto creado | `pnpm ci` | Verde — sin features de negocio todavía, pero type-check/lint/test/build funcionan sin error |
 | 3 | Componentes base generados | Importar `Button` en una página de prueba | Renderiza con el tema definido (no estilos default sin tema) |
 | 4 | Componente interactivo (ej. `Dialog`) | Navegar con teclado (Tab, Escape) | Foco visible, cierre con Escape — cumple `web/WEB_VISUAL_STANDARDS.md` §3 (accesibilidad) sin trabajo adicional |
+| 5 | `pnpm dev` (modo desarrollo) | Cargar la app | `<DevIndicator />` visible |
+| 6 | `pnpm build` (build de producción) | Inspeccionar el bundle | `<DevIndicator />` ausente del código generado |
 
 ## Definition of Done
 
@@ -60,6 +70,8 @@ UI futuro) compongan pantallas sin tener que resolver infraestructura. Implement
       aplicado, evidencia (captura o descripción del recorrido) pegada.
 - [ ] `web/WEB_VISUAL_STANDARDS.md` §1 actualizado con la lista real de componentes instalados y los
       valores del tema.
+- [ ] Evidencia de que `<DevIndicator />` aparece en `pnpm dev` y desaparece en `pnpm build`
+      (casos 5 y 6) pegada.
 
 ## Evidencia
 

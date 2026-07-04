@@ -44,8 +44,15 @@ No aplica.
 ## 6. Alcance técnico
 
 - Crear el proyecto Laravel 13 (PHP 8.5) en `code/api/`.
-- Configurar Docker Compose: PostgreSQL (puerto 5433), Redis, nginx (puerto 8080) — ver
-  `api/API_ARCHITECTURE.md` §1 y §8.
+- Configurar Docker Compose: PostgreSQL (puerto 5434), Redis (6379), nginx (puerto 8081), Mailpit
+  (SMTP 1025, UI 8025 — captura de correo saliente en desarrollo) — ver `api/API_ARCHITECTURE.md`
+  §1, §8 y §9. Puertos no-default (`5434`/`8081` en vez de `5433`/`8080`) porque otro proyecto local
+  (`chasqui-chatbot-service`) ya ocupa esos dos — verificado el 2026-07-03, ambos libres.
+- Establecer la convención `routes/dev.php` (mecanismo, sin endpoints todavía): cargado únicamente
+  si `app()->environment('local', 'testing')`, fuera de `/api/v1/`, nunca congelado en
+  `_state/contracts/CONTRACT_LOCKS.md` — ver `api/API_ARCHITECTURE.md` §9. Cada bloque futuro que
+  necesite exponer un código de prueba (token de invitación, reset, etc.) agrega el suyo ahí, como
+  parte de su propio DoD.
 - Instalar y configurar Pest, PHPStan/Larastan nivel 10, Pint — ver `api/API_ARCHITECTURE.md` §7.
 - Crear la estructura DDD base: carpeta `src/Shared/` con autoload configurado en `composer.json` —
   ver `api/API_ARCHITECTURE.md` §2. Sin bounded contexts de negocio todavía (eso es `AUTH-B01` en

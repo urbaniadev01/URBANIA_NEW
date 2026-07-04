@@ -346,3 +346,28 @@ No hace falta que los corras vos mismo salvo que quieras confirmar evidencia de 
 Gana `_system/`. Esta guía es una capa de conveniencia sobre esos documentos, no una fuente
 independiente — si encontrás una diferencia, es esta guía la que está desactualizada. Corregila (o
 pedile a un agente que la corrija) en el mismo momento en que la notes, no la dejes para después.
+
+---
+
+## 18. Credenciales de demo / prueba (dev y QA)
+
+Placeholder — se completa vos mismo cuando el seeder de demo exista (nace con `PROPIEDADES`/
+`DIRECTORIO`, Fase 1 del roadmap de negocio que llevás vos por fuera de este vault; ver
+`api/API_TESTING.md` §4). Mientras tanto, esta sección queda vacía a propósito — no se inventa un
+seeder ni credenciales antes de que el bloque real las cree.
+
+| Rol | Email | Password | Cómo entrar |
+|---|---|---|---|
+| _(vacío hasta que exista el seeder de demo)_ | | | |
+
+**Cómo se obtienen los códigos que pide el flujo de auth** (invitación, reset de password — ver
+`api/API_ARCHITECTURE.md` §9):
+
+- **Mailpit** — `http://localhost:8025` — todo correo saliente en `local`/`testing` queda ahí, es la
+  forma "real" de ver lo que vería un residente.
+- **Endpoint dev** — `GET /dev/invitations/last?email=...` (y el equivalente de reset de password
+  cuando `AUTH-B09` se detalle) — devuelve el token directo, más rápido para `curl`/Playwright. Solo
+  existe en `local`/`testing` (ver `api/API_ARCHITECTURE.md` §9) — en cualquier otro entorno, 404.
+
+Esta sección es tuya para mantenerla al día — no la actualiza un agente automáticamente al correr un
+seeder, así que si cambian las credenciales de demo, editala vos.
