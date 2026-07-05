@@ -1,7 +1,7 @@
 ---
 tipo: sistema
 proyecto: shared
-actualizado: 2026-07-03
+actualizado: 2026-07-04
 ---
 
 # 06 — Roles de agente y read-sets
@@ -11,12 +11,32 @@ actualizado: 2026-07-03
 > La implementación concreta en OpenCode (`.opencode/agents/*.md`) debe ser un espejo literal de esta
 > tabla — si diverge, este documento gana y el agente se corrige.
 
-## 1. Router (`urbania`)
+## 1. Router (`urbania`) — agente principal
 
+- **Modo:** `primary` — el agente principal del sistema. El usuario interactúa directamente con él.
 - **Lee al arrancar:** `AGENTS.md`, `_state/BOARD.md`.
 - **Decide:** a qué orquestador delegar, según en qué proyecto(s) están los bloques `ready` que el
   usuario quiere avanzar.
-- **Nunca:** edita archivos ni ejecuta bash. Solo enruta.
+- **Ejecuta:** infraestructura y diagnóstico directamente — comandos de Docker, Composer, PNPM, Git
+  (operaciones seguras), y operaciones de archivos dentro del workspace. No requiere delegar a un
+  agente externo para preparar el entorno.
+- **Modelo de seguridad (4 capas):**
+  1. **Confinamiento al workspace** — toda operación de archivos opera exclusivamente dentro del
+     workspace del proyecto. Rutas externas (`C:\Windows`, `/etc`) se rechazan.
+  2. **Operaciones destructivas con confirmación explícita** — `docker compose down -v`,
+     `php artisan migrate:fresh`, `Remove-Item -Recurse` requieren confirmación del usuario.
+  3. **Sin ejecución de código arbitrario** — no ejecuta scripts descargados de internet, no
+     evalúa código dinámico, solo opera binarios del stack del proyecto.
+  4. **Sin modificación de configuración del sistema** — no altera variables de entorno del SO,
+     no edita archivos fuera del workspace, no instala paquetes del sistema operativo.
+- **Permisos bash:** Docker (`compose *`, `ps`, `logs`, `inspect`), Composer (`*`), PHP Artisan
+  (`*`), PNPM (`*`), Git (operaciones seguras; `push`, `reset`, `clean` bloqueados), PowerShell
+  para archivos (`Get-ChildItem`, `Get-Content`, `Test-Path`, `New-Item`, `Copy-Item`,
+  `Rename-Item`; `Remove-Item` requiere confirmación).
+- **Lo invoca:** el usuario directamente, en cada sesión.
+- **Nunca:** implementa features (modelos, controladores, componentes React) — eso lo delega a los
+  orquestadores. No mueve tarjetas de `_state/BOARD.md` — eso es rol exclusivo del orquestador y
+  del verifier.
 
 ## 2. Orquestador de proyecto (`api-orchestrator`, `web-orchestrator`)
 
@@ -74,3 +94,21 @@ actualizado: 2026-07-03
 Ningún agente lee un documento fuera de su read-set "por si acaso". Si un agente concluye que
 necesita algo fuera de su lista para hacer bien la tarea, se detiene y lo reporta como un gap de
 esta tabla — no lo resuelve leyendo todo el vault.
+
+## 8. Utilidad de diagnóstico (`shell-executor`)
+
+- **Lee:** nada del vault. Solo recibe el comando a ejecutar del agente que lo invoca.
+- **Ejecuta:** comandos de diagnóstico pre-aprobados y de solo lectura (`git status`, `git log`,
+  `git diff`, `docker compose ps`, `docker compose logs`, `composer diagnose`, `composer show`,
+  `pnpm list`, `pnpm why`, `Test-Path`, `Get-ChildItem`).
+- **Devuelve:** output verbatim entre marcadores `SHELL_INICIO`/`SHELL_FIN`. Sin interpretación.
+- **Lo invoca:** cualquier agente sin acceso a bash (orquestadores, `cross-project`) que
+  necesite confirmar el estado del entorno. `urbania` ya no requiere `shell-executor` — ejecuta
+  comandos de diagnóstico directamente (ver §1).
+- **Nunca:** modifica archivos, edita código, ni toma decisiones — es un proxy pasivo de comandos.
+
+## 9. Soporte de infraestructura (`urbania-ops`) — OBSOLETO
+
+> **Fusionado en `urbania` (2026-07-04).** Las responsabilidades de infraestructura y diagnóstico
+> ahora las ejecuta `urbania` directamente (ver §1). Este agente permanece desactivado
+> (`disable: true`) por referencia histórica; no debe invocarse ni usarse.

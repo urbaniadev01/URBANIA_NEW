@@ -1,7 +1,7 @@
 ---
 tipo: contrato
 proyecto: shared
-actualizado: 2026-07-03
+actualizado: 2026-07-04
 ---
 
 # CONTRACT_LOCKS — Contratos de API congelados
@@ -16,8 +16,30 @@ actualizado: 2026-07-03
 
 ## Locks activos
 
-_Vacío — ningún bloque de API ha llegado a `done` todavía. La primera entrada se crea cuando
-`AUTH-B01` o `AUTH-B02` complete su Definition of Done._
+### LOCK-AUTH-01 — `POST /auth/register`
+
+- **Bloque productor:** [[../../features/AUTH/blocks/AUTH-B01-registro-por-invitacion]]
+- **Endpoint:** `POST /api/v1/auth/register`
+- **Request body:** `invitation_token` (string, required), `password` (string, required), `name` (string, required), `phone` (string, optional)
+- **Response (201):** `{ "message": "Registro exitoso", "user": { "id", "email", "name", "estado", "organization_id", "created_at" } }`
+- **Errores documentados:** `403 INVITATION_TOKEN_INVALID`, `409 EMAIL_ALREADY_REGISTERED`, `422 VALIDATION_ERROR`, `429` (throttle)
+- **Rate limiting:** 10 intentos por minuto por IP
+- **Detalle completo:** [[../../api/endpoints/AUTH#post-authregister]]
+- **Congelado:** 2026-07-04
+- **Consumido por:** _ninguno todavía_
+
+### LOCK-AUTH-02 — `POST /auth/login`
+
+- **Bloque productor:** [[../../features/AUTH/blocks/AUTH-B02-login]]
+- **Endpoint:** `POST /api/v1/auth/login`
+- **Request body:** `email` (string, required), `password` (string, required)
+- **Response (200):** `{ "access_token": "<JWT RS256>", "token_type": "Bearer", "expires_in": 900 }`
+- **Cookie:** `refresh_token` (httpOnly, secure, sameSite=strict, path=/api/v1/auth)
+- **Errores documentados:** `401 INVALID_CREDENTIALS`, `403 ACCOUNT_NOT_ACTIVE`, `422 VALIDATION_ERROR`, `429` (throttle)
+- **Rate limiting:** 5 intentos por minuto por IP
+- **Detalle completo:** [[../../api/endpoints/AUTH#post-apiv1authlogin]]
+- **Congelado:** 2026-07-04
+- **Consumido por:** _ninguno todavía_
 
 ## Locks reemplazados
 

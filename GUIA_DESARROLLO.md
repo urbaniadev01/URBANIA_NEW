@@ -40,7 +40,7 @@ Esto carga `opencode.json` (instrucciones = `AGENTS.md`, MCPs: `urbania-db`, `co
 
 - Para hablarle al router directamente: escribís tu pedido en lenguaje natural.
 - Para dirigirte a un agente primario específico sin pasar por el router: `@nombre-agente tu mensaje`
-  (ej. `@api-orchestrator ejecutá AUTH-B01`).
+  (ej. `@api-orchestrator ejecutá AUTH-B01` o `@urbania-ops verificá el entorno`).
 - Los agentes marcados como **subagente** en la tabla de §17 (`api-build`, `web-build`,
   `context-reader`) no se invocan directamente — los llama el orquestador correspondiente. Si le
   escribís a uno de ellos igual va a responder, pero estás saltándote el pipeline de verificación —
@@ -332,6 +332,7 @@ No hace falta que los corras vos mismo salvo que quieras confirmar evidencia de 
 | Agente | Qué hace | ¿Le hablás vos directamente? |
 |---|---|---|
 | `urbania` | Router — lee el `BOARD` y delega | Sí, es tu punto de entrada normal |
+| `urbania-ops` | Infraestructura y mantenimiento del entorno — contenedores, dependencias, migraciones, .env | Sí, invocalo directamente para preparar/verificar el entorno |
 | `api-orchestrator` / `web-orchestrator` | Coordinan la ejecución de un bloque de su proyecto, nunca implementan | Sí, si querés saltear el router |
 | `api-build` / `web-build` | Implementan un único bloque | No directamente — los invoca el orquestador |
 | `context-reader` | Lee la tarjeta asignada y resume, sin opinar | No — uso interno del pipeline |

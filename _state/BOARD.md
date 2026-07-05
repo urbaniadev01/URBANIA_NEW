@@ -32,17 +32,17 @@ actualizado: 2026-07-04
 | ID | Proyecto(s) | Estado | Depende de | Tarjeta |
 |---|---|---|---|---|
 | API_BOOTSTRAP-B01 | api | **done** | — | [[../features/API_BOOTSTRAP/blocks/API_BOOTSTRAP-B01-crear-esqueleto-laravel]] |
-| WEB_BOOTSTRAP-B01 | web | **ready** | — | [[../features/WEB_BOOTSTRAP/blocks/WEB_BOOTSTRAP-B01-instalar-shadcn-tailwind]] |
+| WEB_BOOTSTRAP-B01 | web | **done** | — | [[../features/WEB_BOOTSTRAP/blocks/WEB_BOOTSTRAP-B01-instalar-shadcn-tailwind]] |
 
-> API_BOOTSTRAP-B01 ya está `done`. En este momento hay 3 bloques `ready` en el vault:
-> `WEB_BOOTSTRAP-B01` (web), `AUTH-B01` (api) y `AUTH-B02` (api).
+> Los 4 bloques iniciales ya están `done`. En este momento no hay bloques `ready` — todos los
+> bloques restantes (AUTH-B03 al AUTH-B09) están en `backlog`.
 
 ## Bloques — AUTH
 
 | ID | Proyecto(s) | Estado | Depende de | Tarjeta |
 |---|---|---|---|---|
-| AUTH-B01 | api | **ready** | API_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B01-registro-por-invitacion]] |
-| AUTH-B02 | api | **ready** | API_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B02-login]] |
+| AUTH-B01 | api | **done** | API_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B01-registro-por-invitacion]] |
+| AUTH-B02 | api | **done** | API_BOOTSTRAP-B01 | [[../features/AUTH/blocks/AUTH-B02-login]] |
 | AUTH-B03 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B03-refresh-token]] |
 | AUTH-B04 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B04-logout]] |
 | AUTH-B05 | api | backlog | AUTH-B02 | [[../features/AUTH/blocks/AUTH-B05-rbac-middleware]] |

@@ -41,7 +41,11 @@ reversiona `/api/v1` completo por un solo endpoint.
 
 | Código | HTTP | Significado |
 |---|---|---|
-| _(vacío — el primer código lo agrega `AUTH-B01`)_ | | |
+| `INVITATION_TOKEN_INVALID` | 403 | El token de invitación no existe, no está vigente, o ya expiró |
+| `EMAIL_ALREADY_REGISTERED` | 409 | El email de la invitación ya está asociado a un usuario existente |
+| `VALIDATION_ERROR` | 422 | La request no pasó la validación (campos faltantes o inválidos) |
+| `INVALID_CREDENTIALS` | 401 | Email o password incorrectos (no se distingue cuál para evitar enumeración) |
+| `ACCOUNT_NOT_ACTIVE` | 403 | La cuenta existe pero no está activa (estado suspended, inactive, etc.) |
 
 ## 4. Paginación (para endpoints de listado)
 
