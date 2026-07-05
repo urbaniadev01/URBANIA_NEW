@@ -4,10 +4,10 @@ proyecto: api
 feature: AUTH
 id: AUTH-B04
 proyectos: [api]
-estado: backlog
+estado: done
 depende_de: [AUTH-B02]
 contrato: produce
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # AUTH-B04 — Logout
@@ -51,7 +51,27 @@ Produce `LOCK-AUTH-04`.
 
 ## Evidencia
 
-_Vacío._
+### Tests (Pest)
+
+```
+PASS  Tests\Feature\Auth\LogoutTest
+  ✓ caso 1: logout con sesion activa revoca el token y limpia la cookie
+  ✓ caso 2: logout sin token es idempotente y devuelve 200
+  ✓ caso 3: tras logout el token revocado es rechazado en refresh
+
+  Tests:  3 passed (15 assertions)
+  Duration: 4.65s
+```
+
+3/3 tests pasando — cubren todos los criterios de aceptación (CA1: sesión activa → 200 + token revocado + cookie limpiada, CA2: sin token → 200 idempotente, CA3: confirmación de revocación real contra refresh).
+
+### Contrato congelado
+
+LOCK-AUTH-04 creado en `_state/contracts/CONTRACT_LOCKS.md`.
+
+### Documentación
+
+- `api/endpoints/AUTH.md`: sección `POST /api/v1/auth/logout` documentada.
 
 ## Notas
 

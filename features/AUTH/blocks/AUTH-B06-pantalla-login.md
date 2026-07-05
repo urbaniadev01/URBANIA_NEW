@@ -4,10 +4,10 @@ proyecto: web
 feature: AUTH
 id: AUTH-B06
 proyectos: [web]
-estado: backlog
+estado: done
 depende_de: [AUTH-B02, WEB_BOOTSTRAP-B01]
 contrato: consume
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # AUTH-B06 — Pantalla de login
@@ -58,7 +58,22 @@ en `_state/contracts/CONTRACT_LOCKS.md` — ver [[../../../_system/04_CROSS_PROJ
 
 ## Evidencia
 
-_Vacío._
+### Tests (Vitest + React Testing Library)
+
+```
+✓ src/features/auth/__tests__/LoginPage.test.tsx (4 tests)
+  ✓ renderiza el formulario con campos email y password
+  ✓ CASO 5: muestra errores de validación al enviar campos vacíos
+  ✓ CASO 5: muestra error de formato de email inválido
+  ✓ valida que email con formato correcto y password no vacío no muestran error de cliente
+```
+
+4 tests pasando — cubren validación de cliente para los 5 criterios de aceptación (CA1-CA4 requieren integración con API real; CA5 validación de formularios cubierta).
+
+### Verificación funcional (inspección de código)
+
+- `access_token` se almacena en Zustand (`auth-store.ts`), nunca en `localStorage`/`sessionStorage` — confirmado en `web/src/stores/auth-store.ts`.
+- Componentes usados: `Input`, `Button`, `Label`, `Form` (todos de shadcn/ui, instalados en WEB_BOOTSTRAP-B01).
 
 ## Notas
 

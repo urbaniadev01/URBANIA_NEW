@@ -4,10 +4,10 @@ proyecto: api
 feature: AUTH
 id: AUTH-B05
 proyectos: [api]
-estado: backlog
+estado: done
 depende_de: [AUTH-B02]
 contrato: null
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # AUTH-B05 — Middleware de autorización RBAC
@@ -63,7 +63,26 @@ rol legacy en vez del RBAC real.
 
 ## Evidencia
 
-_Vacío._
+### Tests (Pest)
+
+```
+PASS  Tests\Feature\Authorization\RbacTest
+  ✓ CA1: usuario con permiso admin.access en el scope correcto recibe 200
+  ✓ CA2: usuario autenticado sin permiso admin.access recibe 403
+  ✓ CA3: usuario con permiso admin.access pero en otra organizacion recibe 403
+  ✓ CA4: al revocar el role_assignment la cache se invalida y devuelve 403
+  ✓ CA5: el gate no tiene ruta alterna — solo RBAC decide
+
+  Tests:  5 passed (12 assertions)
+  Duration: 6.18s
+```
+
+5/5 tests pasando — cubren todos los criterios de aceptación (CA1: permiso en scope correcto → 200, CA2: sin permiso → 403 PERMISSION_DENIED, CA3: permiso en otra org → 403, CA4: cache se invalida al revocar rol, CA5: no existe columna `role` legacy como ruta alterna de autorización).
+
+### Documentación
+
+- `api/API_DATABASE.md`: tablas `roles`, `permissions`, `role_assignments` documentadas.
+- `api/API_ARCHITECTURE.md` §5: bounded context `Authorization` agregado.
 
 ## Notas
 

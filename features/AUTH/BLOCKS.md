@@ -2,7 +2,7 @@
 tipo: feature
 proyecto: shared
 feature: AUTH
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # AUTH — Plan de bloques
@@ -35,23 +35,21 @@ AUTH-B02 ──> AUTH-B09 (api, recuperación de contraseña — sin detallar to
 
 | ID | Proyecto | Depende de | Estado | Tarjeta |
 |---|---|---|---|---|
-| AUTH-B01 | api | API_BOOTSTRAP-B01 | backlog | [[blocks/AUTH-B01-registro-por-invitacion]] |
-| AUTH-B02 | api | API_BOOTSTRAP-B01 | backlog | [[blocks/AUTH-B02-login]] |
-| AUTH-B03 | api | AUTH-B02 | backlog | [[blocks/AUTH-B03-refresh-token]] |
-| AUTH-B04 | api | AUTH-B02 | backlog | [[blocks/AUTH-B04-logout]] |
-| AUTH-B05 | api | AUTH-B02 | backlog | [[blocks/AUTH-B05-rbac-middleware]] |
-| AUTH-B06 | web | AUTH-B02 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/AUTH-B06-pantalla-login]] |
-| AUTH-B07 | web | AUTH-B01 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/AUTH-B07-pantalla-registro]] |
-| AUTH-B08 | api | AUTH-B05 | backlog (sin detallar) | [[blocks/AUTH-B08-mfa-enrollment]] |
-| AUTH-B09 | api | AUTH-B02 | backlog (sin detallar) | [[blocks/AUTH-B09-recuperacion-password]] |
+| AUTH-B01 | api | API_BOOTSTRAP-B01 | done | [[blocks/AUTH-B01-registro-por-invitacion]] |
+| AUTH-B02 | api | API_BOOTSTRAP-B01 | done | [[blocks/AUTH-B02-login]] |
+| AUTH-B03 | api | AUTH-B02 | done | [[blocks/AUTH-B03-refresh-token]] |
+| AUTH-B04 | api | AUTH-B02 | done | [[blocks/AUTH-B04-logout]] |
+| AUTH-B05 | api | AUTH-B02 | done | [[blocks/AUTH-B05-rbac-middleware]] |
+| AUTH-B06 | web | AUTH-B02 (lock), WEB_BOOTSTRAP-B01 | done | [[blocks/AUTH-B06-pantalla-login]] |
+| AUTH-B07 | web | AUTH-B01 (lock), WEB_BOOTSTRAP-B01 | done | [[blocks/AUTH-B07-pantalla-registro]] |
+| AUTH-B08 | api | AUTH-B05 | backlog | [[blocks/AUTH-B08-mfa-enrollment]] |
+| AUTH-B09 | api | AUTH-B02 | backlog | [[blocks/AUTH-B09-recuperacion-password]] |
 
 > Los bloques `ready` para arrancar hoy son `API_BOOTSTRAP-B01` y `WEB_BOOTSTRAP-B01` (ver
 > [[../API_BOOTSTRAP/BLOCKS]] y [[../WEB_BOOTSTRAP/BLOCKS]]) — son los que crean `code/api/` y
 > `code/web/`. Ningún bloque de `AUTH` tiene dónde ejecutarse antes de que esos dos existan.
 
-## Nota sobre "backlog" en B01–B07
+## Nota sobre el estado actual
 
-`backlog` aquí no significa "sin diseñar" — todas estas tarjetas están completas y listas. Solo
-esperan a que su dependencia llegue a `done` para que el orquestador las mueva a `ready` (regla
-mecánica de [[../../_system/04_CROSS_PROJECT]] §3 para B06/B07, y de dependencia simple de bloque
-para el resto). B08 y B09 sí están sin detallar todavía — se completan cuando les toque el turno.
+B01 a B07 ya están `done`. B08 y B09 están en `backlog` sin detallar — se completan cuando les
+toque el turno.
