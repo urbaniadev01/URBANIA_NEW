@@ -1,0 +1,2 @@
+# Stores globales de Zustand — solo estado de cliente (token en memoria, tema, sidebar)
+# Nunca cachear respuestas de API aquí

@@ -1,0 +1,2 @@
+# Hooks compartidos entre features
+# Cada hook vive en su propio archivo (useNombre.ts)
