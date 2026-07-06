@@ -1,0 +1,4 @@
+<?php
+
+// Migrations will be added here as features are implemented.
+// First migrations: AUTH-B01 (users, invitations, contacts tables).

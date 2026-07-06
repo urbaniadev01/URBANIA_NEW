@@ -1,0 +1,23 @@
+#
+# OpenSSL configuration file for Urbania API.
+#
+# Minimal config — only what's needed for RSA key pair generation
+# (openssl_pkey_new / openssl_pkey_export). No x509_extensions / [v3_ca]
+# because we never generate certificates here, just key pairs.
+#
+# This file is explicitly passed to openssl_pkey_new() and openssl_pkey_export()
+# via the 'config' parameter in bin/generate-jwt-keys.php.
+# The project NEVER depends on the system's global openssl.cnf.
+#
+# See api/API_ARCHITECTURE.md §10.
+
+openssl_conf = openssl_init
+
+[ openssl_init ]
+providers = provider_sect
+
+[ provider_sect ]
+default = default_sect
+
+[ default_sect ]
+activate = 1

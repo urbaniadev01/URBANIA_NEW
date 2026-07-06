@@ -1,0 +1,18 @@
+parameters:
+    level: 10
+    paths:
+        - app/
+        - src/
+        - config/
+        - routes/
+        - database/
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # PHP config files return mixed from config() — validated at runtime
+        -
+            identifier: missingType.iterableValue
+        -
+            identifier: missingType.generics
+    universalObjectCratesClasses:
+        - Illuminate\Http\Request
+    editorUrl: 'phpstorm://open?file=%%file%%&line=%%line%%'
