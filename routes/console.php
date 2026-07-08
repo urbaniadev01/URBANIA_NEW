@@ -1,5 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Schedule;
+declare(strict_types=1);
 
 // Console routes — scheduled tasks live here.

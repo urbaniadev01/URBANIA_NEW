@@ -1,6 +1,11 @@
 <?php
 
-uses(Tests\TestCase::class)->in('Feature', 'Integration', 'Security');
+declare(strict_types=1);
+
+use Tests\TestCase;
+use Urbania\Shared\JWT\JwtService;
+
+uses(TestCase::class)->in('Feature', 'Integration', 'Security');
 
 expect()->extend('toBeOne', function () {
     return $this->toBe(1);
@@ -11,7 +16,8 @@ expect()->extend('toBeOne', function () {
  */
 function testJwtPrivateKey(): string
 {
-    $pair = \Urbania\Shared\JWT\JwtService::generateTestKeyPair();
+    $pair = JwtService::generateTestKeyPair();
+
     return $pair['private'];
 }
 
@@ -20,6 +26,7 @@ function testJwtPrivateKey(): string
  */
 function testJwtPublicKey(): string
 {
-    $pair = \Urbania\Shared\JWT\JwtService::generateTestKeyPair();
+    $pair = JwtService::generateTestKeyPair();
+
     return $pair['public'];
 }

@@ -10,15 +10,15 @@
 
 declare(strict_types=1);
 
-$configFile = __DIR__ . '/openssl.cnf';
-$storageDir = __DIR__ . '/../storage/jwt';
+$configFile = __DIR__.'/openssl.cnf';
+$storageDir = __DIR__.'/../storage/jwt';
 
 if (! is_dir($storageDir)) {
     mkdir($storageDir, 0755, true);
 }
 
-$privateKeyPath = $storageDir . '/private.pem';
-$publicKeyPath = $storageDir . '/public.pem';
+$privateKeyPath = $storageDir.'/private.pem';
+$publicKeyPath = $storageDir.'/public.pem';
 
 // --- Generate private key ---
 $privateKey = openssl_pkey_new([
@@ -28,7 +28,7 @@ $privateKey = openssl_pkey_new([
 ]);
 
 if ($privateKey === false) {
-    fwrite(STDERR, '✗ Failed to generate private key: ' . openssl_error_string() . "\n");
+    fwrite(STDERR, '✗ Failed to generate private key: '.openssl_error_string()."\n");
     exit(1);
 }
 
@@ -36,7 +36,7 @@ if ($privateKey === false) {
 $exported = openssl_pkey_export($privateKey, $privateKeyPem, null, ['config' => $configFile]);
 
 if ($exported === false) {
-    fwrite(STDERR, '✗ Failed to export private key: ' . openssl_error_string() . "\n");
+    fwrite(STDERR, '✗ Failed to export private key: '.openssl_error_string()."\n");
     exit(1);
 }
 
@@ -47,7 +47,7 @@ chmod($privateKeyPath, 0600);
 $keyDetails = openssl_pkey_get_details($privateKey);
 
 if ($keyDetails === false) {
-    fwrite(STDERR, '✗ Failed to extract public key: ' . openssl_error_string() . "\n");
+    fwrite(STDERR, '✗ Failed to extract public key: '.openssl_error_string()."\n");
     exit(1);
 }
 
@@ -69,7 +69,7 @@ $signature = '';
 $signOk = openssl_sign($testPayload, $signature, $privateKeyPem, OPENSSL_ALGO_SHA256);
 
 if (! $signOk) {
-    fwrite(STDERR, '✗ Verification failed: could not sign test payload' . "\n");
+    fwrite(STDERR, '✗ Verification failed: could not sign test payload'."\n");
     exit(1);
 }
 
@@ -78,7 +78,7 @@ $verifyOk = openssl_verify($testPayload, $signature, $keyDetails['key'], OPENSSL
 if ($verifyOk === 1) {
     echo "✓ Verificación RS256: OK — las llaves funcionan correctamente.\n";
 } else {
-    fwrite(STDERR, '✗ Verification failed: RS256 sign/verify mismatch' . "\n");
+    fwrite(STDERR, '✗ Verification failed: RS256 sign/verify mismatch'."\n");
     exit(1);
 }
 

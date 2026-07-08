@@ -30,5 +30,5 @@ test('RouteServiceProvider conditionally loads dev routes', function () {
 
     expect($contents)
         ->toContain("app()->environment('local', 'testing')")
-        ->toContain("routes/dev.php");
+        ->toContain('routes/dev.php');
 });

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -11,6 +13,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seeders will be registered here as features are implemented.
+        $this->call([
+            RbacDemoSeeder::class,
+        ]);
     }
 }

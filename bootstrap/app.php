@@ -1,6 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+use Urbania\Authorization\Infrastructure\Http\Middleware\RequirePermission;
+use Urbania\Mfa\Infrastructure\Http\Middleware\RequireMfa;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -9,9 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Illuminate\Foundation\Configuration\Middleware $middleware): void {
-        //
+    ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->alias([
+            'require_permission' => RequirePermission::class,
+            'require_mfa' => RequireMfa::class,
+        ]);
     })
-    ->withExceptions(function (Illuminate\Foundation\Configuration\Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

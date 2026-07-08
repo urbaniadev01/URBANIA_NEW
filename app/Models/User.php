@@ -1,13 +1,33 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Urbania\Auth\Infrastructure\Models\EloquentContact;
 
 class User extends Authenticatable
 {
     use HasUuids;
+    use SoftDeletes;
+
+    /**
+     * The table associated with the model.
+     */
+    protected $table = 'users';
+
+    /**
+     * Get the name of the column used for the password hash.
+     * Override default 'password' to match our custom schema.
+     */
+    public function getAuthPasswordName(): string
+    {
+        return 'password_hash';
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -15,9 +35,11 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'id',
+        'organization_id',
         'email',
-        'password',
+        'password_hash',
+        'estado',
     ];
 
     /**
@@ -26,7 +48,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
-        'password',
+        'password_hash',
         'remember_token',
     ];
 
@@ -37,10 +59,7 @@ class User extends Authenticatable
      */
     protected function casts(): array
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return [];
     }
 
     /**
@@ -49,5 +68,13 @@ class User extends Authenticatable
     public function uniqueIds(): array
     {
         return ['id'];
+    }
+
+    /**
+     * @return HasOne<EloquentContact, $this>
+     */
+    public function contact(): HasOne
+    {
+        return $this->hasOne(EloquentContact::class, 'user_id');
     }
 }

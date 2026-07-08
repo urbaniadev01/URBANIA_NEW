@@ -4,15 +4,20 @@
     "description": "Urbania API — Laravel 13 + DDD",
     "require": {
         "php": "^8.5",
-        "laravel/framework": "^13.0",
+        "endroid/qr-code": "^5.1",
+        "ext-gd": "*",
         "firebase/php-jwt": "^7.0",
-        "laravel/tinker": "^3.0"
+        "laravel/framework": "^13.0",
+        "laravel/tinker": "^3.0",
+        "predis/predis": "*",
+        "spomky-labs/otphp": "^11.3"
     },
     "require-dev": {
-        "pestphp/pest": "^4.4",
-        "pestphp/pest-plugin-laravel": "^4.1",
         "larastan/larastan": "^3.3",
-        "laravel/pint": "^1.21"
+        "laravel/pint": "^1.21",
+        "mockery/mockery": "*",
+        "pestphp/pest": "^4.4",
+        "pestphp/pest-plugin-laravel": "^4.1"
     },
     "autoload": {
         "psr-4": {

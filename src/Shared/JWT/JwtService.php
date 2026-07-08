@@ -4,16 +4,23 @@ declare(strict_types=1);
 
 namespace Urbania\Shared\JWT;
 
+use Firebase\JWT\ExpiredException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Firebase\JWT\SignatureInvalidException;
 
 final readonly class JwtService
 {
     private string $privateKey;
+
     private string $publicKey;
+
     private string $algorithm;
+
     private int $ttl;
+
     private int $refreshTtl;
+
     private string $issuer;
 
     public function __construct()
@@ -30,19 +37,44 @@ final readonly class JwtService
      * Issue an access token for a given subject.
      *
      * @param array<string, mixed> $claims Additional claims to embed in the token.
+     *                                     Passed claims override defaults (including 'type' and 'exp').
      * @return string Signed JWT access token.
      */
     public function issueAccessToken(string $subject, array $claims = []): string
     {
         $now = time();
 
-        $payload = array_merge($claims, [
+        $payload = array_merge([
             'iss' => $this->issuer,
             'sub' => $subject,
             'iat' => $now,
             'exp' => $now + $this->ttl,
             'type' => 'access',
-        ]);
+        ], $claims);
+
+        return JWT::encode($payload, $this->privateKey, $this->algorithm);
+    }
+
+    /**
+     * Issue an MFA token for a given subject.
+     *
+     * MFA tokens have ultra-short TTL (5 min) and are only usable
+     * for MFA verification endpoints — not as general access tokens.
+     *
+     * @return string Signed JWT mfa token.
+     */
+    public function issueMfaToken(string $subject): string
+    {
+        $now = time();
+
+        $payload = [
+            'iss' => $this->issuer,
+            'sub' => $subject,
+            'iat' => $now,
+            'exp' => $now + 300,
+            'type' => 'mfa',
+            'mfa_verified' => false,
+        ];
 
         return JWT::encode($payload, $this->privateKey, $this->algorithm);
     }
@@ -71,15 +103,13 @@ final readonly class JwtService
     /**
      * Verify and decode a JWT token.
      *
-     * @return object{iss: string, sub: string, iat: int, exp: int, type: string, ...}
      *
-     * @throws \Firebase\JWT\ExpiredException If the token has expired.
-     * @throws \Firebase\JWT\SignatureInvalidException If the signature is invalid.
+     * @throws ExpiredException If the token has expired.
+     * @throws SignatureInvalidException If the signature is invalid.
      * @throws \UnexpectedValueException If the token is otherwise invalid.
      */
     public function verify(string $token): object
     {
-        /** @var object{iss: string, sub: string, iat: int, exp: int, type: string} */
         return JWT::decode($token, new Key($this->publicKey, $this->algorithm));
     }
 
@@ -93,7 +123,7 @@ final readonly class JwtService
      */
     public static function generateTestKeyPair(): array
     {
-        $configFile = __DIR__ . '/../../../bin/openssl.cnf';
+        $configFile = __DIR__.'/../../../bin/openssl.cnf';
 
         $privateKey = openssl_pkey_new([
             'private_key_bits' => 2048,
@@ -102,19 +132,27 @@ final readonly class JwtService
         ]);
 
         if ($privateKey === false) {
-            throw new \RuntimeException('Failed to generate test key pair: ' . openssl_error_string());
+            throw new \RuntimeException('Failed to generate test key pair: '.openssl_error_string());
         }
 
         $exported = openssl_pkey_export($privateKey, $privateKeyPem, null, ['config' => $configFile]);
 
         if ($exported === false) {
-            throw new \RuntimeException('Failed to export test private key: ' . openssl_error_string());
+            throw new \RuntimeException('Failed to export test private key: '.openssl_error_string());
         }
 
         $keyDetails = openssl_pkey_get_details($privateKey);
 
         if ($keyDetails === false) {
-            throw new \RuntimeException('Failed to extract test public key: ' . openssl_error_string());
+            throw new \RuntimeException('Failed to extract test public key: '.openssl_error_string());
+        }
+
+        if (! is_string($privateKeyPem)) {
+            throw new \RuntimeException('openssl_pkey_export failed to produce a string');
+        }
+
+        if (! isset($keyDetails['key']) || ! is_string($keyDetails['key'])) {
+            throw new \RuntimeException('openssl_pkey_get_details did not return a valid key string');
         }
 
         return [
@@ -130,7 +168,6 @@ final readonly class JwtService
      */
     private function loadKey(string $configPath, string $errorMessage): string
     {
-        /** @var string $path */
         $path = config($configPath);
 
         if (! is_string($path) || $path === '') {
