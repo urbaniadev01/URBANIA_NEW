@@ -190,4 +190,29 @@ test.describe("AUTH-B06 — Pantalla de login", () => {
     // Debe seguir en la misma página
     expect(page.url()).toContain("/login");
   });
+
+  test("CA6 — mfa_required: redirige a /mfa/verify sin guardar access_token", async ({
+    page,
+  }) => {
+    await page.route(API_LOGIN, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          mfa_required: true,
+          mfa_token: "fake-mfa-session",
+        }),
+      });
+    });
+
+    await page.fill(
+      'input[placeholder="tu@email.com"]',
+      "admin@urbania.com",
+    );
+    await page.fill('input[placeholder="........"]', "Password1");
+    await page.click('button:has-text("Iniciar sesion")');
+
+    await page.waitForURL("**/mfa/verify", { timeout: 5000 });
+    expect(page.url()).toContain("/mfa/verify");
+  });
 });
