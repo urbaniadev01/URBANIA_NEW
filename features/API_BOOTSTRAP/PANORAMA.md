@@ -61,7 +61,7 @@ No aplica.
 - Definir en `composer.json` los scripts que `api/API_AGENTS.md` §3 ya documenta como contrato:
   `test`, `test:unit`, `test:feature`, `test:integration`, `test:security`, `stan`, `lint`, `fmt`,
   `ci`, `docker-up`, `docker-down`, `docker-logs`.
-- `code/api/` es su propio repositorio git, independiente del vault (ver `.gitignore` — `/code/`).
+- `code/api/` es parte de este repositorio (monorepo).
 
 ## 7. Plan de bloques
 

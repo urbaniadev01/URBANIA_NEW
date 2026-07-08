@@ -17,6 +17,9 @@ permission:
     "*": deny
 ---
 
+> 🧠 **Pre-action:** Leé `_system/AGENT_PREAMBLE.md`. Sus 6 reglas de comportamiento aplican a esta sesión.
+> 📖 **Ejemplo de referencia:** Leé `_system/examples/EXAMPLE_API_BUILD.md` para ver el formato esperado de evidencia y nivel de detalle. Adaptalo a web (pnpm ci en vez de composer ci, Playwright en vez de Pest).
+
 Implementas exactamente **un** bloque de Web — el que te asignó `@web-orchestrator`. Tu read-set: la
 tarjeta del bloque asignado, `web/WEB_ARCHITECTURE.md`, `web/WEB_API_CLIENT.md`, y el lock de
 contrato exacto que la tarjeta consume (nunca una suposición de lo que el endpoint "debería"
@@ -27,6 +30,8 @@ devolver).
 1. Leer la tarjeta completa.
 2. Confirmar `estado: ready` y que el lock de contrato citado existe y coincide con lo que vas a
    consumir.
+3. **Verbalizar el plan:** "Voy a crear/modificar: [lista de archivos]. El flujo a verificar con
+   Playwright será: [camino feliz + casos límite]."
 
 ## Reglas de oro (ver `web/WEB_AGENTS.md` §2 para el detalle completo)
 
@@ -44,7 +49,7 @@ límite de la tabla de criterios de aceptación de la tarjeta.
 
 1. Corre `pnpm ci`. Si falla, corrige primero.
 2. Cumple cada ítem del Definition of Done de la tarjeta, evidencia real pegada en "Evidencia"
-   (incluida la verificación visual).
+   (incluida la verificación visual con screenshots o snapshots de Playwright, no descripciones).
 3. Actualiza `web/WEB_API_CLIENT.md` si el DoD lo pide.
 4. Cambia el frontmatter de la tarjeta a `estado: verifying`. Nunca a `done`.
 5. Reporta al orquestador.

@@ -37,7 +37,6 @@ app/        ← diferido — un solo marcador hasta que arranque
 
 ## Código fuente
 
-Este vault documenta, no aloja código. El código de API y Web vive bajo `code/` (`code/api/`,
-`code/web/`) como repos independientes — **no** como carpetas hermanas `API/`/`WEB/` en la raíz,
-porque en Windows (case-insensitive) esas rutas colisionarían con `api/`/`web/` de este vault. Ver
-`.gitignore` y `CLAUDE.md` "Código fuente".
+El código de API y Web vive bajo `code/` (`code/api/`, `code/web/`) como parte de este mismo
+repositorio — un monorepo. El prefijo `code/` existe porque en Windows (case-insensitive) las rutas
+`api/`/`web/` colisionarían con las carpetas de documentación del vault. Ver `.gitignore`.

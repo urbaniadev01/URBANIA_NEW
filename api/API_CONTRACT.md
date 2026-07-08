@@ -1,7 +1,7 @@
 ---
 tipo: contrato
 proyecto: api
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # API_CONTRACT — Convenciones REST (fuente de verdad de las reglas, no del catálogo)
@@ -41,11 +41,25 @@ reversiona `/api/v1` completo por un solo endpoint.
 
 | Código | HTTP | Significado |
 |---|---|---|
-| `INVITATION_TOKEN_INVALID` | 403 | El token de invitación no existe, no está vigente, o ya expiró |
-| `EMAIL_ALREADY_REGISTERED` | 409 | El email de la invitación ya está asociado a un usuario existente |
 | `VALIDATION_ERROR` | 422 | La request no pasó la validación (campos faltantes o inválidos) |
-| `INVALID_CREDENTIALS` | 401 | Email o password incorrectos (no se distingue cuál para evitar enumeración) |
-| `ACCOUNT_NOT_ACTIVE` | 403 | La cuenta existe pero no está activa (estado suspended, inactive, etc.) |
+| `INVITATION_TOKEN_INVALID` | 403 | El token de invitación no existe, ya fue consumido, o está expirado |
+| `EMAIL_ALREADY_REGISTERED` | 409 | El email de la invitación ya está asociado a un usuario existente |
+| `INVALID_CREDENTIALS` | 401 | Email no existe o password incorrecta (mismo código en ambos casos — no distingue) |
+| `ACCOUNT_NOT_ACTIVE` | 403 | El usuario existe pero su estado no es `active` |
+| `REFRESH_TOKEN_MISSING` | 401 | No se envió la cookie `refresh_token` en la request |
+| `REFRESH_TOKEN_EXPIRED` | 401 | El refresh token ha expirado — debe iniciar sesión de nuevo |
+| `REFRESH_TOKEN_REUSED` | 401 | El refresh token ya fue usado — posible robo de sesión. Todas las sesiones del usuario fueron revocadas |
+| `MFA_ALREADY_ENABLED` | 409 | MFA ya está activado para este usuario |
+| `MFA_NOT_ENABLED` | 409 | MFA no está activado para este usuario |
+| `MFA_CODE_INVALID` | 422 | El código MFA ingresado no es válido |
+| `MFA_TOKEN_INVALID` | 401 | El token MFA no es válido o ha expirado |
+| `MFA_RECOVERY_CODE_USED` | 422 | El código de respaldo ya fue utilizado |
+| `MFA_ENROLLMENT_NOT_FOUND` | 404 | No hay un enrollment de MFA pendiente para este usuario |
+| `MFA_ENROLLMENT_EXPIRED` | 422 | El enrollment de MFA ha expirado por demasiados intentos fallidos |
+| `MFA_REQUIRED` | 403 | Se requiere verificación MFA para acceder a este recurso |
+| `TOO_MANY_REQUESTS` | 429 | Rate limiting superado |
+| `RESET_TOKEN_EXPIRED` | 422 | El token de recuperación de contraseña ha expirado |
+| `RESET_TOKEN_INVALID` | 422 | El token de recuperación de contraseña no es válido o ya fue usado |
 
 ## 4. Paginación (para endpoints de listado)
 

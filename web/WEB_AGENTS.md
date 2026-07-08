@@ -11,8 +11,8 @@ actualizado: 2026-07-03
 
 ## 0. Dónde vive el código
 
-El proyecto Vite vive en `code/web/` (repo git independiente de este vault, gitignored — ver
-`.gitignore`). Todo comando de esta página se ejecuta desde ahí, no desde la raíz del vault. Si
+El proyecto Vite vive en `code/web/` como parte de este repositorio (monorepo). Todo comando de
+esta página se ejecuta desde ahí, no desde la raíz del vault. Si
 `code/web/` todavía no existe, el bloque a ejecutar es
 `features/WEB_BOOTSTRAP/blocks/WEB_BOOTSTRAP-B01-instalar-shadcn-tailwind.md` — ningún otro bloque
 de Web tiene dónde ejecutarse antes de que ese exista.

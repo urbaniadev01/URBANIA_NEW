@@ -12,8 +12,8 @@ actualizado: 2026-07-03
 
 ## 0. Dónde vive el código
 
-El proyecto Laravel vive en `code/api/` (repo git independiente de este vault, gitignored — ver
-`.gitignore`). Todo comando de esta página se ejecuta desde ahí, no desde la raíz del vault. Si
+El proyecto Laravel vive en `code/api/` como parte de este repositorio (monorepo). Todo comando de
+esta página se ejecuta desde ahí, no desde la raíz del vault. Si
 `code/api/` todavía no existe, el bloque a ejecutar es
 `features/API_BOOTSTRAP/blocks/API_BOOTSTRAP-B01-crear-esqueleto-laravel.md` — ningún otro bloque de
 API tiene dónde ejecutarse antes de que ese exista.

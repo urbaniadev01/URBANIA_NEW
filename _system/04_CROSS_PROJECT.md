@@ -1,7 +1,7 @@
 ---
 tipo: sistema
 proyecto: shared
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # 04 — Protocolo Cross-Project
@@ -21,12 +21,12 @@ es más barato tratar un cambio local como cross-project que descubrir tarde uno
 ## 2. La máquina de estados
 
 ```
-DESIGNED ─────────> API_BUILDING ─────────> API_VERIFIED ─────────> CLIENTS_BUILDING ─────────> CLIENTS_VERIFIED ─────────> SHIPPED
-(panorama            (bloque de API           (contrato del bloque    (bloque(s) de cliente         (verificación              (CHANGELOG.md
- approved,            tomado por un            congelado en           tomados; solo pueden           independiente del          recibe la
- bloques               agente, estado           CONTRACT_LOCKS.md;     entrar en `ready`               lado cliente               entrada final)
- planificados)         de API en                estado de API en       si existe un lock                confirma DoD)
-                       `in_progress`)           `done`)                 vigente para este bloque)
+DESIGNED ──────> API_BUILDING ──────> API_VERIFIED ──────> CLIENTS_BUILDING ──────> CLIENTS_VERIFIED ──────> SHIPPED
+(panorama         (bloque de API        (contrato del bloque    (bloque(s) de cliente      (verificación           (release-council
+ approved,         tomado por un         congelado en           tomados; solo pueden        independiente del       emite GO;
+ bloques           agente, estado        CONTRACT_LOCKS.md;     entrar en `ready`           lado cliente            CHANGELOG.md
+ planificados)     de API en             estado de API en       si existe un lock             confirma DoD)          recibe la
+                   `in_progress`)        `done`)                 vigente para este bloque)                             entrada final)
 ```
 
 Cada flecha exige una condición mecánica verificable — ninguna transición es una declaración de
@@ -38,7 +38,7 @@ intención en texto libre.
 | `API_BUILDING → API_VERIFIED` | El bloque de API llega a `estado: done` (DoD + verificación independiente cumplidos, ver [[05_DEFINITION_OF_DONE]]) | La tarjeta del bloque de API |
 | `API_VERIFIED → CLIENTS_BUILDING` | Existe una entrada vigente en `_state/contracts/CONTRACT_LOCKS.md` que referencia el bloque de API, Y el bloque de cliente pasa a `in_progress` | `_state/contracts/CONTRACT_LOCKS.md` + tarjeta del bloque de cliente |
 | `CLIENTS_BUILDING → CLIENTS_VERIFIED` | El/los bloque(s) de cliente llegan a `estado: done` | Tarjeta(s) del bloque de cliente |
-| `CLIENTS_VERIFIED → SHIPPED` | Se agrega la entrada de cierre en `_state/CHANGELOG.md` | `_state/CHANGELOG.md` |
+| `CLIENTS_VERIFIED → SHIPPED` | El `release-council` ([[06_AGENT_ROLES#14]]) emite veredicto GO y se agrega la entrada de cierre en `_state/CHANGELOG.md` | `_state/CHANGELOG.md` |
 
 ## 3. Regla dura: un bloque de cliente no puede empezar sin contrato congelado
 

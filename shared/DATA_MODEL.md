@@ -56,7 +56,7 @@ erDiagram
     }
     CONTACTS {
         uuid id PK
-        uuid user_id FK "nullable — un contact puede no tener user"
+        uuid user_id FK "UNIQUE — todo user activo tiene un contact (invariante ADR-001)"
         text nombre
         text email
         text telefono
@@ -69,19 +69,18 @@ erDiagram
     }
     INVITATIONS {
         uuid id PK
-        uuid property_id FK
+        uuid organization_id FK
         text token
         text estado "vigente | consumida | expirada"
         timestamptz expira_en
     }
     ROLES {
         uuid id PK
-        uuid organization_id FK "nullable — null = rol de sistema"
         text nombre
     }
     PERMISSIONS {
         uuid id PK
-        text codigo "recurso.accion"
+        text name "recurso.accion"
     }
     ROLE_ASSIGNMENTS {
         uuid id PK

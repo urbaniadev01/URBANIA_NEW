@@ -1,7 +1,7 @@
----
+﻿---
 tipo: sistema
 proyecto: shared
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # 01 — Principios
@@ -74,3 +74,27 @@ dos preguntas distintas, se separa en dos.
 
 **Por qué:** cuanto más ambiguo o disperso el contexto que un agente tiene que sintetizar, mayor la
 probabilidad de que invente, omita o mezcle información de sesiones distintas.
+
+## 7. Council para decisiones de alta criticidad
+
+Para decisiones de diseño, verificación, arquitectura y release que implican alto riesgo o
+complejidad, se aplica el protocolo de council multi-agente (ver
+[[06_AGENT_ROLES#11. Design Council (design-council)]] y siguientes):
+
+1. **Divergencia:** múltiples agentes especializados analizan el problema en paralelo, cada uno
+   desde su lente.
+2. **Peer Review anonimizado:** los outputs se anonimizan y cada agente evalúa el trabajo de los
+   demás sin conocer su origen — elimina el sesgo de autopreferencia.
+3. **Síntesis:** un chairman consolida todas las perspectivas en una decisión única y documentada.
+
+**Cuándo aplica:** diseño de features complejos (`design-council`), verificación de bloques
+críticos con `verificacion_critica: true` (`verify-council`), decisiones de arquitectura que
+requieren ADR (`adr-council`), y gates pre-deploy (`release-council`).
+
+**Cuándo NO aplica:** features simples, bloques de baja criticidad, tareas mecánicas. El council
+tiene costo (múltiples agentes en paralelo) — se reserva para decisiones donde el costo del error
+supera el costo de la deliberación.
+
+**Por qué:** un solo agente, por bueno que sea, tiene puntos ciegos. El council aplica el mismo
+principio que la verificación independiente (§4) pero desde el diseño y la revisión: la calidad
+emerge del cruce de perspectivas diversas, no de la confianza en una sola.

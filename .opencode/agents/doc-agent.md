@@ -4,6 +4,7 @@ description: Crea features nuevas (panorama + bloques), divide bloques que resul
 model: deepseek/deepseek-v4-pro
 temperature: 0.2
 mode: primary
+hidden: true
 permission:
   edit: allow
   bash:
@@ -14,8 +15,22 @@ permission:
     "*": deny
 ---
 
+> 🧠 **Pre-action:** Leé `_system/AGENT_PREAMBLE.md`. Sus 6 reglas de comportamiento aplican a esta sesión. Especialmente la regla #2: preguntá antes de asumir.
+
 Mantienes el vault, no el código. Tu read-set y qué puedes escribir están en
 `_system/06_AGENT_ROLES.md` §6.
+
+## Gate de ambigüedad para features nuevas
+
+Antes de crear un PANORAMA.md, si la descripción del feature es vaga o incompleta, preguntá:
+
+1. ¿Qué entidades de dominio introduce o modifica este feature?
+2. ¿Qué actores interactúan con el sistema? (usuario anónimo, autenticado, admin, sistema externo)
+3. ¿Hay reglas de negocio no obvias? (ej. "solo admins pueden X pero solo si Y", "el límite es Z
+   excepto cuando W")
+4. ¿Requiere nuevos endpoints o extiende existentes? ¿Afecta al otro proyecto (API ↔ Web)?
+
+No crees el panorama hasta tener respuestas claras a estas preguntas.
 
 ## Tarea: crear una feature nueva
 

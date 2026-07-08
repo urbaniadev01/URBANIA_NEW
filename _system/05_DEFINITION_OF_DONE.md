@@ -1,7 +1,7 @@
----
+﻿---
 tipo: sistema
 proyecto: shared
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # 05 — Definition of Done (con evidencia)
@@ -14,11 +14,15 @@ actualizado: 2026-07-03
 ## 1. Principio de verificación independiente
 
 El agente que implementa un bloque **reporta** que el DoD se cumplió y pega la evidencia — pero no
-es quien mueve la tarjeta a `estado: done`. Esa transición la hace un rol distinto (verificador /
-orquestador, ver [[06_AGENT_ROLES]]) que re-ejecuta o al menos re-lee la evidencia de forma
-independiente antes de confirmar. Un bloque puede volver de `verifying` a `in_progress` si la
-verificación no coincide con lo reportado — eso no es un fallo del proceso, es el proceso
-funcionando.
+es quien mueve la tarjeta a `estado: done`. Esa transición la hace un rol distinto (verificador
+independiente, ver [[06_AGENT_ROLES#5]]) que re-ejecuta o al menos re-lee la evidencia de forma
+independiente antes de confirmar. Para bloques con `verificacion_critica: true` (ver §6), el
+verificador invoca al `verify-council` ([[06_AGENT_ROLES#12]]) y basa su decisión en el veredicto
+consolidado del council — el council no reemplaza al verifier, lo asiste con múltiples perspectivas
+especializadas.
+
+Un bloque puede volver de `verifying` a `in_progress` si la verificación no coincide con lo
+reportado — eso no es un fallo del proceso, es el proceso funcionando.
 
 ## 2. DoD — proyecto API
 
@@ -69,3 +73,28 @@ Además de los checklists anteriores para cada lado:
 
 Esta lista existe porque el vault anterior aceptó exactamente estas tres formas de "evidencia" en un
 feature marcado como completado que después resultó tener huecos de seguridad reales.
+
+## 6. Flag `verificacion_critica`
+
+Una tarjeta de bloque puede declarar `verificacion_critica: true` en su frontmatter. Esto indica
+que el bloque toca superficies de alto riesgo y requiere verificación multi-perspectiva por el
+`verify-council` ([[06_AGENT_ROLES#12]]) antes de que el verifier pueda decidir `done`.
+
+**Cuándo usarlo:**
+- Endpoints de autenticación/autorización
+- Lógica de pagos o transacciones financieras
+- Migraciones que modifican datos existentes (no solo esquema)
+- Endpoints públicos sin capa de seguridad anterior
+- Cambios en el modelo de permisos (RBAC/ACL)
+- Features nuevos completos (su último bloque)
+
+**Cuándo NO usarlo:**
+- CRUD interno con auth ya establecida
+- Cambios de UI sin lógica de negocio nueva
+- Refactors con cobertura de tests existente
+- Correcciones de bugs acotados
+
+El flag lo asigna `@doc-agent` al crear la tarjeta (a criterio del diseño), o el orquestador al
+detectar que el bloque cumple los criterios de alto riesgo. Una vez puesto, el verifier no puede
+ignorarlo — el `verify-council` es obligatorio para ese bloque. Si `verificacion_critica` no está
+presente en el frontmatter, se asume `false` y el verifier opera solo (comportamiento actual).

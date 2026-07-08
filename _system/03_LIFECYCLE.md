@@ -1,7 +1,7 @@
 ---
 tipo: sistema
 proyecto: shared
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # 03 — Ciclo de vida: Feature → Bloque → Sesión
@@ -13,11 +13,14 @@ actualizado: 2026-07-03
 
 ```
 1. IDEA           → se nombra el feature, se agrega fila en BOARD (estado agregado: sin diseñar)
-2. DRAFT           → PANORAMA.md se escribe con la plantilla FEATURE_PANORAMA.md
+2. DRAFT           → PANORAMA.md se escribe. Para features de alta complejidad, `urbania` delega en
+                     `design-council` ([[06_AGENT_ROLES#11]]) que genera el panorama por consenso
+                     multi-perspectiva. Para features simples, `@doc-agent` usa la plantilla
+                     FEATURE_PANORAMA.md directamente.
 3. APPROVED         → humano revisa y aprueba el panorama (gate — ver §3)
 4. BLOQUEADO EN BLOQUES → BLOCKS.md lista los bloques ordenados, con dependencias y gates marcados
 5. EN EJECUCIÓN     → los bloques se ejecutan uno a uno (§2)
-6. DONE             → todos los bloques obligatorios del feature están `done`
+6. DONE             → todos los bloques obligatorios del feature están `done` (§6 añade gate de release)
 ```
 
 Un feature **nunca** pasa directo de IDEA a código. El paso 3 (APPROVED) es el mismo gate que ya
@@ -50,6 +53,14 @@ el bloque es más grande de lo que su tarjeta describía, el agente:
 Esto es lo que reemplaza al feature "de corrido": el tamaño de la unidad de trabajo se corrige
 partiéndola, nunca extendiendo la sesión más allá de lo planeado.
 
+### Verificación crítica
+
+Para bloques con `verificacion_critica: true` en su frontmatter, la transición
+`verifying → done` requiere que el verificador independiente invoque al `verify-council`
+([[06_AGENT_ROLES#12]]) antes de decidir. El veredicto del council es un input calificado,
+no un reemplazo del verifier — la decisión final sigue siendo del verifier. Si el flag está
+ausente o es `false`, el verifier opera solo (comportamiento actual).
+
 ## 3. Gate de aprobación de diseño (Feature → Bloques)
 
 Antes de que `BLOCKS.md` pueda existir, `PANORAMA.md` debe tener `estado_diseño: approved` en su
@@ -78,3 +89,20 @@ entra en `ready` hasta que el de API está `done` y su contrato está en
 | `*_IMPLEMENTATION_PLAN.md` (cola de sesiones futuras) | `features/<F>/BLOCKS.md` (la cola ya es la lista de bloques con su estado) |
 | Checklist §14/§15 de 700 líneas al final del panorama | DoD por bloque, pequeño y verificable, dentro de cada tarjeta |
 | "Sesión N" como eje temporal | El bloque como eje; la fecha real queda en el frontmatter y en `CHANGELOG.md` |
+
+## 6. Gate de release (Feature → SHIPPED)
+
+Cuando el último bloque de un feature (según `BLOCKS.md`) llega a `estado: done`, el feature no
+pasa automáticamente a completado. En su lugar:
+
+1. `urbania` invoca al `release-council` ([[06_AGENT_ROLES#14]]).
+2. El council emite un veredicto multi-perspectiva: 🟢 GO, 🟡 GO CON CONDICIONES, o 🔴 NO-GO.
+3. Si es **GO**, se agrega la entrada de cierre en `_state/CHANGELOG.md` y el feature se marca
+   `DONE` en `_state/BOARD.md`.
+4. Si es **GO CON CONDICIONES**, se documentan las condiciones y el feature avanza con deuda
+   registrada. Las condiciones se agregan como nota en `_state/BOARD.md`.
+5. Si es **NO-GO**, el feature vuelve a estado activo — los bloques que requieren corrección se
+   identifican, se crean tarjetas nuevas (`<FEATURE>-B<NN+1>`) y el ciclo continúa.
+
+El release-council también puede invocarse manualmente en cualquier momento ("¿estamos listos para
+producción?").

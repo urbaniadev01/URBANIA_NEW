@@ -1,7 +1,7 @@
----
+﻿---
 tipo: sistema
 proyecto: shared
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # 02 — Convenciones
@@ -17,6 +17,7 @@ actualizado: 2026-07-03
 tipo: sistema | referencia | contrato | feature | bloque | adr | estado
 proyecto: shared | api | web | app
 estado: <solo si tipo: bloque — ver vocabulario abajo>
+verificacion_critica: true | false  <opcional, solo si tipo: bloque. Indica que el bloque requiere verificación por verify-council antes de done>
 actualizado: YYYY-MM-DD
 ---
 ```
@@ -26,6 +27,10 @@ actualizado: YYYY-MM-DD
 - `proyecto` clasifica A QUIÉN pertenece. `shared` = ningún proyecto es dueño exclusivo.
 - `estado` solo aparece en tarjetas de bloque (`tipo: bloque`) — es el único campo de estado
   ejecutable del vault (ver [[03_LIFECYCLE]] para el vocabulario y sus transiciones).
+- `verificacion_critica` solo aparece en tarjetas de bloque (`tipo: bloque`). Si es `true`, el
+  verificador independiente debe invocar al `verify-council` (ver [[06_AGENT_ROLES#12]]) antes de
+  decidir `done`. Si no está presente, se asume `false`. Ver [[05_DEFINITION_OF_DONE#6]] para
+  criterios de uso.
 - `actualizado` se toca cada vez que el contenido cambia de forma material (no en cada typo).
 
 ## 2. Nombres de archivo

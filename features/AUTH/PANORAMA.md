@@ -2,7 +2,7 @@
 tipo: feature
 proyecto: shared
 feature: AUTH
-estado_diseño: approved
+estado_diseño: SHIPPED
 actualizado: 2026-07-03
 ---
 
@@ -43,9 +43,12 @@ Es el primer feature porque nada más puede empezar sin él.
 | `users` | Nueva | `organization_id` | Referencia (`→ organizations.id`) | Identidad de cuenta (actor) |
 | `contacts` | Nueva | `user_id` | Referencia, nullable | Todo `user` activo tiene un `contact` (invariante ADR-001) |
 | `invitations` | Nueva | `organization_id`, `email` | Referencia + Valor | Token de alta, consumible una sola vez |
+| `refresh_tokens` | Nueva | `user_id`, `jti` | Referencia + Valor | Rotación de refresh tokens (AUTH-B03) |
+| `user_mfa` | Nueva | `user_id` | Referencia | TOTP secret + recovery codes (AUTH-B08) |
+| `password_reset_tokens` | Nueva | `email`, `token_hash` | Valor + Valor | Tokens de recuperación de contraseña (AUTH-B09) |
 | `roles` / `permissions` / `role_assignments` | Nueva | — | Referencia | RBAC — se crean en `AUTH-B05`, no en `AUTH-B01` |
 
-Convenciones de columnas (UUID v7, soft delete, etc.): [[../../shared/DATA_MODEL]] §1.
+Convenciones de columnas (UUID v7, soft delete, etc.): [[../../shared/DATA_MODEL]] §1. RBAC, MFA y recuperación de contraseña implementados en bloques AUTH-B05, AUTH-B08 y AUTH-B09 respectivamente.
 
 ## 5. Reglas de negocio globales
 

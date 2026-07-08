@@ -1,7 +1,7 @@
 ---
 tipo: sistema
 proyecto: shared
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # AGENTS — Punto de entrada del vault
@@ -32,9 +32,11 @@ técnicas, o el estado de una feature específica, no están aquí — siguen el
 
 | Necesito... | Voy a |
 |---|---|
-| Entender la metodología completa | `_system/` (7 documentos numerados, orden de lectura) |
+| Entender la metodología completa | `_system/` (documentos numerados, orden de lectura) |
 | Ver qué hay que hacer ahora mismo | `_state/BOARD.md` |
 | Ver el vocabulario de dominio o una decisión de arquitectura | `shared/` |
 | Ver el diseño de una feature y sus bloques | `features/<NOMBRE>/` |
 | Convenciones técnicas de API | `api/API_AGENTS.md` |
 | Convenciones técnicas de Web | `web/WEB_AGENTS.md` |
+| Auditar la integridad del vault | `@auditor` o pedile a `urbania` que lo invoque |
+| Diseñar una feature nueva compleja | `@design-council` o pedile a `urbania` que lo invoque |

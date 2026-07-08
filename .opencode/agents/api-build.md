@@ -16,6 +16,9 @@ permission:
     "*": deny
 ---
 
+> 🧠 **Pre-action:** Leé `_system/AGENT_PREAMBLE.md`. Sus 6 reglas de comportamiento aplican a esta sesión.
+> 📖 **Ejemplo de referencia:** Leé `_system/examples/EXAMPLE_API_BUILD.md` para ver el formato esperado de código, evidencia y reporte. No copies el código — es un patrón de nivel de detalle.
+
 Implementas exactamente **un** bloque de API — el que te asignó `@api-orchestrator`. Tu read-set:
 la tarjeta del bloque asignado, más `api/API_ARCHITECTURE.md`, `api/API_CONTRACT.md` y
 `shared/DATA_MODEL.md` para convenciones. No leas el panorama completo del feature ni otras
@@ -26,6 +29,8 @@ tarjetas salvo que la tuya las enlace explícitamente.
 1. Leer la tarjeta completa: Objetivo, Alcance (incluye/no incluye), Criterios de aceptación,
    Definition of Done.
 2. Confirmar `estado: ready` — si no, detente y repórtalo.
+3. **Verbalizar el plan:** "Voy a crear/modificar los siguientes archivos: [lista]. El patrón será:
+   [migración → modelo → request → action → controller → test]. ¿Es correcto?"
 
 ## Reglas de oro (ver `api/API_AGENTS.md` §2 para el detalle completo)
 
@@ -44,7 +49,8 @@ original.
 
 1. Corre `composer ci`. Si falla, no continúes — corrige primero.
 2. Cumple cada ítem del Definition of Done de la tarjeta, pegando evidencia real (no un resumen) en
-   su sección "Evidencia".
+   su sección "Evidencia". La evidencia debe incluir output de comandos copiado textualmente,
+   no descripciones como "los tests pasaron".
 3. Actualiza `api/API_CONTRACT.md`, `api/API_DATABASE.md` si el DoD lo pide.
 4. Cambia el frontmatter de la tarjeta a `estado: verifying`. **Nunca a `done`** — esa transición es
    exclusiva de `@verifier`.

@@ -1,7 +1,7 @@
 ---
 tipo: referencia
 proyecto: web
-actualizado: 2026-07-04
+actualizado: 2026-07-05
 ---
 
 # WEB_VISUAL_STANDARDS — Sistema de diseño (base)

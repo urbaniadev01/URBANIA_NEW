@@ -1,7 +1,7 @@
 ---
 tipo: referencia
 proyecto: api
-actualizado: 2026-07-04
+actualizado: 2026-07-08
 ---
 
 # API_ARCHITECTURE — Stack y estructura (fuente de verdad)
@@ -63,8 +63,9 @@ cuando su primer bloque llega a `done`:
 
 | Contexto | Feature que lo origina | Estado |
 |---|---|---|
-| `Auth` | [[../features/AUTH/PANORAMA]] | En diseño — bloques `AUTH-B01`/`AUTH-B02` en `ready` |
-| `Authorization` | RBAC de [[../shared/adr/ADR-001-actor-party]] | Se crea junto con `AUTH-B05` (middleware RBAC) |
+| `Auth` | [[../features/AUTH/PANORAMA]] | `SHIPPED` — AUTH-B01 a AUTH-B09 `done`, Fase 2 Web (B10-B12) `done` |
+| `Authorization` | RBAC de [[../shared/adr/ADR-001-actor-party]] | `done` — bloque AUTH-B05 completado (middleware RBAC, tests, documentación) |
+| `Mfa` | MFA de [[../features/AUTH/PANORAMA]] | `done` — bloque AUTH-B08 completado (TOTP enrollment, verify, recovery codes, middleware). Pantallas Web en B10-B11. |
 
 ## 6. Seguridad — requisitos que Web debe cumplir del lado cliente
 

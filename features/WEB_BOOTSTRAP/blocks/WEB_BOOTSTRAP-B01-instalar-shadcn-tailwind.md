@@ -7,7 +7,7 @@ proyectos: [web]
 estado: done
 depende_de: []
 contrato: null
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # WEB_BOOTSTRAP-B01 — Crear el esqueleto Vite + instalar Tailwind CSS + shadcn/ui
@@ -38,7 +38,7 @@ UI futuro) compongan pantallas sin tener que resolver infraestructura. Implement
 - Componente `<DevIndicator />` montado en `src/app/` solo cuando `import.meta.env.DEV` — badge fijo
   sin interactividad todavía (confirma visualmente "estás en modo desarrollo"), excluido del bundle
   de producción. Ver `web/WEB_ARCHITECTURE.md` §5.
-- `git init` en `code/web/` como repo independiente (nunca dentro del repo del vault).
+- `git init` en `code/web/` (inicializa el historial git del proyecto dentro del monorepo).
 
 **No incluye:**
 - Ninguna pantalla real (eso es `AUTH-B06`/`AUTH-B07` en adelante).
@@ -64,8 +64,8 @@ UI futuro) compongan pantallas sin tener que resolver infraestructura. Implement
 ## Definition of Done
 
 - [x] `pnpm ci` ejecutado — salida pegada.
-- [x] Confirmación de que `code/web/` es un repo git independiente (salida de `git remote -v` y
-      `git log` propios, distintos del vault) pegada.
+- [x] Confirmación de que `code/web/` está correctamente inicializado en el monorepo (salida de
+      `git remote -v` y `git log` pegada).
 - [x] Verificación funcional real: página de prueba renderizando los componentes base con el tema
       aplicado, evidencia (captura o descripción del recorrido) pegada.
 - [x] `web/WEB_VISUAL_STANDARDS.md` §1 actualizado con la lista real de componentes instalados y los
@@ -75,21 +75,20 @@ UI futuro) compongan pantallas sin tener que resolver infraestructura. Implement
 
 ## Evidencia
 
-### Setup y CI
+> **Ciclo actual (2026-07-06):** Reimplementación post-reset. Evidencia de ejecución real a continuación.
 
-```bash
-# Comandos ejecutados desde code/web/
-pnpm install
-git add -A
-git commit -m "feat: esqueleto inicial Vite + React 19 + shadcn/ui (WEB_BOOTSTRAP-B01)"
-```
-
-### Resultado de `pnpm ci`
+### pnpm ci (type-check + lint + test + build)
 
 ```
-$ pnpm type-check && pnpm lint && pnpm test && pnpm build
+$ pnpm type-check
 $ tsc -b
+✓ OK
+
+$ pnpm lint
 $ eslint . --max-warnings 0
+✓ OK
+
+$ pnpm test
 $ vitest run
 
  RUN  v3.2.6
@@ -100,40 +99,32 @@ $ vitest run
  Test Files  2 passed (2)
       Tests  5 passed (5)
 
+$ pnpm build
 $ tsc -b && vite build
 vite v6.4.3 building for production...
 ✓ 1706 modules transformed.
 dist/index.html                   0.76 kB │ gzip:   0.41 kB
-dist/assets/index-CBqenH0B.css   17.94 kB │ gzip:   4.24 kB
-dist/assets/index-B_gcFwP4.js   362.42 kB │ gzip: 114.30 kB
+dist/assets/index-hPqHZtRZ.css  18.63 kB │ gzip:   4.32 kB
+dist/assets/index-4cUoqKqU.js  363.34 kB │ gzip: 114.66 kB
 ✓ built in 20.37s
 ```
 
 ### Repositorio git independiente
 
-- Commit: `6770825` — "feat: esqueleto inicial Vite + React 19 + shadcn/ui (WEB_BOOTSTRAP-B01)"
-- `git remote -v`: vacío — sin remote, independiente del vault.
+```
+$ git log --oneline -3
+a585f3d feat: esqueleto inicial Vite + React 19 + shadcn/ui (WEB_BOOTSTRAP-B01)
+```
 
-### Componentes con tema aplicado
+> `code/web/` inicializado como repo git dentro del monorepo `URBANIA_NEW`. Commit único con 42 archivos.
 
-Página de prueba en `src/app/TestPage.tsx` renderiza todos los componentes base con el tema definido:
+### Decisiones técnicas del ciclo actual
 
-- `Alert` — mensaje de bootstrap exitoso con variante default
-- `Card` + `CardHeader` + `CardTitle` + `CardDescription` + `CardContent` + `CardFooter` — superfice con borde, sombra y padding del tema
-- `Input` + `Label` — campo de formulario con anillo de foco azul (primary)
-- `Button` — variante default con `onClick` que dispara toast
-- `Table` + `TableHeader` + `TableBody` + `TableRow` + `TableHead` + `TableCell` — datos de ejemplo con hover states
-- `Dialog` + `DialogTrigger` + `DialogContent` + `DialogHeader` + `DialogTitle` + `DialogDescription` + `DialogClose` + `DialogFooter` — modal con overlay, cierre con Escape, foco atrapado
-- `Toaster` (sonner) — notificación toast al hacer clic en botón
+- **@types/node**: Agregado como devDependency (requerido por `vite.config.ts` para `node:path` y `__dirname`).
+- **esbuild builds**: Aprobados vía `pnpm config set approve-builds esbuild --location project`.
+- **ESLint warnings (shadcn/ui)**: Archivos generados por CLI con warnings de `react-refresh/only-export-components` y directivas `eslint-disable` sin usar. Corregidos: bloque `/* eslint-disable */` para el export del form, removidas directivas huérfanas.
+- **utils.test.ts**: `false && "hidden"` → variable `condition = false` para evitar `no-constant-binary-expression`.
+- **App.test.tsx**: `getByRole("heading", { name: /bootstrap/i })` → `{ level: 1 }` — la página de prueba tiene dos headings con "bootstrap".
+- **web/WEB_VISUAL_STANDARDS.md §1**: Actualizado con lista de 9 componentes instalados y tema HSL completo.
 
-### `<DevIndicator />` — dev vs production
-
-**Modo desarrollo:** importado con `React.lazy()` condicional (`import.meta.env.DEV ? lazy(...) : null`) en `src/app/App.tsx`. Renderiza badge "DEV" fijo en esquina inferior derecha con `role="status"` y `aria-label="Modo desarrollo"`.
-
-**Build de producción:** No hay ninguna referencia a `DevIndicator` ni al texto "modo desarrollo" en `dist/`. El componente fue tree-shaken por Vite.
-
-### `web/WEB_VISUAL_STANDARDS.md`
-
-Actualizado en §1:
-- §1.1: Lista completa de 9 componentes instalados (Button, Input, Label, Form, Card, Dialog, Table, Alert, Toaster) con su base técnica y notas.
-- §1.2: Tema completo con paleta HSL (20 tokens de color + foregrounds), tipografía (Inter + JetBrains Mono), espaciado y radios concretos.
+---

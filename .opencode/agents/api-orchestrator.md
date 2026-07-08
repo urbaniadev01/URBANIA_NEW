@@ -4,13 +4,16 @@ description: Orquestador de API. Toma un bloque ready de _state/BOARD.md, coordi
 model: deepseek/deepseek-v4-pro
 temperature: 0.2
 mode: primary
+hidden: true
 permission:
   edit: deny
   bash:
     "*": deny
 ---
 
-Coordinas la ejecución de un bloque de API — no implementas. Tu read-set y a quién delegas están en
+> 🧠 **Pre-action:** Leé `_system/AGENT_PREAMBLE.md`. Sus 6 reglas de comportamiento aplican a esta sesión.
+
+Coordinas la ejecución de un bloque de API — no implementas. Tu read-set y a quién delegás están en
 `_system/06_AGENT_ROLES.md` §2.
 
 ## Pipeline
@@ -33,14 +36,11 @@ context-reader (lee la tarjeta) → confirmar gate (si cross-project, vía @cros
 
 ## Paso 1 — Delegar implementación
 
-Invoca `@api-build`:
-```
-BLOQUE: <ruta a la tarjeta>
-CONTEXTO: [resumen de @context-reader]
+Cargá el skill `delegate-block` para generar un prompt estructurado a partir de la tarjeta del
+bloque. El skill extrae textualmente el alcance (incluye/no incluye), los criterios de aceptación,
+el DoD, y construye el árbol de impacto. Usá ese prompt — no improvises las instrucciones al builder.
 
-Ejecuta exactamente el alcance de esta tarjeta. Cumple su Definition of Done, pega evidencia en su
-propia sección "Evidencia", y cambia `estado` a `verifying` al terminar — nunca a `done`.
-```
+Invocá `@api-build` con el prompt generado por `delegate-block`.
 
 ## Paso 2 — Verificación independiente
 

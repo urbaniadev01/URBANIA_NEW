@@ -40,7 +40,7 @@ Esto carga `opencode.json` (instrucciones = `AGENTS.md`, MCPs: `urbania-db`, `co
 
 - Para hablarle al router directamente: escribís tu pedido en lenguaje natural.
 - Para dirigirte a un agente primario específico sin pasar por el router: `@nombre-agente tu mensaje`
-  (ej. `@api-orchestrator ejecutá AUTH-B01` o `@urbania-ops verificá el entorno`).
+  (ej. `@api-orchestrator ejecutá AUTH-B01` o `@urbania levantá el entorno`).
 - Los agentes marcados como **subagente** en la tabla de §17 (`api-build`, `web-build`,
   `context-reader`) no se invocan directamente — los llama el orquestador correspondiente. Si le
   escribís a uno de ellos igual va a responder, pero estás saltándote el pipeline de verificación —
@@ -57,7 +57,7 @@ Esto carga `opencode.json` (instrucciones = `AGENTS.md`, MCPs: `urbania-db`, `co
 | `shared/` | Glosario, ADRs, el contrato entre API y Web | Al diseñar una feature que introduce vocabulario o decisiones de arquitectura nuevas |
 | `features/<F>/` | El diseño de una feature (`PANORAMA.md`) y sus bloques ejecutables (`blocks/`) | Constantemente — es donde vive el trabajo real |
 | `api/`, `web/` | Documentación técnica de cada proyecto (convenciones, no catálogo) | Rara vez a mano — normalmente la actualiza el agente como parte del DoD de un bloque |
-| `app/` | Un solo archivo, diferido | No, hasta que decidas arrancarlo (Flujo J) |
+| `app/` | Un solo archivo, diferido | No, hasta que decidas arrancarlo (Flujo I) |
 
 ---
 
@@ -124,19 +124,42 @@ Este es el flujo con más responsabilidad tuya, porque es el único gate de dise
 
 ### C.1 — Pedir el borrador
 
-1. Decile al router o a `@doc-agent`: *"quiero diseñar la feature X"*, con una descripción de qué
-   problema resuelve.
+El proceso depende de la complejidad del feature. `urbania` decide la ruta — vos solo describís lo
+que necesitás.
+
+#### Features simples (1 endpoint, 1 pantalla, reglas directas) → `@doc-agent`
+
+1. Decile a `urbania`: *"quiero diseñar la feature X"*, con una descripción de qué problema
+   resuelve. `urbania` evalúa la complejidad y delega a `@doc-agent`.
 2. `@doc-agent` va a copiar `_system/templates/FEATURE_PANORAMA.md` a
-   `features/<NOMBRE>/PANORAMA.md` y completar §1–§6 con vos — es una conversación, no un documento
-   que aparece solo. Prestá atención especial a:
+   `features/<NOMBRE>/PANORAMA.md` y completar §1–§6 **con vos** — es una conversación, no un
+   documento que aparece solo. Prestá atención especial a:
    - **§4 (modelo de datos):** cada campo nuevo tiene que decir explícitamente si es **Valor** o
      **Referencia**. Si el agente deja algo ambiguo, no lo dejes pasar — es la fuente número uno de
      bugs de modelado más adelante.
    - **§3 (relación con otras features):** si la feature nueva depende de algo que todavía no existe
      (como pasó con Propiedades en `AUTH`), tiene que quedar anotado explícitamente qué se excluye
      por ahora.
-3. El resultado queda con `estado_diseño: draft`. Ningún agente puede ir más allá de este punto sin
-   vos.
+3. El resultado queda con `estado_diseño: draft`.
+
+#### Features complejos (múltiples endpoints/pantallas, reglas intrincadas) → `design-council`
+
+1. Decile a `urbania`: *"quiero diseñar la feature X"*. `urbania` reconoce la complejidad y delega
+   a `design-council`.
+2. `design-council` opera de forma **autónoma** — no interactúa con vos durante el diseño. Usa un
+   protocolo de 3 fases:
+   - **Fase 1 — Divergencia:** 3 subagentes (`design-architect`, `design-ux`, `design-security`)
+     generan diseños independientes en paralelo.
+   - **Fase 2 — Peer Review:** los diseños se anonimizan (A/B/C) y cada subagente rankea y critica
+     los 3, incluido el propio.
+   - **Fase 3 — Síntesis:** `design-council` produce un `PANORAMA.md` unificado con §1–§6 más una
+     sección extra **"Veredicto del Design Council"** que documenta puntos de acuerdo, divergencias
+     y la recomendación final.
+3. El resultado queda con `estado_diseño: draft`.
+
+**En ambas rutas:** el panorama queda en `draft` — ningún agente puede ir más allá sin tu
+aprobación. Ni `@doc-agent` ni `design-council` se invocan directamente (son `hidden: true`) —
+siempre pasan por `urbania`.
 
 ### C.2 — Revisar antes de aprobar (checklist que hacés vos, a mano)
 
@@ -278,7 +301,79 @@ App misma — no un checkbox que se activa solo.
 
 ---
 
-## 13. Checklist rápido — qué es tuyo y qué es delegable
+
+## 13. Flujo J — Auditoría de integridad del vault
+
+> El vault tiene un mecanismo de autocorrección: un agente `auditor` que barre todas las reglas del
+> sistema (BOARD vs tarjetas, estados, frontmatter, wikilinks, contract locks, evidencia, gates
+> cross-project) y reporta inconsistencias en una tabla plana, sin narrativa. Las inconsistencias
+> **no se encolan** — se corrigen en el momento y se re-audita hasta que no quede ninguna.
+
+### Cuándo se gatilla
+
+| Trigger | Quién lo activa |
+|---|---|
+| Cada **3 bloques `done`** desde la última auditoría | `urbania` automáticamente |
+| Cuando el último bloque de un feature pasa a `done` | `urbania` automáticamente |
+| Antes de que un bloque de cliente pase a `ready` en un cross-project | `urbania` (mini-auditoría de contract locks) |
+| Cuando vos decís "auditá el vault" | Vos, directamente |
+
+Los triggers 1 y 2 usan un contador que `urbania` lleva internamente. El umbral de 3 bloques es
+configurable.
+
+### Qué revisa
+
+1. **Drift BOARD vs. tarjetas** — que `_state/BOARD.md` refleje fielmente el frontmatter de cada
+   tarjeta de bloque (es la regla #1 del sistema).
+2. **Vocabulario de estado** — que ningún bloque use un estado fuera de los 6 permitidos.
+3. **Frontmatter y estructura** — que todo `.md` tenga frontmatter válido y nombres correctos.
+4. **Wikilinks** — que no haya enlaces rotos.
+5. **Contract locks** — que cada lock esté respaldado por un bloque productor `done`, que los
+   consumidores estén registrados, y que ningún bloque web esté `ready` sin su lock vigente.
+6. **Evidencia en bloques `done`** — que la evidencia pegada sea real (output de comandos), no
+   afirmaciones.
+7. **Gate cross-project** — que las transiciones de la máquina de estados se respetaron.
+8. **Correspondencia ADRs** — que las decisiones de arquitectura están reflejadas en los docs
+   técnicos.
+
+### Cómo se lee el reporte y qué hacés
+
+El `auditor` produce una tabla plana como esta:
+
+```
+┌─────┬──────────────────────┬──────────┬─────────────────────┐
+│  #  │ Hallazgo             │ Severidad│ Ref                 │
+├─────┼──────────────────────┼──────────┼─────────────────────┤
+│  1  │ BOARD dice backlog,  │ ❌       │ _state/BOARD.md L:42│
+│     │ tarjeta dice ready   │          │                     │
+│  2  │ Wikilink roto        │ ⚠️       │ PANORAMA.md L:15    │
+└─────┴──────────────────────┴──────────┴─────────────────────┘
+Resumen: 2 hallazgos (1 ❌, 1 ⚠️) · severidad: CRÍTICO
+```
+
+- ❌ = hay que arreglarlo antes de seguir. No se avanza ni un bloque más hasta corregirlo.
+- ⚠️ = aviso, no bloquea, pero conviene revisarlo pronto.
+- Si hay ❌, se arreglan en el momento y se re-corre la auditoría hasta que no quede ninguno.
+- No existe "lo arreglamos después" para los ❌.
+
+### Cómo pedir una auditoría
+
+```bash
+# En la conversación con OpenCode:
+"auditá el vault"
+# o:
+"@auditor check contract-locks"
+```
+
+### Qué NO es el auditor
+
+No es un reemplazo del `@verifier` (que revisa un bloque puntual cuando está en `verifying`).
+El `@verifier` es micro (un bloque); el `auditor` es macro (todo el vault). El `@verifier` sí
+escribe (cambia estados de tarjetas); el `auditor` nunca escribe nada.
+
+---
+
+## 14. Checklist rápido — qué es tuyo y qué es delegable
 
 | Decisión | ¿Quién la toma? |
 |---|---|
@@ -296,7 +391,7 @@ App misma — no un checkbox que se activa solo.
 
 ---
 
-## 14. Comandos de referencia
+## 15. Comandos de referencia
 
 **API** (ver `api/API_AGENTS.md` §3 para el detalle completo):
 ```bash
@@ -315,7 +410,7 @@ No hace falta que los corras vos mismo salvo que quieras confirmar evidencia de 
 
 ---
 
-## 15. Errores comunes al empezar con este sistema
+## 16. Errores comunes al empezar con este sistema
 
 | Lo que se te va a ocurrir pedir | Por qué no | Qué pedir en su lugar |
 |---|---|---|
@@ -327,22 +422,72 @@ No hace falta que los corras vos mismo salvo que quieras confirmar evidencia de 
 
 ---
 
-## 16. Glosario de roles de agente (versión humana de `_system/06_AGENT_ROLES.md`)
+## 17. Glosario de roles de agente (versión humana de `_system/06_AGENT_ROLES.md`)
+
+> Actualizado 2026-07-08 — refleja los 30 agentes activos en `.opencode/agents/` (31 archivos,
+> 1 obsoleto: `urbania-ops`). Si un agente aparece aquí pero no en esos archivos (o viceversa),
+> esta tabla está desactualizada — reportalo.
+
+### 🧭 Entrada
 
 | Agente | Qué hace | ¿Le hablás vos directamente? |
 |---|---|---|
-| `urbania` | Router — lee el `BOARD` y delega | Sí, es tu punto de entrada normal |
-| `urbania-ops` | Infraestructura y mantenimiento del entorno — contenedores, dependencias, migraciones, .env | Sí, invocalo directamente para preparar/verificar el entorno |
-| `api-orchestrator` / `web-orchestrator` | Coordinan la ejecución de un bloque de su proyecto, nunca implementan | Sí, si querés saltear el router |
-| `api-build` / `web-build` | Implementan un único bloque | No directamente — los invoca el orquestador |
-| `context-reader` | Lee la tarjeta asignada y resume, sin opinar | No — uso interno del pipeline |
-| `verifier` | Verificación independiente; único que mueve una tarjeta a `done` | Podés pedirle directamente que revise un bloque en `verifying` |
-| `cross-project` | Gestiona los contratos congelados y el gate API→Web | Podés pedirle directamente que te muestre el estado de un lock |
-| `doc-agent` | Crea features nuevas, bloques, y audita coherencia del vault | Sí, es con quien hablás en el Flujo C |
+| `urbania` | **Router + infraestructura.** Lee el `BOARD`, decide a qué orquestador delegar cada bloque, y ejecuta operaciones de entorno directamente (Docker, Composer, PNPM, migraciones). No implementa features. | Sí — es tu punto de entrada normal. También le podés pedir tareas de infraestructura directamente ("levantá el entorno"). |
+| ~~`urbania-ops`~~ | **OBSOLETO** — fusionado en `urbania` el 2026-07-04. Sus responsabilidades de infraestructura ahora las ejecuta `urbania` directamente. Permanece desactivado (`disable: true`). | No — no lo uses. Usá `urbania` en su lugar. |
+
+### 🎯 Coordinación
+
+| Agente | Qué hace | ¿Le hablás vos directamente? |
+|---|---|---|
+| `api-orchestrator` | Coordina la ejecución de un bloque de API: confirma dependencias satisfechas, verifica el gate cross-project si aplica, y delega la implementación a `api-build`. No escribe código. | Sí — si querés saltear el router para un bloque específico. |
+| `web-orchestrator` | Coordina la ejecución de un bloque de Web: confirma con `cross-project` que el contract-lock está vigente, y delega la implementación a `web-build`. No mueve un bloque de Web a `ready` sin lock confirmado. | Sí — si querés saltear el router. |
+| `cross-project` | Opera la máquina de estados cross-project: congela contratos en `CONTRACT_LOCKS.md` cuando un bloque de API llega a `done`, verifica locks antes de que Web avance, y registra cierres en `CHANGELOG.md`. | Sí — para consultar el estado de un lock o pedir que te muestre un contrato congelado. |
+| `git-admin` | Administra el versionado del monorepo (vault raíz + `code/api` + `code/web`): commits prolijos, resolución de repos anidados (submódulo vs. tracking directo), configuración de submódulos, higiene de `.gitignore`. Nunca hace `push`, `reset`, `clean` ni `rm` — esos comandos quedan fuera de su permission set a propósito. | Sí — para pedirle un diagnóstico de los 3 repos o que resuelva un problema de versionado puntual. |
+
+### 🛠️ Implementación
+
+| Agente | Qué hace | ¿Le hablás vos directamente? |
+|---|---|---|
+| `api-build` | Implementa un único bloque de API contra su tarjeta. Escribe migraciones, modelos, actions, controladores y tests. Corre `composer ci`, pega evidencia real, y pasa el bloque a `verifying`. | No — lo invoca `api-orchestrator`. |
+| `web-build` | Implementa un único bloque de Web contra su tarjeta y el contrato congelado. Escribe componentes, hooks, páginas y tests. Verifica visualmente con Playwright antes de reportar. | No — lo invoca `web-orchestrator`. |
+
+### ✅ Verificación
+
+| Agente | Qué hace | ¿Le hablás vos directamente? |
+|---|---|---|
+| `verifier` | **Verificador independiente.** Re-ejecuta CI, contrasta cada criterio de aceptación contra evidencia real, y hace spot-check de código. Es el único autorizado a mover una tarjeta a `done`. | Sí — para pedirle que revise un bloque en `verifying`. |
+| `verify-council` | Verificación por consenso para bloques con `verificacion_critica: true`. Invoca 3 subagentes en paralelo (seguridad, rendimiento, calidad) y produce un veredicto estructurado. El `verifier` usa ese veredicto como input para su decisión final. | No — lo invoca el `verifier` automáticamente cuando la tarjeta lo requiere. |
+
+### 📐 Diseño y documentación
+
+| Agente | Qué hace | ¿Le hablás vos directamente? |
+|---|---|---|
+| `doc-agent` | Crea el `PANORAMA.md` para features simples, parte features aprobadas en bloques y tarjetas, divide bloques demasiado grandes, y audita coherencia BOARD vs. tarjetas. No aprueba diseños ni mueve tarjetas a `done`. | No directamente — lo invoca `urbania`. Es `hidden: true`. |
+| `design-council` | Diseña features de **alta complejidad** por consenso multi-perspectiva. Invoca 3 subagentes en paralelo — arquitectura, UX, seguridad —, anonimiza sus diseños para peer review, y sintetiza un `PANORAMA.md` unificado con sección "Veredicto del Design Council". | No directamente — lo invoca `urbania` según la complejidad del feature. Es `hidden: true`. |
+| `adr-council` | Decide decisiones arquitectónicas que requieren un ADR por consenso. Invoca 3 subagentes — optimista (upside), pesimista (riesgos), pragmático (viabilidad) — y produce un ADR con sección "Veredicto del ADR Council". | No directamente — lo invoca `urbania` cuando se necesita documentar una decisión de arquitectura. |
+
+### 🔍 Auditoría y release
+
+| Agente | Qué hace | ¿Le hablás vos directamente? |
+|---|---|---|
+| `auditor` | Barre todo el vault con 8 checks: BOARD vs. tarjetas, estados válidos, frontmatter, wikilinks rotos, contract locks, evidencia real, gates cross-project, y correspondencia ADRs. Solo lectura — nunca escribe ni modifica archivos. | Sí — "auditá el vault" o "@auditor check contract-locks". También se dispara automáticamente cada 3 bloques `done` y al completar un feature. |
+| `release-council` | Evalúa si un feature completo está listo para producción. Invoca 5 subagentes en paralelo (seguridad, datos, UX, rendimiento, regresión) y emite veredicto: 🟢 GO, 🟡 GO CON CONDICIONES, o 🔴 NO-GO. | No directamente — lo invoca `urbania` automáticamente cuando el último bloque de un feature pasa a `done`. |
+
+### 📦 Utilidades internas
+
+| Agente | Qué hace | ¿Le hablás vos directamente? |
+|---|---|---|
+| `context-reader` | Lee un conjunto acotado de documentos y devuelve un resumen estructurado (`CONTEXTO_INICIO`/`CONTEXTO_FIN`). No interpreta, no sugiere, no decide — solo extrae datos textuales de las tarjetas. | No — lo usan los orquestadores para leer tarjetas antes de delegar. |
+| `shell-executor` | Ejecuta comandos de solo lectura (`git status`, `docker compose ps`, `composer show`, `pnpm list`) y devuelve el output verbatim. Sin capacidad de edición ni decisión. | No — lo usan agentes sin acceso a bash para verificar el estado del entorno. |
+
+> **Tip:** El `research-council` y sus subagentes (`optimist-researcher`, `pessimist-researcher`,
+> `pragmatist-researcher`) que aparecían en versiones anteriores de esta guía **no existen** en el
+> sistema actual — fueron eliminados. Para investigar tecnologías, usá `urbania` directamente o
+> consultá la documentación con el MCP `context7`.
 
 ---
 
-## 17. Si esta guía y el sistema (`_system/`) no coinciden
+## 18. Si esta guía y el sistema (`_system/`) no coinciden
 
 Gana `_system/`. Esta guía es una capa de conveniencia sobre esos documentos, no una fuente
 independiente — si encontrás una diferencia, es esta guía la que está desactualizada. Corregila (o
@@ -350,7 +495,7 @@ pedile a un agente que la corrija) en el mismo momento en que la notes, no la de
 
 ---
 
-## 18. Credenciales de demo / prueba (dev y QA)
+## 19. Credenciales de demo / prueba (dev y QA)
 
 Placeholder — se completa vos mismo cuando el seeder de demo exista (nace con `PROPIEDADES`/
 `DIRECTORIO`, Fase 1 del roadmap de negocio que llevás vos por fuera de este vault; ver

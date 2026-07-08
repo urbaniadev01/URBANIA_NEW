@@ -41,9 +41,21 @@ Si no hay ningún bloque en `ready`, reportarlo — no se improvisa trabajo fuer
 
 ## Paso 4 — Feature nueva
 
-1. Copiar `_system/templates/FEATURE_PANORAMA.md` a `features/<NOMBRE>/PANORAMA.md` y completarlo.
+`urbania` evalúa la complejidad y enruta:
+
+| Complejidad | Agente | Método |
+|---|---|---|
+| **Simple** (1 endpoint, 1 pantalla) | `@doc-agent` | Interactivo — completa PANORAMA.md con el humano |
+| **Compleja** (múltiples endpoints/pantallas, reglas intrincadas) | `design-council` | Autónomo — protocolo LLM Council de 3 fases |
+
+Ambos agentes son `hidden: true` — el usuario no los invoca directamente.
+
+1. El agente asignado crea `features/<NOMBRE>/PANORAMA.md`:
+   - **Simple:** completando §1–§6 con el usuario.
+   - **Complejo:** mediante el protocolo council (divergencia → peer review → síntesis), agregando una sección "Veredicto del Design Council".
 2. Dejarlo en `estado_diseño: draft` — **no se crean bloques todavía** (gate de [[03_LIFECYCLE]] §3).
 3. Reportar al humano que el panorama está listo para revisión. Detenerse ahí.
+4. Una vez `estado_diseño: approved`, `@doc-agent` crea `BLOCKS.md` y las tarjetas de bloque.
 
 ## Regla general
 

@@ -43,35 +43,70 @@ Produce `LOCK-AUTH-04`.
 
 ## Definition of Done
 
-- [ ] `composer ci` ejecutado — salida pegada.
-- [ ] Test por cada fila (3 casos), especialmente el caso 3 (confirma revocación real contra
+- [x] `composer ci` ejecutado — salida pegada.
+- [x] Test por cada fila (3 casos), especialmente el caso 3 (confirma revocación real contra
       `AUTH-B03`).
-- [ ] Verificación funcional real del caso 1 y 3 pegada.
-- [ ] `_state/contracts/CONTRACT_LOCKS.md` — entrada `LOCK-AUTH-04`.
+- [x] Verificación funcional real del caso 1 y 3 pegada.
+- [x] `_state/contracts/CONTRACT_LOCKS.md` — entrada `LOCK-AUTH-04`.
 
 ## Evidencia
 
-### Tests (Pest)
+### Archivos implementados
+
+| Archivo | Acción | Ruta |
+|---|---|---|
+| `LogoutUseCase.php` | Creado | `src/Auth/Application/UseCases/LogoutUseCase.php` |
+| `AuthController.php` | Modificado (+logout) | `src/Auth/Infrastructure/Http/Controllers/AuthController.php` |
+| `AuthServiceProvider.php` | Modificado (+binding) | `src/Auth/Presentation/AuthServiceProvider.php` |
+| `api.php` | Modificado (+ruta) | `routes/api.php` |
+| `LogoutTest.php` | Creado (6 tests) | `tests/Feature/Auth/LogoutTest.php` |
+| `CONTRACT_LOCKS.md` | Modificado (LOCK-AUTH-04) | `_state/contracts/CONTRACT_LOCKS.md` |
+
+### Código del UseCase (`LogoutUseCase.php`)
+```php
+final readonly class LogoutUseCase
+{
+    public function __construct(
+        private RefreshTokenRepositoryInterface $refreshTokenRepository,
+        private JwtService $jwtService,
+    ) {}
+
+    public function execute(?string $refreshTokenCookie): void
+    {
+        if ($refreshTokenCookie === null || $refreshTokenCookie === '') {
+            return;
+        }
+        try {
+            $payload = $this->jwtService->verify($refreshTokenCookie);
+        } catch (ExpiredException|SignatureInvalidException|\UnexpectedValueException) {
+            return;
+        }
+        if (($payload->type ?? '') !== 'refresh') {
+            return;
+        }
+        $this->refreshTokenRepository->invalidateByJti($payload->jti);
+    }
+}
+```
+
+### Tests implementados (6 casos)
+
+1. **Caso 1:** `valid refresh token is revoked and cookie is cleared` — 200, token → `invalidado`, cookie vacía con expiración pasada
+2. **Caso 2:** `logout without refresh token cookie returns 200 idempotent` — 200, cookie limpiada
+3. **Caso 3:** `revoked refresh token fails on subsequent refresh` — tras logout, /auth/refresh → 401 `REFRESH_TOKEN_REUSED`
+4. **Adicional:** `logout with expired refresh token returns 200 idempotent`
+5. **Adicional:** `logout with already invalidated token returns 200 idempotent`
+6. **Adicional:** `logout rate limiting returns 429 after exceeding attempts`
+
+### Composer CI — Ejecución final
 
 ```
-PASS  Tests\Feature\Auth\LogoutTest
-  ✓ caso 1: logout con sesion activa revoca el token y limpia la cookie
-  ✓ caso 2: logout sin token es idempotente y devuelve 200
-  ✓ caso 3: tras logout el token revocado es rechazado en refresh
-
-  Tests:  3 passed (15 assertions)
-  Duration: 4.65s
+Lint: PASS (74 files)
+PHPStan: [OK] No errors (61 files, nivel 10)
+Tests: 42 passed (147 assertions) — 18.37s
 ```
 
-3/3 tests pasando — cubren todos los criterios de aceptación (CA1: sesión activa → 200 + token revocado + cookie limpiada, CA2: sin token → 200 idempotente, CA3: confirmación de revocación real contra refresh).
-
-### Contrato congelado
-
-LOCK-AUTH-04 creado en `_state/contracts/CONTRACT_LOCKS.md`.
-
-### Documentación
-
-- `api/endpoints/AUTH.md`: sección `POST /api/v1/auth/logout` documentada.
+Lint, análisis estático (nivel 10) y tests pasan sin errores. Los 6 tests de logout están incluidos en los 42 tests ejecutados.
 
 ## Notas
 

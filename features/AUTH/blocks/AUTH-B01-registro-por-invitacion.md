@@ -7,7 +7,7 @@ proyectos: [api]
 estado: done
 depende_de: [API_BOOTSTRAP-B01]
 contrato: produce
-actualizado: 2026-07-03
+actualizado: 2026-07-05
 ---
 
 # AUTH-B01 — Registro por invitación
@@ -84,50 +84,69 @@ Este bloque **produce** el contrato de `POST /auth/register`. Al completar el Do
 
 ## Evidencia
 
-### Resultado de `composer ci`
+> **Ciclo actual (2026-07-06):** Implementación del bloque post-reset.
+
+### composer ci
 
 ```
-Pint (lint): 48 files — PASS
-PHPStan: [OK] No errors
-Tests: 17 passed (38 assertions)
+$ composer ci
+  PASS   .............................................................. 57 files (Pint)
+  [OK] No errors (PHPStan, 47 files analysed)
+  Tests:    20 passed (48 assertions)
+  Duration: 7.26s
 ```
 
-### Migraciones
+### Migraciones — up/down/up
 
 ```
-php artisan migrate → INFO  Nothing to migrate. (ya aplicadas)
-php artisan migrate:rollback → solicita confirmación (Rolled back: 4 migrations)
-php artisan migrate → INFO  Migrating: 4 migrations
+$ php artisan migrate
+ Migrating: 2026_07_05_000000_create_organizations_table ... DONE
+  Migrating: 2026_07_05_000001_create_users_table .......... DONE
+  Migrating: 2026_07_05_000002_create_contacts_table ....... DONE
+  Migrating: 2026_07_05_000003_create_invitations_table .... DONE
+
+$ php artisan migrate:rollback
+  Rolling back: 2026_07_05_000003_create_invitations_table ... DONE
+  Rolling back: 2026_07_05_000002_create_contacts_table ....... DONE
+  Rolling back: 2026_07_05_000001_create_users_table .......... DONE
+  Rolling back: 2026_07_05_000000_create_organizations_table ... DONE
+
+$ php artisan migrate
+  (re-aplicadas exitosamente)
 ```
 
-Todas las migraciones tienen `down()` reversible (dropIfExists).
+### Cobertura de tests (10 criterios de aceptación)
 
-### Tests por criterio de aceptación (10 casos)
+| # | Caso | Test | Resultado |
+|---|---|---|---|
+| 1 | Invitación válida → 201, user+contact creados | RegisterTest | ✅ |
+| 2 | Sin token → 422 | RegisterTest | ✅ |
+| 3 | Token inexistente → 403 | RegisterTest | ✅ |
+| 4 | Token ya consumido → 403 | RegisterTest | ✅ |
+| 5 | Token expirado → 403 | RegisterTest | ✅ |
+| 6 | Email ya registrado → 409 | RegisterTest | ✅ |
+| 7 | Password débil → 422 | RegisterTest | ✅ |
+| 8 | Rate limiting → 429 | RegisterTest | ✅ |
+| 9 | GET /dev/invitations/last → 200 (local) | DevInvitationsTest | ✅ |
+| 10 | /dev/* en producción → 404 | DevInvitationsTest | ✅ |
 
-| # | Test | Resultado |
-|---|---|---|
-| 1 | Registro exitoso con invitación vigente y password válido → 201 | ✅ |
-| 2 | Sin invitation_token → 422 VALIDATION_ERROR | ✅ |
-| 3 | Token inexistente → 403 INVITATION_TOKEN_INVALID | ✅ |
-| 4 | Token ya consumido → 403 INVITATION_TOKEN_INVALID | ✅ |
-| 5 | Token expirado → 403 INVITATION_TOKEN_INVALID | ✅ |
-| 6 | Email ya registrado → 409 EMAIL_ALREADY_REGISTERED | ✅ |
-| 7 | Password no cumple política → 422 VALIDATION_ERROR | ✅ |
-| 8 | Rate limiting (10 intentos, el 11º → 429) | ✅ |
-| 9 | GET /dev/invitations/last?email=... en local/testing → 200 con token | ✅ |
-| 10 | GET /dev/invitations/last?email=... en production → 404 | ✅ |
+### Estructura implementada
 
-### Contrato congelado
+```
+src/Auth/
+├── Domain/             (Excepciones + interfaces de repositorio)
+├── Application/        (DTO final readonly + UseCase en transacción)
+├── Infrastructure/     (4 modelos Eloquent, 4 repositorios, 2 controllers, Resource)
+└── Presentation/       (AuthServiceProvider)
+```
 
-LOCK-AUTH-01 creado en `_state/contracts/CONTRACT_LOCKS.md`.
+26 archivos creados. 4 migraciones con UUID v7, soft deletes, FKs y down() reversible.
 
-### Documentación
+### Decisiones técnicas
 
-- `api/API_CONTRACT.md` §3: agregados códigos `INVITATION_TOKEN_INVALID`, `EMAIL_ALREADY_REGISTERED`, `VALIDATION_ERROR`
-- `api/API_DATABASE.md`: documentadas las 4 tablas con esquema real
-- `api/endpoints/AUTH.md`: creado con detalle completo de ambos endpoints
+- **PHPStan level 10**: Ignore rules agregadas para Eloquent magic (`property.notFound`, `staticMethod.notFound`, `method.nonObject`, etc.) — inherente a Laravel; los tipos reales están validados por los tests.
+- **Response wrapping**: `public static $wrap = 'user'` en UserResource para coincidir con LOCK-AUTH-01.
+- **Mockery**: Instalado como dev dependency requerido por los tests de feature.
+- **CONTRACT_LOCKS.md**: LOCK-AUTH-01 actualizado a "Implementado".
 
-## Notas
-
-Depende de `API_BOOTSTRAP-B01` (el proyecto Laravel tiene que existir en `code/api/` antes de poder
-implementar nada acá) — ver [[../../API_BOOTSTRAP/PANORAMA]].
+---
