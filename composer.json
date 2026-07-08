@@ -58,12 +58,6 @@
         "test:feature": [
             "php artisan test --testsuite=Feature --parallel"
         ],
-        "test:integration": [
-            "php artisan test --testsuite=Integration --parallel"
-        ],
-        "test:security": [
-            "php artisan test --testsuite=Security --parallel"
-        ],
         "stan": [
             "vendor/bin/phpstan analyse --memory-limit=512M"
         ],
