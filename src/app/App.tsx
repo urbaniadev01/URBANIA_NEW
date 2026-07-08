@@ -2,6 +2,7 @@ import { type ReactNode, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
+import { DashboardPage } from "@/app/DashboardPage";
 
 const LoginPageLazy = lazy(() =>
   import("@/features/auth/pages/LoginPage").then((m) => ({
@@ -39,12 +40,6 @@ const ResetPasswordPageLazy = lazy(() =>
   })),
 );
 
-const DashboardPageLazy = lazy(() =>
-  import("@/features/auth/pages/DashboardPage").then((m) => ({
-    default: m.DashboardPage,
-  })),
-);
-
 const DevIndicatorLazy = import.meta.env.DEV
   ? lazy(() =>
       import("@/components/DevIndicator").then((m) => ({
@@ -79,34 +74,8 @@ export function App(): ReactNode {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route
-            path="/"
-            element={
-              <Suspense
-                fallback={
-                  <div className="flex min-h-screen items-center justify-center">
-                    <p className="text-muted-foreground">Cargando...</p>
-                  </div>
-                }
-              >
-                <DashboardPageLazy />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <Suspense
-                fallback={
-                  <div className="flex min-h-screen items-center justify-center">
-                    <p className="text-muted-foreground">Cargando...</p>
-                  </div>
-                }
-              >
-                <DashboardPageLazy />
-              </Suspense>
-            }
-          />
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route
             path="/login"
             element={

@@ -11,13 +11,16 @@ export interface LoginRequestDto {
   password: string;
 }
 
-/** POST /api/v1/auth/login — response 200 (LOCK-AUTH-02, actualizado por AUTH-B08) */
+/** POST /api/v1/auth/login — response 200 (LOCK-AUTH-02) */
 export interface LoginResponse {
-  mfa_required: boolean;
-  mfa_token?: string;
+  /** Presente cuando el usuario NO tiene MFA activo */
   access_token?: string;
   token_type?: "Bearer";
   expires_in?: 900;
+  /** Presente cuando el usuario tiene MFA activo — redirigir a /mfa/verify */
+  mfa_required?: boolean;
+  /** Token temporal para el flujo MFA (se envía como cookie httpOnly) */
+  mfa_token?: string;
 }
 
 /**
