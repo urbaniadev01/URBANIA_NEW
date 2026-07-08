@@ -19,7 +19,7 @@ const MFA_VERIFY_URL = "/api/v1/auth/mfa/verify";
  * de 401 intente refresh (el 401 aquí significa mfa_token expirado, no
  * access_token expirado — son dominios distintos).
  *
- * - Éxito (200): guarda access_token en Zustand (memoria), redirige al dashboard /.
+ * - Éxito (200): guarda access_token en Zustand (memoria), redirige al dashboard /dashboard.
  * - Error 401 (MFA_TOKEN_INVALID): notifica y deja que la página muestre enlace a /login.
  * - Error 422 (MFA_CODE_INVALID, MFA_RECOVERY_CODE_USED): mensaje específico.
  * - Error 429 (TOO_MANY_REQUESTS): notifica rate limit.
@@ -34,7 +34,7 @@ export function useMfaVerifyMutation() {
 
     onSuccess: (response: MfaVerifyResponse) => {
       setAccessToken(response.access_token);
-      navigate("/");
+      navigate("/dashboard");
     },
 
     onError: (error: ApiError) => {

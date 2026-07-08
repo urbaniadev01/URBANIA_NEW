@@ -11,11 +11,13 @@ export interface LoginRequestDto {
   password: string;
 }
 
-/** POST /api/v1/auth/login — response 200 (LOCK-AUTH-02) */
+/** POST /api/v1/auth/login — response 200 (LOCK-AUTH-02, actualizado por AUTH-B08) */
 export interface LoginResponse {
-  access_token: string;
-  token_type: "Bearer";
-  expires_in: 900;
+  mfa_required: boolean;
+  mfa_token?: string;
+  access_token?: string;
+  token_type?: "Bearer";
+  expires_in?: 900;
 }
 
 /**

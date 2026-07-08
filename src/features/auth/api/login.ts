@@ -13,7 +13,8 @@ const LOGIN_URL = "/api/v1/auth/login";
  * Hook de mutación para login.
  * Consume LOCK-AUTH-02 (POST /api/v1/auth/login).
  *
- * - Éxito (200): guarda access_token en Zustand (memoria), redirige a /dashboard.
+ * - mfa_required: redirige a /mfa/verify (AUTH-B08).
+ * - Éxito (200, mfa_required=false): guarda access_token en Zustand (memoria), redirige a /dashboard.
  * - Error: muestra toast con mensaje apropiado según el código de error de la API.
  */
 export function useLoginMutation() {
@@ -25,7 +26,14 @@ export function useLoginMutation() {
       apiClient.unauthenticated.post<LoginResponse>(LOGIN_URL, data),
 
     onSuccess: (response: LoginResponse) => {
-      setAccessToken(response.access_token);
+      if (response.mfa_required) {
+        navigate("/mfa/verify");
+        return;
+      }
+
+      if (response.access_token) {
+        setAccessToken(response.access_token);
+      }
       navigate("/dashboard");
     },
 
