@@ -1,15 +1,16 @@
 ---
 tipo: contrato
 proyecto: shared
-actualizado: 2026-07-09
+actualizado: 2026-07-10
 ---
 
 # CONTRACT_LOCKS — Contratos de API congelados
 
-> **Estado actual (2026-07-09):** 10 locks implementados (AUTH-01 a AUTH-05, AUTH-08, AUTH-09, AUTH-10, PROPIEDADES-01, PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04).
-> Todos los productores en `done`. Consumidores web: B10, B11, B13 en `done`; **B06, B07, B12 en
-> `in_progress`** (revertidos por auditoría 2026-07-09 — evidencia vacía o contradictoria, ver
-> `_state/CHANGELOG.md#SHIP-013`). DASHBOARD-B02 consume locks PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04.
+> **Estado actual (2026-07-10):** 10 locks implementados (AUTH-01 a AUTH-05, AUTH-08, AUTH-09, AUTH-10, PROPIEDADES-01, PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04).
+> Todos los productores en `done`. Consumidores web: B10, B11, B12, B13 en `done`; **B06, B07, B08,
+> B09 en `verifying`** desde el 2026-07-10 — DoD cerrado con `pnpm ci` limpio y tests de componente
+> nuevos, pendiente solo de verificación visual Playwright bloqueada por un bug de entorno (ver
+> `_state/RUNBOOK.md#E-005`). DASHBOARD-B02 consume locks PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04.
 
 > Registro de contratos de endpoint congelados para que un bloque de cliente pueda construir contra
 > ellos. Formato y reglas completas en [[../../_system/04_CROSS_PROJECT]] §4–§5. Una entrada es

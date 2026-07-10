@@ -8,7 +8,7 @@ estado: done
 depende_de: [PROPIEDADES-B01]
 contrato: produce
 verificacion_critica: false
-actualizado: 2026-07-08
+actualizado: 2026-07-10
 ---
 
 # PROPIEDADES-B02 — CRUD de catálogos (tipos y estados de propiedad)
@@ -128,3 +128,21 @@ Todos los 16 criterios de aceptación están cubiertos por los tests:
 
 > Los catálogos del sistema (`organization_id IS NULL`) los insertó B01 vía seeders. Este bloque
 > solo permite a los tenants crear, editar y eliminar sus propios catálogos personalizados.
+
+> **Fix post-done (2026-07-10):** Al cerrar el DoD de `PROPIEDADES-B06` se encontró que
+> `POST`/`PATCH` de `property-types` y `property-statuses` respondían con envelope
+> `{property_type: {...}}` / `{property_status: {...}}` en vez de `{data: {...}}` — violando el
+> contrato congelado `LOCK-PROPIEDADES-01` (que documenta `{data: {...}}` para los tres verbos) y
+> rompiendo el frontend en producción (`response.data.nombre` con `response.data === undefined` →
+> `TypeError` no capturado en el toast de éxito de `TiposPropiedadPage`/`EstadosPropiedadPage`).
+> Causa raíz: `PropertyTypeResource`/`PropertyStatusResource` declaraban
+> `public static $wrap = 'property_type'` / `'property_status'`, que Laravel solo aplica cuando el
+> Resource se serializa vía `->response()` (usado en `store()`/`update()`), no cuando se envuelve
+> manualmente con `response()->json(['data' => ...])` (usado en `index()`/`show()`) — de ahí que
+> GET funcionara bien y POST/PATCH no. Corregido a `$wrap = 'data'` en ambos Resources. Los tests
+> de `PropertyTypeTest`/`PropertyStatusTest` habían sido escritos contra el bug
+> (`$response->json('property_type')`) en vez de contra el contrato — también corregidos. Ver
+> `_state/RUNBOOK.md#E-006` para el diagnóstico completo y
+> `code/web/scripts/verify-propiedades-contract.mjs` para el script de verificación de contrato que
+> lo detectó (sustituto de la verificación visual Playwright, bloqueada por
+> `_state/RUNBOOK.md#E-005`).

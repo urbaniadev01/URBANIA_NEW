@@ -4,11 +4,11 @@ proyecto: web
 feature: PROPIEDADES
 id: PROPIEDADES-B09
 proyectos: [web]
-estado: in_progress
+estado: verifying
 depende_de: [PROPIEDADES-B05, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false
-actualizado: 2026-07-09
+actualizado: 2026-07-10
 ---
 
 # PROPIEDADES-B09 — Pantalla de coeficientes (tabla editable en lote con suma en tiempo real)
@@ -86,7 +86,62 @@ puede pasar a `ready` sin que ambos locks estén vigentes.
 
 ## Evidencia
 
-> Vacío hasta que el bloque se ejecute.
+### `pnpm run ci` (code/web) — 2026-07-10
+
+```
+$ pnpm type-check && pnpm lint && pnpm test && pnpm build
+$ tsc -b
+$ eslint . --max-warnings 0
+$ vitest run
+...
+ ✓ src/features/propiedades/__tests__/CoeficientesTab.test.tsx (8 tests)
+ Test Files  14 passed (14)
+      Tests  126 passed (126)
+$ tsc -b && vite build
+✓ 1797 modules transformed.
+✓ built in 11.71s
+```
+
+Misma corrida consolidada de `pnpm ci` que `PROPIEDADES-B06/B07/B08` (un único comando en el
+monorepo web) — sesión de cierre de DoD del 2026-07-10.
+
+### Test de componente nuevo
+
+`code/web/src/features/propiedades/__tests__/CoeficientesTab.test.tsx` (8 tests): render inicial
+con "Guardar cambios" deshabilitado, editar valor actualiza la barra de suma en tiempo real y
+habilita el botón, indicador ámbar (suma ≠ 1.0), indicador verde (suma = 1.0), guardar dispara el
+PATCH masivo con solo las filas modificadas + toast de éxito, error 422 no pierde los cambios en la
+UI.
+
+### Confirmación de contrato
+
+`LOCK-PROPIEDADES-04` (`_state/contracts/CONTRACT_LOCKS.md`) sigue vigente, congelado 2026-07-08,
+producido por `PROPIEDADES-B05` (`done`); también se confirmó `LOCK-PROPIEDADES-03` para la lista de
+unidades (vigente). Los endpoints en `code/web/src/features/propiedades/api/coefficients.ts`
+coinciden exactamente con las rutas del lock.
+
+### Verificación visual (Playwright) — bloqueada, no completada
+
+Se escribió un spec real (sin mocks, login contra el backend real en Docker) en
+`code/web/e2e/propiedades/propiedades.spec.ts` cubriendo CA1 de este bloque (tab Coeficientes
+renderiza y botón "Guardar cambios" deshabilitado sin cambios). **No se pudo ejecutar**:
+`@playwright/test` está roto en este entorno — probado exhaustivamente en 1.49.0 (versión exacta
+committeada), 1.60.0 y 1.61.1, y en Node v22 y v25, incluso con un spec trivial de una línea. Falla
+también en el spec preexistente de `AUTH-B06`. Ver `_state/RUNBOOK.md#E-005` para el diagnóstico
+completo. El spec queda listo para correr en cuanto se resuelva ese bloqueo.
+
+### Verificación de contrato API real — sustituto de Playwright (2026-07-10)
+
+`code/web/scripts/verify-propiedades-contract.mjs` (login real, sin mocks) ejercita
+`LOCK-PROPIEDADES-04` completo: `PATCH` masivo de coeficientes (`data[]` con `vigente_hasta: null`
+para el vigente actual), warning no bloqueante `COEFFICIENT_SUM_MISMATCH` cuando la suma ≠ 1.0 (R-06),
+error 422 `COEFFICIENT_OUT_OF_RANGE` en valor fuera de rango — código que `CoeficientesTab` espera
+en su manejo de error —, superseder un coeficiente y confirmar que el anterior queda con
+`vigente_hasta != null` (R-05), y `GET /condominiums/{id}/tree` con el shape completo
+(`tree.towers[]`, `tree.untowered_properties_count`). **Resultado: 51/51 checks pasando** (corrida
+consolidada con `PROPIEDADES-B06/B07/B08`) — sin discrepancias de contrato en este bloque. No
+sustituye la verificación visual (barra de suma en tiempo real, toggle de historial) pero cubre el
+riesgo de contrato real API↔Web.
 
 ## Notas
 

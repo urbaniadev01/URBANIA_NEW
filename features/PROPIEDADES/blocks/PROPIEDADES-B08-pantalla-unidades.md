@@ -4,11 +4,11 @@ proyecto: web
 feature: PROPIEDADES
 id: PROPIEDADES-B08
 proyectos: [web]
-estado: in_progress
+estado: verifying
 depende_de: [PROPIEDADES-B04, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false
-actualizado: 2026-07-09
+actualizado: 2026-07-10
 ---
 
 # PROPIEDADES-B08 — Pantalla de unidades (tabla con filtros + Sheet + acciones en lote)
@@ -129,10 +129,62 @@ locks estén vigentes.
 - **LOCK-PROPIEDADES-01**: GET property-types y property-statuses para dropdowns
 - **LOCK-PROPIEDADES-02**: GET towers/{id}/towers para dropdown de torre
 
-### Pendiente para verificación
+### `pnpm run ci` (code/web) — 2026-07-10
 
-- Ejecutar `pnpm ci` (type-check + lint + test + build) en `code/web/`
-- Verificación visual Playwright: login → navegar a condominio → tab Unidades → probar todos los criterios
+```
+$ pnpm type-check && pnpm lint && pnpm test && pnpm build
+$ tsc -b
+$ eslint . --max-warnings 0
+$ vitest run
+...
+ ✓ src/features/propiedades/__tests__/UnidadesTab.test.tsx (10 tests)
+ Test Files  14 passed (14)
+      Tests  126 passed (126)
+$ tsc -b && vite build
+✓ 1797 modules transformed.
+✓ built in 11.71s
+```
+
+Misma corrida consolidada de `pnpm ci` que `PROPIEDADES-B06/B07/B09` (un único comando en el
+monorepo web) — sesión de cierre de DoD del 2026-07-10.
+
+### Test de componente nuevo
+
+`code/web/src/features/propiedades/__tests__/UnidadesTab.test.tsx` (10 tests): tabla sin
+`area_m2`, filtro por torre, crear (validación + submit), 422 código duplicado, 422 torre no
+perteneciente al condominio, editar con `condominium_id` no editable, eliminar con confirmación,
+409 por ocupantes, lote "cambiar estado", lote "eliminar seleccionadas" con resultados mixtos
+(`Promise.allSettled` — un fallo no bloquea los éxitos).
+
+### Confirmación de contrato
+
+`LOCK-PROPIEDADES-03` (`_state/contracts/CONTRACT_LOCKS.md`) sigue vigente, congelado 2026-07-08,
+producido por `PROPIEDADES-B04` (`done`); también se confirmó `LOCK-PROPIEDADES-01` y
+`LOCK-PROPIEDADES-02` para los dropdowns (ambos vigentes). Los endpoints en
+`code/web/src/features/propiedades/api/properties.ts` coinciden exactamente con las rutas del lock.
+
+### Verificación visual (Playwright) — bloqueada, no completada
+
+Se escribió un spec real (sin mocks, login contra el backend real en Docker) en
+`code/web/e2e/propiedades/propiedades.spec.ts` cubriendo CA1 de este bloque (tabla del tab Unidades
+sin columna `area_m2`). **No se pudo ejecutar**: `@playwright/test` está roto en este entorno —
+probado exhaustivamente en 1.49.0 (versión exacta committeada), 1.60.0 y 1.61.1, y en Node v22 y
+v25, incluso con un spec trivial de una línea. Falla también en el spec preexistente de `AUTH-B06`.
+Ver `_state/RUNBOOK.md#E-005` para el diagnóstico completo. El spec queda listo para correr en
+cuanto se resuelva ese bloqueo.
+
+### Verificación de contrato API real — sustituto de Playwright (2026-07-10)
+
+`code/web/scripts/verify-propiedades-contract.mjs` (login real, sin mocks) ejercita
+`LOCK-PROPIEDADES-03` completo: crear unidad (envelope `{property: {...}}`, incluye `area_m2` —
+`PropertyDetail`), listar unidades del condominio y confirmar que el item de LISTADO **no** incluye
+`area_m2` (R-10, `PropertyListItem` vs `PropertyDetail`), paginación cursor-based
+(`meta.next_cursor`), código duplicado (409 `PROPERTY_CODE_DUPLICATE`), torre de otro condominio
+(422 `TOWER_CONDOMINIUM_MISMATCH`) y `PATCH` de actualización — los mismos códigos de error que
+`UnidadesTab` maneja en su `switch`. **Resultado: 51/51 checks pasando** (corrida consolidada con
+`PROPIEDADES-B06/B07/B09`) — sin discrepancias de contrato en este bloque. No sustituye la
+verificación visual (filtros combinados, acciones en lote, debounce) pero cubre el riesgo de
+contrato real API↔Web, el más grave de los identificados.
 
 ## Notas
 

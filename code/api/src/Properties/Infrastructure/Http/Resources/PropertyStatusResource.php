@@ -13,9 +13,11 @@ use Urbania\Properties\Infrastructure\Models\EloquentPropertyStatus;
 final class PropertyStatusResource extends JsonResource
 {
     /**
-     * The wrapper key for the resource.
+     * The wrapper key for the resource — debe ser 'data' para respetar
+     * LOCK-PROPIEDADES-01 (ver _state/contracts/CONTRACT_LOCKS.md), que index()/show()
+     * ya aplican manualmente. No cambiar sin actualizar el contrato congelado.
      */
-    public static $wrap = 'property_status';
+    public static $wrap = 'data';
 
     /**
      * @return array<string, mixed>

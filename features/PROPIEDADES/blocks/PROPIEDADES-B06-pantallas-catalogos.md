@@ -4,11 +4,11 @@ proyecto: web
 feature: PROPIEDADES
 id: PROPIEDADES-B06
 proyectos: [web]
-estado: in_progress
+estado: verifying
 depende_de: [PROPIEDADES-B02, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false
-actualizado: 2026-07-09
+actualizado: 2026-07-10
 ---
 
 # PROPIEDADES-B06 — Pantallas de catálogos (TiposPropiedad, EstadosPropiedad)
@@ -86,7 +86,72 @@ request/response definidos en el contrato congelado.
 
 ## Evidencia
 
-> Vacío hasta que el bloque se ejecute.
+### `pnpm run ci` (code/web) — 2026-07-10
+
+```
+$ pnpm type-check && pnpm lint && pnpm test && pnpm build
+$ tsc -b
+$ eslint . --max-warnings 0
+$ vitest run
+...
+ ✓ src/features/propiedades/__tests__/TiposPropiedadPage.test.tsx (10 tests)
+ ✓ src/features/propiedades/__tests__/EstadosPropiedadPage.test.tsx (10 tests)
+ Test Files  14 passed (14)
+      Tests  126 passed (126)
+$ tsc -b && vite build
+✓ 1797 modules transformed.
+✓ built in 11.71s
+```
+
+Salida completa (todos los archivos, no solo los de este bloque) en la sesión de cierre de DoD del
+2026-07-10 — ver también `PROPIEDADES-B07/B08/B09` que comparten la misma corrida de `pnpm ci`
+(un único monorepo web, un único comando).
+
+### Tests de componente nuevos
+
+- `code/web/src/features/propiedades/__tests__/TiposPropiedadPage.test.tsx` (10 tests): render con
+  badges Sistema/Personalizado, abrir diálogo, validación Zod (nombre vacío), crear con payload
+  correcto, editar con id+payload correctos, warning de 409 IN_USE sin cerrar el diálogo.
+- `code/web/src/features/propiedades/__tests__/EstadosPropiedadPage.test.tsx` (10 tests): mismo
+  patrón para Estados de Propiedad.
+
+### Confirmación de contrato
+
+`LOCK-PROPIEDADES-01` (`_state/contracts/CONTRACT_LOCKS.md`) sigue vigente, congelado 2026-07-08,
+producido por `PROPIEDADES-B02` (`done`). Los endpoints usados en
+`code/web/src/features/propiedades/api/property-types.ts` y `property-statuses.ts` coinciden
+exactamente con las rutas del lock (`GET/POST/PATCH/DELETE /api/v1/property-types` y
+`/api/v1/property-statuses`).
+
+### Verificación visual (Playwright) — bloqueada, no completada
+
+Se escribió un spec real (sin mocks, login contra el backend real en Docker) en
+`code/web/e2e/propiedades/propiedades.spec.ts` cubriendo CA1-CA5 y CA11 de este bloque. **No se pudo
+ejecutar**: `@playwright/test` está roto en este entorno — probado exhaustivamente en 1.49.0 (versión
+exacta committeada), 1.60.0 y 1.61.1, y en Node v22 y v25, incluso con un spec trivial de una línea
+sin ningún import del proyecto. Falla también en el spec preexistente de `AUTH-B06`. Ver
+`_state/RUNBOOK.md#E-005` para el diagnóstico completo. El spec queda listo para correr en cuanto se
+resuelva ese bloqueo.
+
+### Verificación de contrato API real — sustituto de Playwright (2026-07-10)
+
+Como alternativa que sí se pudo ejecutar, se escribió y corrió
+`code/web/scripts/verify-propiedades-contract.mjs` — un script sin mocks que hace login real contra
+el backend (Docker) y ejercita los endpoints de `LOCK-PROPIEDADES-01` exactamente como los llama el
+frontend, verificando el shape de cada respuesta contra los tipos TS (`CatalogoItem`,
+`CatalogoListResponse`, etc.) y los códigos de error que `TiposPropiedadPage`/`EstadosPropiedadPage`
+manejan en sus `switch`. **Resultado: 51/51 checks pasando** (ver evidencia consolidada también en
+`PROPIEDADES-B07/B08/B09`, que comparten la misma corrida del script).
+
+Esta verificación encontró y permitió corregir un bug real: `POST`/`PATCH` de `property-types` y
+`property-statuses` devolvían `{property_type: {...}}` en vez de `{data: {...}}` (violaba el
+contrato congelado y rompía el toast de éxito en producción con un `TypeError`). Ver
+`_state/RUNBOOK.md#E-006` y la nota correspondiente en
+`PROPIEDADES-B02#Notas` (bloque productor, ya `done`, donde vivía el bug).
+
+No sustituye completamente la verificación visual (no cubre renderizado, routing de navegador, CSS)
+pero cubre el riesgo más grave: contrato real API↔Web, que los tests de componente (con la API
+mockeada) no pueden detectar.
 
 ## Notas
 

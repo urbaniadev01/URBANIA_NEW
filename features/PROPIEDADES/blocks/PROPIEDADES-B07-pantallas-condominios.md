@@ -4,11 +4,11 @@ proyecto: web
 feature: PROPIEDADES
 id: PROPIEDADES-B07
 proyectos: [web]
-estado: in_progress
+estado: verifying
 depende_de: [PROPIEDADES-B03, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false
-actualizado: 2026-07-09
+actualizado: 2026-07-10
 ---
 
 # PROPIEDADES-B07 — Pantallas de condominios (CondominiosList + DetalleCondominio)
@@ -82,7 +82,61 @@ puede pasar a `ready` sin ese lock vigente.
 
 ## Evidencia
 
-> Vacío hasta que el bloque se ejecute.
+### `pnpm run ci` (code/web) — 2026-07-10
+
+```
+$ pnpm type-check && pnpm lint && pnpm test && pnpm build
+$ tsc -b
+$ eslint . --max-warnings 0
+$ vitest run
+...
+ ✓ src/features/propiedades/__tests__/CondominiosListPage.test.tsx (6 tests)
+ ✓ src/features/propiedades/__tests__/DetalleCondominioPage.test.tsx (6 tests)
+ Test Files  14 passed (14)
+      Tests  126 passed (126)
+$ tsc -b && vite build
+✓ 1797 modules transformed.
+✓ built in 11.71s
+```
+
+Misma corrida consolidada de `pnpm ci` que `PROPIEDADES-B06/B08/B09` (un único comando en el
+monorepo web) — sesión de cierre de DoD del 2026-07-10.
+
+### Tests de componente nuevos
+
+- `code/web/src/features/propiedades/__tests__/CondominiosListPage.test.tsx` (6 tests): grid de
+  cards, búsqueda local por nombre, validación al crear sin nombre, crear exitoso, nombre duplicado
+  (422) no cierra el sheet.
+- `code/web/src/features/propiedades/__tests__/DetalleCondominioPage.test.tsx` (6 tests):
+  breadcrumb + tab Torres activo por defecto, crear torre, eliminar torre, tab Configuración
+  (datos + editar), eliminar condominio sin hijos.
+
+### Confirmación de contrato
+
+`LOCK-PROPIEDADES-02` (`_state/contracts/CONTRACT_LOCKS.md`) sigue vigente, congelado 2026-07-08,
+producido por `PROPIEDADES-B03` (`done`). Los endpoints usados en
+`code/web/src/features/propiedades/api/condominiums.ts` y `towers.ts` coinciden exactamente con las
+rutas del lock (`/api/v1/condominiums`, `/api/v1/condominiums/{id}/towers`, `/api/v1/towers/{id}`).
+
+### Verificación visual (Playwright) — bloqueada, no completada
+
+Se escribió un spec real (sin mocks, login contra el backend real en Docker) en
+`code/web/e2e/propiedades/propiedades.spec.ts` cubriendo CA1, CA3-CA7 de este bloque. **No se pudo
+ejecutar**: `@playwright/test` está roto en este entorno — probado exhaustivamente en 1.49.0 (versión
+exacta committeada), 1.60.0 y 1.61.1, y en Node v22 y v25, incluso con un spec trivial de una línea.
+Falla también en el spec preexistente de `AUTH-B06`. Ver `_state/RUNBOOK.md#E-005` para el
+diagnóstico completo. El spec queda listo para correr en cuanto se resuelva ese bloqueo.
+
+### Verificación de contrato API real — sustituto de Playwright (2026-07-10)
+
+`code/web/scripts/verify-propiedades-contract.mjs` (login real, sin mocks) ejercita
+`LOCK-PROPIEDADES-02` completo para este bloque: listar condominios, crear, `GET` detalle con
+`towers[]` anidado, crear torre, y el bloqueo de `DELETE` de un condominio con torres (409
+`CONDOMINIUM_HAS_TOWERS` — mismo código que usa `DetalleCondominioPage` para deshabilitar el botón
+"Eliminar condominio"). **Resultado: 51/51 checks pasando** (corrida consolidada con
+`PROPIEDADES-B06/B08/B09`) — sin discrepancias de contrato en este bloque. No sustituye la
+verificación visual (renderizado, routing de navegador) pero cubre el riesgo de contrato real
+API↔Web.
 
 ## Notas
 

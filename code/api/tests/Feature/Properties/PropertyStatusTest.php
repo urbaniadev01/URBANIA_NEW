@@ -144,7 +144,7 @@ test('create property status returns 201 with created_by', function () {
     ], createPropStatusAuthHeader($auth['token']));
 
     $response->assertCreated();
-    $data = $response->json('property_status');
+    $data = $response->json('data');
     expect($data['nombre'])->toBe('Pre-venta');
     expect($data['organization_id'])->toBe($auth['org']->id);
     expect($data['created_by'])->toBe($auth['user']->id);

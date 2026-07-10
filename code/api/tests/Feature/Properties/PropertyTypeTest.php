@@ -160,7 +160,7 @@ test('create property type returns 201 with created_by', function () {
     ], createPropTypeAuthHeader($auth['token']));
 
     $response->assertCreated();
-    $data = $response->json('property_type');
+    $data = $response->json('data');
     expect($data['nombre'])->toBe('Oficina');
     expect($data['organization_id'])->toBe($auth['org']->id);
     expect($data['created_by'])->toBe($auth['user']->id);
@@ -208,7 +208,7 @@ test('update property type returns 200 with updated_by', function () {
     ], createPropTypeAuthHeader($auth['token']));
 
     $response->assertOk();
-    $data = $response->json('property_type');
+    $data = $response->json('data');
     expect($data['nombre'])->toBe('Loft');
     expect($data['descripcion'])->toBe('Loft moderno');
     expect($data['updated_by'])->toBe($auth['user']->id);

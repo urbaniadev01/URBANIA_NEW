@@ -1,7 +1,7 @@
 ---
 tipo: estado
 proyecto: shared
-actualizado: 2026-07-09
+actualizado: 2026-07-10
 ---
 
 # BOARD — Tablero único de estado
@@ -68,10 +68,10 @@ actualizado: 2026-07-09
 | PROPIEDADES-B03 | api         | **done**  | PROPIEDADES-B01                           | [[../features/PROPIEDADES/blocks/PROPIEDADES-B03-crud-condominios-torres]]     |
 | PROPIEDADES-B04 | api         | **done**  | PROPIEDADES-B01                           | [[../features/PROPIEDADES/blocks/PROPIEDADES-B04-crud-unidades]]               |
 | PROPIEDADES-B05 | api         | **done**  | PROPIEDADES-B01                           | [[../features/PROPIEDADES/blocks/PROPIEDADES-B05-coeficientes-tree]]           |
-| PROPIEDADES-B06 | web         | **in_progress** | PROPIEDADES-B02 (lock), WEB_BOOTSTRAP-B01 | [[../features/PROPIEDADES/blocks/PROPIEDADES-B06-pantallas-catalogos]]         |
-| PROPIEDADES-B07 | web         | **in_progress** | PROPIEDADES-B03 (lock), WEB_BOOTSTRAP-B01 | [[../features/PROPIEDADES/blocks/PROPIEDADES-B07-pantallas-condominios]]       |
-| PROPIEDADES-B08 | web         | **in_progress** | PROPIEDADES-B04 (lock), WEB_BOOTSTRAP-B01 | [[../features/PROPIEDADES/blocks/PROPIEDADES-B08-pantalla-unidades]]           |
-| PROPIEDADES-B09 | web         | **in_progress** | PROPIEDADES-B05 (lock), WEB_BOOTSTRAP-B01 | [[../features/PROPIEDADES/blocks/PROPIEDADES-B09-pantalla-coeficientes]]       |
+| PROPIEDADES-B06 | web         | **verifying** | PROPIEDADES-B02 (lock), WEB_BOOTSTRAP-B01 | [[../features/PROPIEDADES/blocks/PROPIEDADES-B06-pantallas-catalogos]]         |
+| PROPIEDADES-B07 | web         | **verifying** | PROPIEDADES-B03 (lock), WEB_BOOTSTRAP-B01 | [[../features/PROPIEDADES/blocks/PROPIEDADES-B07-pantallas-condominios]]       |
+| PROPIEDADES-B08 | web         | **verifying** | PROPIEDADES-B04 (lock), WEB_BOOTSTRAP-B01 | [[../features/PROPIEDADES/blocks/PROPIEDADES-B08-pantalla-unidades]]           |
+| PROPIEDADES-B09 | web         | **verifying** | PROPIEDADES-B05 (lock), WEB_BOOTSTRAP-B01 | [[../features/PROPIEDADES/blocks/PROPIEDADES-B09-pantalla-coeficientes]]       |
 
 ## Bloques — DIRECTORIO
 
@@ -113,26 +113,25 @@ actualizado: 2026-07-09
 > como NOT NULL. Incluye un parche de una línea en `RegisterUserUseCase` con test de regresión — ver
 > esa tarjeta antes de ejecutarla, toca código ya en producción.
 
-> **Nota (2026-07-09, auditoría Claude Code) — plan para cerrar `PROPIEDADES-B06/B07/B08/B09`:**
-> Auditoría encontró código real, committeado y funcional para las 4 pantallas (`pnpm type-check`,
-> `pnpm lint` y `pnpm build` limpios en `code/web`, rutas ya wireadas en `App.tsx`, docs de pantalla
-> creadas en `web/features/propiedades/`), pero el DoD nunca se cerró. Pendiente para la próxima
-> sesión:
-> 1. Correr `pnpm ci` en `code/web` y pegar la salida completa en la sección Evidencia de cada uno de
->    los 4 cards (`PROPIEDADES-B06`, `B07`, `B08`, `B09`).
-> 2. Verificación visual real (Playwright) recorriendo los criterios de aceptación de cada pantalla —
->    ya están numerados en cada card.
-> 3. Agregar tests de componente para las 4 pantallas — hoy `pnpm test` solo cubre `auth`, ninguna
->    pantalla de `PROPIEDADES` tiene test dedicado. Seguir el patrón de
->    `code/web/src/features/auth/__tests__/`.
-> 4. Los 4 locks que consumen (`LOCK-PROPIEDADES-01/02/03/04`) ya están confirmados vigentes — no hace
->    falta reabrir el contrato, solo confirmar que la integración los respeta exactamente.
-> 5. Una vez cumplido el DoD, pasar cada card a `estado: verifying` con la evidencia pegada. La
->    transición a `done` la hace el usuario, no el agente que implementa (ver `CLAUDE.md`).
-> 6. Housekeeping menor detectado en la misma auditoría: borrar `code/web/start-dev.bat` y
->    `code/web/verify-b03.bat` (residuos, no parte del alcance de ningún bloque) y limpiar los
->    artefactos de depuración sin trackear en `.playwright-mcp/` (screenshots/logs de sesiones
->    Playwright previas, ya cubierto por `.gitignore` tras la reorganización de git del mismo día).
+> **Nota (2026-07-10) — cierre de DoD de `PROPIEDADES-B06/B07/B08/B09`:** Completado en esta sesión:
+> `pnpm run ci` limpio en `code/web` (type-check, lint, 126 tests incluyendo 50 nuevos de
+> componente para las 4 pantallas, build) — evidencia pegada en cada card; los 4 locks
+> (`LOCK-PROPIEDADES-01/02/03/04`) confirmados vigentes y respetados exactamente por la integración;
+> housekeeping (`start-dev.bat`, `verify-b03.bat` borrados). La verificación visual real
+> (Playwright) quedó bloqueada — `@playwright/test` está roto en este entorno (probado en 1.49.0
+> exacto committeado, 1.60.0 y 1.61.1, en Node v22 y v25, ver `_state/RUNBOOK.md#E-005`) — el spec
+> ya escrito (`code/web/e2e/propiedades/propiedades.spec.ts`, sin mocks, login real) queda listo
+> para correr en cuanto se resuelva. **Como sustituto**, se escribió y corrió
+> `code/web/scripts/verify-propiedades-contract.mjs` (login real contra el backend, sin mocks,
+> 51/51 checks) que verifica el contrato API↔Web exacto de los 4 locks — encontró y permitió
+> corregir un bug real: `POST`/`PATCH` de `property-types`/`property-statuses` violaban
+> `LOCK-PROPIEDADES-01` (envelope `{property_type: ...}` en vez de `{data: ...}`, rompía el toast de
+> éxito en el navegador con un `TypeError`). Ver `_state/RUNBOOK.md#E-006` y
+> `PROPIEDADES-B02#Notas` (bloque productor, ya `done`, donde vivía el bug — corregido con evidencia
+> de tests PHP re-verificados). Las 4 cards pasaron a `estado: verifying` con la verificación visual
+> como único pendiente explícito, documentado en su propia sección Evidencia — la transición a
+> `done` la hace el usuario,
+> no el agente que implementa (ver `CLAUDE.md`).
 
 ## Bloques — COBRANZA
 

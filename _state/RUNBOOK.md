@@ -2,7 +2,7 @@
 tipo: estado
 proyecto: shared
 creado: 2026-07-06
-actualizado: 2026-07-09
+actualizado: 2026-07-10
 ---
 
 # RUNBOOK — Errores conocidos y soluciones
@@ -127,6 +127,116 @@ actualizado: 2026-07-09
   el texto le instruye ejecutar tenga un patrón literal correspondiente en su `permission.bash` — un
   wildcard de un comando distinto (`composer test*`) no cubre otro (`composer ci`).
 - **Tags:** #verifier #composer-ci #pnpm-ci #permission #bash #deepseek #diagnostico #falso-positivo
+
+### E-005: `@playwright/test@1.61.1` roto en `code/web` — `test.describe()` no reconocido en proyecto ESM
+
+- **Fecha:** 2026-07-10
+- **Agente/Sesión:** urbania (cierre de DoD de PROPIEDADES-B06..B09)
+- **Causa raíz:** No confirmada con certeza — hipótesis más probable es una doble instanciación del
+  registro interno de `@playwright/test` (`_TestTypeImpl`) en un proyecto con `"type": "module"`
+  (`code/web/package.json`): el runner de Playwright parece cargar `playwright.config.ts` por una
+  ruta de resolución de módulos distinta a la que usa para cargar los archivos `*.spec.ts`, dejando
+  el objeto `test` importado en el spec desconectado del contexto de ejecución activo del runner.
+  Descartado: no es un problema de versión de Node — se reprodujo idéntico en Node v25.9.0 y en
+  Node v22.23.1 (instalado vía `nvm install 22` específicamente para probar esta hipótesis).
+  Descartado: no hay dependencias duplicadas de `@playwright/test` ni de `playwright` en
+  `node_modules` (`pnpm list playwright @playwright/test -r` muestra una sola instancia).
+  No es específico de los specs nuevos de esta sesión — el spec preexistente
+  `e2e/auth/login.spec.ts` (de `AUTH-B06`) falla exactamente igual.
+- **Síntoma:** Cualquier invocación de `npx playwright test` (incluyendo `--list`, que ni siquiera
+  lanza un navegador) falla en el primer `test.describe()` de cualquier archivo con:
+  `Error: Playwright Test did not expect test.describe() to be called here.` seguido de
+  `Error: No tests found.` — 0 tests recolectados, 0 archivos.
+- **Solución:** Sin resolver. Probado sin éxito, exhaustivamente:
+  1. Cambiar la versión de Node activa (`nvm use 22.23.1` en vez de `v25.9.0`) — mismo error.
+  2. Downgrade de `@playwright/test` a `1.60.0` — mismo error, incluso con un spec trivial de una
+     sola línea (`test("x", () => expect(1+1).toBe(2))`) sin ningún import del proyecto, aliases de
+     `@/` ni helpers — descarta que la causa esté en el código de los specs.
+  3. Reinstalación forzada (`pnpm install --force`) tras borrar las carpetas de playwright en el
+     store de pnpm — mismo error.
+  4. Downgrade a la versión **exacta que especifica el `package.json` commiteado**,
+     `@playwright/test@1.49.0` (el rango `^1.49.0` del lockfile había resuelto silenciosamente a
+     `1.61.1` porque esa era la última 1.x disponible cuando se generó el lockfile — no hay drift
+     entre lo commiteado y lo instalado, es una resolución de rango semver legítima pero
+     inesperadamente lejana). Con `1.49.0` exacto y su Chromium correspondiente
+     (`npx playwright install chromium`), **mismo error idéntico**.
+  Con 4 versiones distintas de Playwright (1.49.0, 1.60.0, 1.61.1, y descartada la exploración de
+  `1.62.0-alpha-*` por no ser estable) y 2 versiones de Node fallando de forma idéntica en un spec
+  mínimo sin ninguna dependencia del proyecto, se descarta con alta confianza que sea una regresión
+  de Playwright. La causa más probable pasa a ser algo específico de este entorno/proyecto:
+  `"type": "module"` en `code/web/package.json` combinado con Windows + pnpm (symlinks) rompiendo el
+  mecanismo interno de Playwright para registrar el runner activo (`TestTypeImpl._currentSuite`)
+  antes de que el archivo de test se evalúe. No investigado por quedar fuera de un tiempo
+  razonable de sesión: forzar `"type": "commonjs"` temporalmente para playwright.config, o abrir un
+  issue upstream con un repro mínimo.
+- **Impacto:** Bloquea la verificación visual automatizada (Playwright) exigida por el DoD de
+  cualquier bloque `web` — no es específico de `PROPIEDADES`. `PROPIEDADES-B06/B07/B08/B09` se
+  cerraron a `verifying` sin este paso, dejándolo documentado como pendiente explícito en cada card
+  (ver `_state/BOARD.md`). El spec ya escrito para estos 4 bloques
+  (`code/web/e2e/propiedades/propiedades.spec.ts`, hace login real contra el backend en Docker con
+  `admin@urbania.test` / `Admin123!` y recorre los criterios de aceptación de las 4 pantallas) queda
+  listo para correr en cuanto se resuelva este bloqueo — no requiere cambios de código, solo
+  `npx playwright test e2e/propiedades`.
+- **Prevención:** Antes de asumir que un fallo de Playwright es del código bajo prueba, correr un
+  spec preexistente conocido-bueno (`e2e/auth/login.spec.ts`) para confirmar si el fallo es del
+  entorno o del código nuevo — así se descartó rápidamente que fuera un problema de los specs de
+  `PROPIEDADES` en este caso.
+- **Tags:** #playwright #e2e #esm #test-describe #node-version #propiedades #dod #bloqueo
+
+### E-006: `$wrap` de JsonResource rompía el envelope de POST/PATCH en property-types y property-statuses
+
+- **Fecha:** 2026-07-10
+- **Agente/Sesión:** urbania (verificación de contrato alternativa a Playwright, ver `E-005`)
+- **Causa raíz:** `PropertyTypeResource` y `PropertyStatusResource`
+  (`code/api/src/Properties/Infrastructure/Http/Resources/`) declaraban
+  `public static $wrap = 'property_type';` / `'property_status';`. Laravel solo aplica `$wrap`
+  cuando el Resource se serializa vía `->response()`/`->toResponse()` (usado en
+  `PropertyTypeController::store()` y `::update()`), no cuando el controlador envuelve
+  manualmente con `response()->json(['data' => ...])` (usado en `index()` y `show()`). Resultado:
+  `GET` devolvía `{data: {...}}` (correcto) pero `POST`/`PATCH` devolvían
+  `{property_type: {...}}` / `{property_status: {...}}` — violando el contrato congelado
+  `LOCK-PROPIEDADES-01`, que documenta `{data: {...}}` para los tres verbos
+  (`api/endpoints/PROPIEDADES.md` líneas 78, 113, 153). Los tests de PHP
+  (`PropertyTypeTest`/`PropertyStatusTest`) habían sido escritos contra el bug
+  (`$response->json('property_type')`) en vez de contra el contrato documentado, así que nunca lo
+  detectaron.
+- **Síntoma:** En el frontend real, `useCreatePropertyTypeMutation`/`useUpdatePropertyTypeMutation`
+  (y sus equivalentes de status) leen `response.data.nombre` para el toast de éxito. Con
+  `response.data === undefined`, eso lanza `TypeError: Cannot read properties of undefined
+  (reading 'nombre')` dentro del `onSuccess` de la mutación — un error no capturado en cada
+  creación/edición exitosa de un tipo o estado de propiedad personalizado. No se detectó en los
+  tests de componente de `PROPIEDADES-B06` porque mockean el hook de API completo (la respuesta
+  simulada ya viene con la forma correcta por construcción). Se encontró al escribir un script de
+  verificación de contrato contra el backend real
+  (`code/web/scripts/verify-propiedades-contract.mjs`) como sustituto de la verificación visual
+  Playwright bloqueada por `E-005`.
+- **Solución:**
+  1. Cambiar `$wrap` a `'data'` en ambos Resources — alinea POST/PATCH con lo que ya hacían
+     GET/show y con el contrato congelado.
+  2. Corregir las 3 aserciones de test que esperaban el wrap viejo
+     (`tests/Feature/Properties/PropertyTypeTest.php` líneas 163, 211;
+     `PropertyStatusTest.php` línea 147) de `$response->json('property_type'/'property_status')`
+     a `$response->json('data')`.
+  3. Re-verificado: `php artisan test --filter=PropertyType` (12 passed) y `--filter=PropertyStatus`
+     (6 passed) dentro del contenedor con `-e DB_HOST=postgres -e DB_PORT=5432` (ver nota abajo
+     sobre por qué esas variables son necesarias), y el script de contrato completo
+     (51/51 checks, antes 49/51).
+- **Nota al margen — `php artisan test` dentro del contenedor sin overrides falla:**
+  `config/database.php` tiene fallback `env('DB_HOST', 'localhost')` / `env('DB_PORT', '5434')`,
+  pensado para correr los tests desde el HOST (donde docker-compose mapea postgres a
+  `localhost:5434`). `.env.testing` solo sobreescribe `DB_DATABASE`, así que dentro del contenedor
+  (`docker exec`) los tests no encuentran esos DB_HOST/DB_PORT y caen al default incorrecto
+  (`localhost:5434`, que desde DENTRO del contenedor no es nada). Workaround usado en esta sesión:
+  `docker exec -e DB_HOST=postgres -e DB_PORT=5432 urbania-php php artisan test ...`. No se
+  investigó si hay una forma de correr los tests desde el host directamente (requeriría PHP+deps
+  instalados fuera de Docker) ni si vale la pena agregar `DB_HOST`/`DB_PORT` a `.env.testing` para
+  que `docker exec ... php artisan test` funcione sin overrides — queda como mejora futura.
+- **Prevención:** Cuando se agregue una verificación de contrato como la de `E-005`/este bug
+  (`code/web/scripts/verify-propiedades-contract.mjs`), correrla tras cualquier cambio en
+  Resources/Controllers de `code/api` antes de dar por buena la integración — los tests de
+  componente del frontend (con API mockeada) y los tests de PHP (si están mal escritos, como aquí)
+  no son suficientes por sí solos para detectar un envelope de respuesta incorrecto.
+- **Tags:** #propiedades #json-resource #wrap #contrato #property-types #property-statuses #bug-real #dod
 
 ---
 
