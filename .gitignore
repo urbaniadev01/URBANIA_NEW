@@ -16,3 +16,4 @@ yarn-error.log
 /.idea
 /.vscode
 /storage/jwt/private.pem
+test_output.txt
