@@ -6,27 +6,58 @@ trabajar en este repositorio.
 ## What this repository is / Qué es este repositorio
 
 **EN:** This is the Urbania documentation vault (redesigned), an Obsidian vault of markdown
-documentation only — not a code repository. Actual development happens via **OpenCode**, driven by
-the agent pipeline configured in `.opencode/agents/` and `opencode.json` at the vault root.
+documentation describing the methodology (`_system/`), live state (`_state/`), and feature design
+(`features/`). Source code lives alongside it under `code/` (see below). Development can be driven by
+either **Claude Code** (this session, following this file) or **OpenCode** (via the agent pipeline in
+`.opencode/agents/` and `opencode.json`) — both follow the same methodology defined in `_system/`,
+they are interchangeable drivers, not competing processes. `.opencode/` is left untouched and fully
+usable; switching to Claude Code as the driver does not retire it.
 
-**ES:** Este es el vault de documentación de Urbania (rediseñado), un vault de Obsidian de solo
-markdown — no un repositorio de código. El desarrollo real ocurre vía **OpenCode**, guiado por el
-pipeline de agentes configurado en `.opencode/agents/` y `opencode.json` en la raíz del vault.
+**ES:** Este es el vault de documentación de Urbania (rediseñado), un vault de Obsidian de markdown
+que describe la metodología (`_system/`), el estado vivo (`_state/`) y el diseño de features
+(`features/`). El código fuente vive junto a él bajo `code/` (ver abajo). El desarrollo puede ser
+conducido tanto por **Claude Code** (esta sesión, siguiendo este archivo) como por **OpenCode** (vía
+el pipeline de agentes en `.opencode/agents/` y `opencode.json`) — ambos siguen la misma metodología
+definida en `_system/`, son drivers intercambiables, no procesos que compitan. `.opencode/` queda
+intacto y totalmente usable; usar Claude Code como driver no lo retira.
 
 ## Claude Code's role here / El rol de Claude Code aquí
 
-**EN:** Claude Code operates in **audit/advisory mode** on this vault — reading, reviewing
-coherence, and (when explicitly asked) helping design or refine the documentation system itself. It
-does not drive day-to-day feature execution; that is OpenCode's job, following
-`_system/00_START_HERE.md`. If asked to "implement a block," treat it as a documentation/design task
-unless the user is explicit that they want actual source code written outside this vault.
+**EN:** Claude Code drives the full pipeline end to end — design **and** execution — following
+`_system/00_START_HERE.md` literally as the decision tree (not the `.opencode/agents/` instructions,
+which are OpenCode-specific and not read by Claude Code):
 
-**ES:** Claude Code opera en **modo auditoría/asesoría** sobre este vault — lee, revisa coherencia y
-(cuando se le pide explícitamente) ayuda a diseñar o refinar el sistema de documentación en sí. No
-conduce la ejecución diaria de features — eso es trabajo de OpenCode, siguiendo
-`_system/00_START_HERE.md`. Si se pide "implementar un bloque", tratarlo como tarea de
-documentación/diseño salvo que el usuario pida explícitamente escribir código fuente real fuera de
-este vault.
+- No explicit block requested → Step 2: read `_state/BOARD.md`, take the first `ready` block.
+- A specific block ID → Step 3: open its card, confirm `ready` + `depende_de` satisfied, read only
+  the card's declared read-set, implement exactly its scope, meet the DoD
+  (`_system/05_DEFINITION_OF_DONE.md`), paste real evidence, move the card to `estado: verifying`.
+  **Claude never moves a card to `done` itself** — that transition is the user's call, mirroring how
+  `PANORAMA.md` approval already works (Claude proposes, the human approves). This preserves the
+  vault's rule that no agent marks its own work done.
+  This applies to real source code under `code/api/` and `code/web/`, not just documentation.
+- A brand-new feature → Step 4: draft `features/<name>/PANORAMA.md` interactively with the user,
+  leave it in `estado_diseño: draft`, stop for review. Blocks are only created once the user sets it
+  to `approved`.
+- If anything is unclear or a document the decision tree references is missing: stop and report —
+  never assume (same rule `00_START_HERE.md` states for every agent).
+
+**ES:** Claude Code conduce el pipeline completo de punta a punta — diseño **y** ejecución —
+siguiendo `_system/00_START_HERE.md` literalmente como árbol de decisión (no las instrucciones de
+`.opencode/agents/`, que son específicas de OpenCode y Claude Code no las lee):
+
+- Sin bloque específico → Paso 2: leer `_state/BOARD.md`, tomar el primer bloque `ready`.
+- Un ID de bloque específico → Paso 3: abrir su tarjeta, confirmar `ready` + `depende_de` satisfecho,
+  leer solo el read-set declarado por la tarjeta, implementar exactamente su alcance, cumplir el DoD
+  (`_system/05_DEFINITION_OF_DONE.md`), pegar evidencia real, pasar la tarjeta a `estado: verifying`.
+  **Claude nunca mueve una tarjeta a `done` por su cuenta** — esa transición es decisión del usuario,
+  igual que ya funciona la aprobación de `PANORAMA.md` (Claude propone, el humano aprueba). Esto
+  preserva la regla del vault de que ningún agente marca su propio trabajo como terminado.
+  Esto aplica a código fuente real bajo `code/api/` y `code/web/`, no solo a documentación.
+- Una feature nueva → Paso 4: completar `features/<nombre>/PANORAMA.md` interactivamente con el
+  usuario, dejarlo en `estado_diseño: draft`, detenerse para revisión. Los bloques solo se crean una
+  vez que el usuario lo pase a `approved`.
+- Si algo no está claro o falta un documento que el árbol de decisión referencia: detenerse y
+  reportar, nunca asumir (misma regla que `00_START_HERE.md` exige a cualquier agente).
 
 ## The core design (read `_system/` for the full version)
 

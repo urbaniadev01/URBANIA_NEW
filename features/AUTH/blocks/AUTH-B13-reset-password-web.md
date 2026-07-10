@@ -4,7 +4,7 @@ proyecto: web
 feature: AUTH
 id: AUTH-B13
 proyectos: [web]
-estado: ready
+estado: done
 depende_de: [AUTH-B09]
 contrato: LOCK-AUTH-09
 verificacion_critica: true
@@ -74,6 +74,29 @@ Consume `LOCK-AUTH-09` — endpoint `POST /api/v1/auth/reset-password`. Ver `_st
 - [ ] `web/WEB_API_CLIENT.md` actualizado si el cliente/hook de este bloque introduce un patrón nuevo no documentado.
 
 ## Evidencia
+
+### CI (`pnpm ci`) — post verify-council fixes
+
+| Paso | Resultado |
+|---|---|
+| type-check (`tsc -b`) | ✅ OK |
+| lint (`eslint . --max-warnings 0`) | ✅ OK (0 warnings) |
+| test (`vitest run`) | ✅ 77 tests passed (8 archivos) |
+| build (`tsc -b && vite build`) | ✅ OK |
+
+### Correcciones aplicadas (verify-council)
+- B1: Formulario permanece visible tras RESET_TOKEN_INVALID/RESET_TOKEN_EXPIRED (Alert sobre form, no reemplazo)
+- B2: Tests agregados para CA9 (TOO_MANY_REQUESTS) y CA10 (VALIDATION_ERROR)
+
+### Archivos creados/modificados
+| Archivo | Acción |
+|---|---|
+| `code/web/src/features/auth/pages/ResetPasswordPage.tsx` | Crear (+ fix B1) |
+| `code/web/src/features/auth/api/reset-password.ts` | Crear |
+| `code/web/src/features/auth/__tests__/ResetPasswordPage.test.tsx` | Crear (+ tests CA9/CA10) |
+| `code/web/src/features/auth/types/auth.types.ts` | Modificar (+ResetPasswordRequest, +ResetPasswordResponse, +passwordSchema export) |
+| `code/web/src/app/App.tsx` | Modificar (+ruta lazy `/reset-password`) |
+| `web/features/auth/AUTH-reset-password.md` | Crear |
 
 ## Notas
 

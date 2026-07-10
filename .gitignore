@@ -1,13 +1,9 @@
-# Código fuente de los proyectos — monorepo, parte de este mismo repositorio.
-# Vive bajo code/ (code/api/, code/web/, code/app/) para no colisionar en mayúsculas/minúsculas
-# con las carpetas de documentación api/, web/, app/ en sistemas de archivos case-insensitive
-# (Windows) — ver AGENTS.md "Código fuente".
-
 # Obsidian
 /.obsidian/
 
 # Grafo de codebase-memory (si se indexa desde este vault en algún momento)
 /.codebase-memory/
 
-# Repos anidados con su propio versionado
-code/
+# Artefactos de depuración de sesiones Playwright MCP (screenshots, logs, no son evidencia
+# oficial de bloque — la evidencia real se pega en las tarjetas de bloque)
+/.playwright-mcp/

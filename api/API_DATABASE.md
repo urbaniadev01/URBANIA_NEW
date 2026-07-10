@@ -157,3 +157,97 @@ asignación de rol duplicada para el mismo scope.
 | `expires_at` | `timestamptz` | NOT NULL — `created_at + 60 min` |
 | `created_at` | `timestamptz` | NOT NULL, DEFAULT CURRENT_TIMESTAMP |
 | `updated_at` | `timestamptz` | NOT NULL, DEFAULT CURRENT_TIMESTAMP |
+
+### Tablas de PROPIEDADES (PROPIEDADES-B01)
+
+#### `condominiums`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `organization_id` | `uuid` | FK → `organizations.id`, NOT NULL, CASCADE ON DELETE |
+| `nombre` | `text` | NOT NULL, UNIQUE(organization_id, nombre) |
+| `direccion` | `text` | nullable |
+| `nit` | `text` | nullable |
+| `created_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` | `timestamptz` | |
+| `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+#### `towers`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `condominium_id` | `uuid` | FK → `condominiums.id`, NOT NULL, CASCADE ON DELETE, inmutable |
+| `nombre` | `text` | NOT NULL, UNIQUE(condominium_id, nombre) |
+| `created_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` | `timestamptz` | |
+| `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+#### `property_types`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `organization_id` | `uuid` | FK → `organizations.id`, nullable (NULL = sistema) |
+| `nombre` | `text` | NOT NULL |
+| `descripcion` | `text` | nullable |
+| `created_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` | `timestamptz` | |
+| `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+#### `property_statuses`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `organization_id` | `uuid` | FK → `organizations.id`, nullable (NULL = sistema) |
+| `nombre` | `text` | NOT NULL |
+| `descripcion` | `text` | nullable |
+| `created_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` | `timestamptz` | |
+| `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+#### `properties`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `condominium_id` | `uuid` | FK → `condominiums.id`, NOT NULL, CASCADE ON DELETE, inmutable |
+| `tower_id` | `uuid` | FK → `towers.id`, nullable, SET NULL ON DELETE |
+| `property_type_id` | `uuid` | FK → `property_types.id`, NOT NULL, RESTRICT ON DELETE |
+| `property_status_id` | `uuid` | FK → `property_statuses.id`, NOT NULL, RESTRICT ON DELETE |
+| `codigo` | `text` | NOT NULL, UNIQUE(condominium_id, codigo) |
+| `piso` | `int` | nullable |
+| `area_m2` | `decimal(10,2)` | nullable — dato sensible, solo en endpoint de detalle |
+| `created_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` | `timestamptz` | |
+| `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+#### `property_coefficients`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `property_id` | `uuid` | FK → `properties.id`, NOT NULL, CASCADE ON DELETE |
+| `tipo` | `text` | NOT NULL, CHECK IN ('copropiedad', 'parqueadero', 'deposito', 'mantenimiento') |
+| `valor` | `decimal(5,4)` | NOT NULL, rango 0-1 |
+| `vigente_desde` | `date` | NOT NULL |
+| `vigente_hasta` | `date` | nullable — NULL = vigente actual |
+| `created_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` | `timestamptz` | |
+| `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+Partial unique index: `UNIQUE (property_id, tipo) WHERE vigente_hasta IS NULL` — solo un coeficiente activo por propiedad+tipo.
