@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +33,6 @@ import type {
   MfaRecoveryRequest,
 } from "@/features/auth/types/auth.types";
 import { MFA_ENROLL_ERROR_CODES } from "@/features/auth/types/auth.types";
-import { useAuthStore } from "@/stores/auth-store";
 import { Loader2, ShieldCheck } from "lucide-react";
 
 const totpSchema = z.object({
@@ -51,12 +49,6 @@ type Step = "idle" | "enrolling" | "active";
 type ActiveSection = "panel" | "recovery-view";
 
 export function MfaEnrollPage(): React.ReactNode {
-  const accessToken = useAuthStore((s) => s.accessToken);
-
-  if (!accessToken) {
-    return <Navigate to="/login" replace />;
-  }
-
   return <MfaEnrollContent />;
 }
 

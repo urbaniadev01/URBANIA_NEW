@@ -9,14 +9,16 @@ import type { ResetPasswordRequest } from "@/features/auth/types/auth.types";
 // Mock del hook de reset-password para que no haga fetch real
 const mockMutate = vi.fn();
 let mockFatalError: string | null = null;
+let mockIsError = false;
+let mockError: { code: string; message: string } | null = null;
 
 vi.mock("@/features/auth/api/reset-password", () => ({
   useResetPasswordMutation: () => ({
     mutate: mockMutate,
     isPending: false,
     fatalError: mockFatalError,
-    error: null,
-    isError: false,
+    error: mockError,
+    isError: mockIsError,
     isSuccess: false,
     data: undefined,
     reset: vi.fn(),
@@ -62,6 +64,8 @@ describe("ResetPasswordPage", () => {
   beforeEach(() => {
     mockMutate.mockClear();
     mockFatalError = null;
+    mockIsError = false;
+    mockError = null;
   });
 
   // ── CA8: Params ausentes ──────────────────────────────────────────────
@@ -323,7 +327,7 @@ describe("ResetPasswordPage", () => {
   // ── CA2/CA3: Token inválido o expirado (fatalError) ───────────────────
 
   describe("CA2/CA3 — token inválido o expirado", () => {
-    it("CA2: muestra mensaje para token inválido y enlace /forgot-password", () => {
+    it("CA2: muestra mensaje para token inválido y enlace /forgot-password con formulario visible", () => {
       mockFatalError = "Este enlace ya no es válido. Solicita uno nuevo.";
       renderResetPasswordPage();
 
@@ -334,12 +338,19 @@ describe("ResetPasswordPage", () => {
       expect(
         screen.getByRole("link", { name: /solicitar un nuevo enlace/i }),
       ).toBeInTheDocument();
+      // El formulario permanece visible para reintentar (CA2)
       expect(
-        screen.queryByLabelText("Nueva contraseña"),
-      ).not.toBeInTheDocument();
+        screen.getByLabelText("Nueva contraseña"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByLabelText("Confirmar contraseña"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /actualizar contraseña/i }),
+      ).toBeInTheDocument();
     });
 
-    it("CA3: muestra mensaje para token expirado y enlace /forgot-password", () => {
+    it("CA3: muestra mensaje para token expirado con formulario visible", () => {
       mockFatalError =
         "Este enlace expiró (válido por 60 minutos). Solicita uno nuevo.";
       renderResetPasswordPage();
@@ -352,6 +363,13 @@ describe("ResetPasswordPage", () => {
       ).toBeInTheDocument();
       expect(
         screen.getByRole("link", { name: /solicitar un nuevo enlace/i }),
+      ).toBeInTheDocument();
+      // El formulario permanece visible para reintentar
+      expect(
+        screen.getByLabelText("Nueva contraseña"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByLabelText("Confirmar contraseña"),
       ).toBeInTheDocument();
     });
 
@@ -367,6 +385,70 @@ describe("ResetPasswordPage", () => {
 
       expect(
         screen.getByTestId("forgot-password-page"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  // ── CA9/CA10: Errores no fatales ────────────────────────────────────
+
+  describe("CA9 — TOO_MANY_REQUESTS (429)", () => {
+    it("llama a la mutación y mantiene el formulario visible", async () => {
+      const user = userEvent.setup();
+      mockIsError = true;
+      mockError = {
+        code: "TOO_MANY_REQUESTS",
+        message: "Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.",
+      };
+      renderResetPasswordPage();
+
+      const passwordInput = screen.getByLabelText("Nueva contraseña");
+      const confirmInput = screen.getByLabelText("Confirmar contraseña");
+      const submitButton = screen.getByRole("button", {
+        name: /actualizar contraseña/i,
+      });
+
+      await user.type(passwordInput, "Password1");
+      await user.type(confirmInput, "Password1");
+      await user.click(submitButton);
+
+      expect(mockMutate).toHaveBeenCalledTimes(1);
+      // El formulario sigue visible (no fue reemplazado)
+      expect(
+        screen.getByLabelText("Nueva contraseña"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByLabelText("Confirmar contraseña"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("CA10 — VALIDATION_ERROR (422)", () => {
+    it("llama a la mutación y mantiene el formulario visible", async () => {
+      const user = userEvent.setup();
+      mockIsError = true;
+      mockError = {
+        code: "VALIDATION_ERROR",
+        message: "Error del servidor",
+      };
+      renderResetPasswordPage();
+
+      const passwordInput = screen.getByLabelText("Nueva contraseña");
+      const confirmInput = screen.getByLabelText("Confirmar contraseña");
+      const submitButton = screen.getByRole("button", {
+        name: /actualizar contraseña/i,
+      });
+
+      await user.type(passwordInput, "Password1");
+      await user.type(confirmInput, "Password1");
+      await user.click(submitButton);
+
+      expect(mockMutate).toHaveBeenCalledTimes(1);
+      // El formulario sigue visible (no fue reemplazado)
+      expect(
+        screen.getByLabelText("Nueva contraseña"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByLabelText("Confirmar contraseña"),
       ).toBeInTheDocument();
     });
   });

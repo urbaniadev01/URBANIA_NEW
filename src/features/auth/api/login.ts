@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { apiClient } from "@/services/api-client";
 import { useAuthStore } from "@/stores/auth-store";
@@ -18,7 +18,10 @@ const LOGIN_URL = "/api/v1/auth/login";
  */
 export function useLoginMutation() {
   const navigate = useNavigate();
+  const location = useLocation();
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
+
+  const from = (location.state as { from?: string })?.from;
 
   return useMutation<LoginResponse, ApiError, LoginRequestDto>({
     mutationFn: (data: LoginRequestDto) =>
@@ -32,11 +35,11 @@ export function useLoginMutation() {
         return;
       }
 
-      // Login directo (sin MFA): guardar token y redirigir al dashboard
+      // Login directo (sin MFA): guardar token y redirigir al destino original o dashboard
       if (response.access_token) {
         setAccessToken(response.access_token);
       }
-      navigate("/dashboard");
+      navigate(from || "/dashboard", { replace: true });
     },
 
     onError: (error: ApiError) => {

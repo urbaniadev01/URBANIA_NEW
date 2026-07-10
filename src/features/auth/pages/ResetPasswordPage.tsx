@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams, Link } from "react-router-dom";
 import { z } from "zod";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Loader2, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,6 +20,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 import { useResetPasswordMutation } from "@/features/auth/api/reset-password";
 import {
   passwordSchema,
@@ -56,8 +61,8 @@ type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
  * - Formulario activo: checklist reactiva mientras se escribe
  * - Carga: botón deshabilitado + spinner
  * - Éxito (200): redirige a /login con toast
- * - Error RESET_TOKEN_INVALID / RESET_TOKEN_EXPIRED: reemplaza formulario
- *   por mensaje + enlace /forgot-password
+ * - Error RESET_TOKEN_INVALID / RESET_TOKEN_EXPIRED: alerta sobre
+ *   el formulario + enlace /forgot-password (formulario sigue visible)
  * - Error TOO_MANY_REQUESTS (429): toast
  * - Error VALIDATION_ERROR (422): toast con mensaje del servidor
  */
@@ -94,31 +99,6 @@ export function ResetPasswordPage(): React.ReactNode {
       password_confirmation: values.password_confirmation,
     };
     mutate(dto);
-  }
-
-  // ── Error fatal de la API: token inválido o expirado ──
-  if (fatalError) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">
-              Enlace inválido
-            </CardTitle>
-            <CardDescription className="text-center">
-              {fatalError}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button asChild variant="outline">
-              <Link to="/forgot-password">
-                Solicitar un nuevo enlace
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
   }
 
   // ── Faltan params en la URL ──
@@ -160,6 +140,23 @@ export function ResetPasswordPage(): React.ReactNode {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* ── Error fatal de la API: token inválido o expirado ── */}
+          {fatalError && (
+            <Alert variant="destructive" className="mb-6">
+              <TriangleAlert className="h-4 w-4" />
+              <AlertTitle>Enlace inválido</AlertTitle>
+              <AlertDescription>
+                {fatalError}{" "}
+                <Link
+                  to="/forgot-password"
+                  className="font-medium underline underline-offset-4"
+                >
+                  Solicitar un nuevo enlace
+                </Link>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}

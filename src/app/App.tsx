@@ -1,8 +1,12 @@
+// Bootstrap — side-effect modules del dashboard (debe ir antes que cualquier feature)
+import "@/app/bootstrap";
+
 import { type ReactNode, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { DashboardPage } from "@/app/DashboardPage";
+import { RequireAuth } from "@/app/RequireAuth";
 
 const LoginPageLazy = lazy(() =>
   import("@/features/auth/pages/LoginPage").then((m) => ({
@@ -40,6 +44,30 @@ const ResetPasswordPageLazy = lazy(() =>
   })),
 );
 
+const TiposPropiedadPageLazy = lazy(() =>
+  import("@/features/propiedades/pages/TiposPropiedadPage").then((m) => ({
+    default: m.TiposPropiedadPage,
+  })),
+);
+
+const EstadosPropiedadPageLazy = lazy(() =>
+  import("@/features/propiedades/pages/EstadosPropiedadPage").then((m) => ({
+    default: m.EstadosPropiedadPage,
+  })),
+);
+
+const CondominiosListPageLazy = lazy(() =>
+  import("@/features/propiedades/pages/CondominiosListPage").then((m) => ({
+    default: m.CondominiosListPage,
+  })),
+);
+
+const DetalleCondominioPageLazy = lazy(() =>
+  import("@/features/propiedades/pages/DetalleCondominioPage").then((m) => ({
+    default: m.DetalleCondominioPage,
+  })),
+);
+
 const DevIndicatorLazy = import.meta.env.DEV
   ? lazy(() =>
       import("@/components/DevIndicator").then((m) => ({
@@ -74,8 +102,7 @@ export function App(): ReactNode {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
+          {/* Public routes — no authentication required */}
           <Route
             path="/login"
             element={
@@ -119,20 +146,6 @@ export function App(): ReactNode {
             }
           />
           <Route
-            path="/mfa/enroll"
-            element={
-              <Suspense
-                fallback={
-                  <div className="flex min-h-screen items-center justify-center">
-                    <p className="text-muted-foreground">Cargando...</p>
-                  </div>
-                }
-              >
-                <MfaEnrollPageLazy />
-              </Suspense>
-            }
-          />
-          <Route
             path="/forgot-password"
             element={
               <Suspense
@@ -160,6 +173,82 @@ export function App(): ReactNode {
               </Suspense>
             }
           />
+
+          {/* Private routes — RequireAuth wrapper checks for access token */}
+          <Route element={<RequireAuth />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route
+              path="/mfa/enroll"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex min-h-screen items-center justify-center">
+                      <p className="text-muted-foreground">Cargando...</p>
+                    </div>
+                  }
+                >
+                  <MfaEnrollPageLazy />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/catalogos/tipos-propiedad"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex min-h-screen items-center justify-center">
+                      <p className="text-muted-foreground">Cargando...</p>
+                    </div>
+                  }
+                >
+                  <TiposPropiedadPageLazy />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/catalogos/estados-propiedad"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex min-h-screen items-center justify-center">
+                      <p className="text-muted-foreground">Cargando...</p>
+                    </div>
+                  }
+                >
+                  <EstadosPropiedadPageLazy />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/condominios"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex min-h-screen items-center justify-center">
+                      <p className="text-muted-foreground">Cargando...</p>
+                    </div>
+                  }
+                >
+                  <CondominiosListPageLazy />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/condominios/:id"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex min-h-screen items-center justify-center">
+                      <p className="text-muted-foreground">Cargando...</p>
+                    </div>
+                  }
+                >
+                  <DetalleCondominioPageLazy />
+                </Suspense>
+              }
+            />
+          </Route>
         </Routes>
         <DevIndicatorWrapper />
       </BrowserRouter>

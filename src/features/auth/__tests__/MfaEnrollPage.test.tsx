@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { MfaEnrollPage } from "@/features/auth/pages/MfaEnrollPage";
-import { useAuthStore } from "@/stores/auth-store";
 import type {
   MfaEnrollResponse,
   MfaConfirmRequest,
@@ -52,12 +51,6 @@ const mockRevokeObjectURL = vi.fn();
 
 globalThis.URL.createObjectURL = mockCreateObjectURL;
 globalThis.URL.revokeObjectURL = mockRevokeObjectURL;
-
-type AuthState = { accessToken: string | null; setAccessToken: (t: string) => void; clearAccessToken: () => void };
-
-function setAccessToken(token: string | null) {
-  useAuthStore.setState({ accessToken: token } as Partial<AuthState>);
-}
 
 function renderMfaEnrollPage() {
   const queryClient = new QueryClient({
@@ -185,16 +178,6 @@ describe("MfaEnrollPage", () => {
     mockToastSuccess = vi.fn();
     mockToastError = vi.fn();
     mockClipboardWrite.mockReset();
-    setAccessToken("valid-token");
-  });
-
-  it("CA7: redirige a /login si no hay access_token", () => {
-    setAccessToken(null);
-    renderMfaEnrollPage();
-
-    expect(
-      screen.queryByText(/autenticación en dos pasos/i),
-    ).not.toBeInTheDocument();
   });
 
   it("CA1: inicia enrollment y muestra QR con recovery codes", async () => {
