@@ -1,7 +1,7 @@
 ---
 tipo: estado
 proyecto: shared
-actualizado: 2026-07-08
+actualizado: 2026-07-09
 ---
 
 # CHANGELOG — Historia append-only
@@ -103,3 +103,48 @@ actualizado: 2026-07-08
 - Locks de contrato: [[contracts/CONTRACT_LOCKS#LOCK-AUTH-08]], [[contracts/CONTRACT_LOCKS#LOCK-AUTH-09]]
 - Evidencia: [[../features/AUTH/blocks/AUTH-B10-mfa-verify-web#Evidencia]], [[../features/AUTH/blocks/AUTH-B11-mfa-enroll-web#Evidencia]], [[../features/AUTH/blocks/AUTH-B12-forgot-password-web#Evidencia]]
 - Notas: Pantallas Web para MFA (verify + enroll) y recuperación de contraseña (forgot password). Correcciones post-auditoría 2026-07-08: ruta /dashboard, manejo mfa_required en login, destinos post-auth unificados.
+
+## SHIP-012 — Cierre documental: AUTH-B13 (reset-password-web) — 2026-07-09
+- Feature: [[../features/AUTH/PANORAMA]]
+- Bloques incluidos: AUTH-B13 (web)
+- Locks de contrato: [[contracts/CONTRACT_LOCKS#LOCK-AUTH-09]]
+- Evidencia: [[../features/AUTH/blocks/AUTH-B13-reset-password-web#Evidencia]]
+- Notas: Cierra el cabo suelto dejado por SHIP-011, que registró AUTH-B13 como pendiente en `ready`.
+  El frontmatter de la tarjeta y `_state/BOARD.md` ya indicaban `done` con evidencia real; solo
+  `features/AUTH/BLOCKS.md` (índice local del feature) seguía desactualizado a `ready` — corregido
+  en la auditoría de 2026-07-09.
+
+## SHIP-013 — Rollback de auditoría: PROPIEDADES-B06/B07/B08/B09 y AUTH-B12 a `in_progress` — 2026-07-09
+- Feature: [[../features/PROPIEDADES/PANORAMA]], [[../features/AUTH/PANORAMA]]
+- Bloques revertidos:
+  - `PROPIEDADES-B06`, `PROPIEDADES-B07`, `PROPIEDADES-B09` (web) — sección Evidencia vacía
+    ("Vacío hasta que el bloque se ejecute.") pese a estar marcados `done`.
+  - `PROPIEDADES-B08` (web) — la propia tarjeta admite en su sección "Pendiente para verificación"
+    que `pnpm ci` y la verificación visual Playwright nunca se ejecutaron.
+  - `AUTH-B12` (web) — la tarjeta se autocontradice: una tabla afirma `type-check ✅`, `lint ✅`,
+    `test ✅ 55 passed`, `build ✅`, pero las secciones "Verificación visual (Playwright)" y "Output
+    de CI" de la misma tarjeta dicen "pendiente de ejecución" / "no disponible en este entorno".
+- Motivo: auditoría completa del vault (2026-07-09) encontró que estos 4 bloques violaban
+  `_system/05_DEFINITION_OF_DONE.md` §5 (evidencia vacía o contradictoria no cuenta como evidencia).
+  Mismo patrón que **SHIP-005**.
+- Locks afectados: [[contracts/CONTRACT_LOCKS#LOCK-PROPIEDADES-01]],
+  [[contracts/CONTRACT_LOCKS#LOCK-PROPIEDADES-02]], [[contracts/CONTRACT_LOCKS#LOCK-PROPIEDADES-03]],
+  [[contracts/CONTRACT_LOCKS#LOCK-AUTH-09]] — conservados vigentes (el código productor del lado API
+  sí está `done` y verificado; el problema es exclusivamente del lado consumidor Web).
+- Próximo paso: para cada bloque, correr `pnpm ci` real y la verificación visual Playwright de sus
+  criterios de aceptación, pegar la evidencia real, y recién entonces pasar a `verifying`.
+
+## SHIP-014 — Corrección de drift documental: DASHBOARD-B01/B02/B03 en BOARD.md — 2026-07-09
+- Feature: [[../features/DASHBOARD/PANORAMA]]
+- Bloques afectados: `DASHBOARD-B01`, `DASHBOARD-B02`, `DASHBOARD-B03` (web) — sin cambio de código.
+- Motivo: `_state/BOARD.md` mostraba `ready`/`backlog`/`backlog` mientras el frontmatter real de las
+  tres tarjetas decía `estado: verifying` desde el mismo día (2026-07-09). Corregido para que
+  `BOARD.md` refleje la tarjeta, no al revés (ver `_system/01_PRINCIPLES` — "un dato, un dueño").
+- No es un rollback: los tres bloques permanecen en `verifying`, solo se corrigió el rollup.
+
+## SHIP-015 — endpoint `GET /auth/me` + resolución de usuario real en el dashboard (AUTH-B15 cross-project) — 2026-07-09
+- Feature: [[../features/AUTH/PANORAMA]]
+- Bloques incluidos: AUTH-B15 (api — Fase API done 2026-07-09), AUTH-B15 (web — Fase Web verificada 2026-07-09)
+- Locks de contrato: [[contracts/CONTRACT_LOCKS#LOCK-AUTH-10]]
+- Evidencia: [[../features/AUTH/blocks/AUTH-B15-endpoint-me-dashboard#Evidencia]]
+- Notas: Cierra el hueco de auditoría (2026-07-09): `GET /api/v1/auth/me` implementado con JWT + PermissionResolver. Web: `useUserQuery` reemplaza `null` en DashboardPage con datos reales. Sidebar RBAC y widgets poblados correctamente para admin y non-admin. `window.__dashboardSetUser` conservado para Playwright en modo DEV. Verificación Playwright real: login admin → dashboard con datos reales, sidebar GESTIÓN visible. Usuario con permisos limitados → sidebar/widgets filtrados.

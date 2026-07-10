@@ -1,0 +1,29 @@
+- generic [ref=f1e2]:
+  - generic [ref=f1e3]:
+    - link "Saltar al contenido principal" [ref=f1e4] [cursor=pointer]:
+      - /url: "#main-content"
+    - complementary [ref=f1e5]:
+      - navigation "Navegación principal" [ref=f1e6]:
+        - link "Inicio" [ref=f1e7] [cursor=pointer]:
+          - /url: /
+    - generic [ref=f1e8]:
+      - banner [ref=f1e9]:
+        - button "Colapsar menú" [ref=f1e10] [cursor=pointer]:
+          - img
+      - main "Panel principal" [ref=f1e11]:
+        - generic [ref=f1e12]:
+          - generic [ref=f1e13]:
+            - heading "Panel" [level=1] [ref=f1e14]
+            - paragraph [ref=f1e15]: Cargando tu información...
+          - list "Cargando widgets" [ref=f1e16]:
+            - listitem [ref=f1e17]:
+              - generic [ref=f1e19]:
+                - heading [level=3]
+            - listitem [ref=f1e29]:
+              - generic [ref=f1e31]:
+                - heading [level=3]
+            - listitem [ref=f1e41]:
+              - generic [ref=f1e43]:
+                - heading [level=3]
+  - status "Modo desarrollo" [ref=f1e53]: DEV
+  - region "Notifications alt+T"

@@ -1,0 +1,38 @@
+- generic [ref=f1e1]:
+  - link "Saltar al contenido principal" [active] [ref=f1e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - main [ref=f1e3]:
+    - heading "Panel" [level=1] [ref=f1e4]
+    - paragraph [ref=f1e5]: Resumen de tu actividad y accesos rapidos
+    - generic [ref=f1e6]:
+      - generic [ref=f1e7]:
+        - heading "Buenos dias, Admin" [level=2] [ref=f1e8]
+        - paragraph [ref=f1e9]: jueves, 9 de julio de 2026
+        - generic [ref=f1e10]:
+          - status "5 condominios en tu scope" [ref=f1e11]:
+            - generic [ref=f1e12]: "5"
+            - generic [ref=f1e13]: Condominios
+          - status "42 unidades en tu scope" [ref=f1e14]:
+            - generic [ref=f1e15]: "42"
+            - generic [ref=f1e16]: Unidades
+          - status "8 torres en tu scope" [ref=f1e17]:
+            - generic [ref=f1e18]: "8"
+            - generic [ref=f1e19]: Torres
+      - generic [ref=f1e20]:
+        - heading "Accesos Directos" [level=3] [ref=f1e21]
+        - navigation "Accesos directos" [ref=f1e22]:
+          - button "Condominios" [ref=f1e23] [cursor=pointer]
+          - button "Unidades" [ref=f1e24] [cursor=pointer]
+          - button "Coeficientes" [ref=f1e25] [cursor=pointer]
+          - button "Directorio" [ref=f1e26] [cursor=pointer]
+          - button "Cobranza" [ref=f1e27] [cursor=pointer]
+      - generic [ref=f1e28]:
+        - generic [ref=f1e29]:
+          - heading "Directorio" [level=3] [ref=f1e30]
+          - generic [ref=f1e31]: Proximamente
+        - generic [ref=f1e32]: "--- Skeleton placeholder ---"
+      - generic [ref=f1e33]:
+        - generic [ref=f1e34]:
+          - heading "Cuotas Pendientes" [level=3] [ref=f1e35]
+          - generic [ref=f1e36]: En desarrollo
+        - generic [ref=f1e37]: "--- Skeleton placeholder ---"

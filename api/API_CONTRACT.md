@@ -1,7 +1,7 @@
 ---
 tipo: contrato
 proyecto: api
-actualizado: 2026-07-05
+actualizado: 2026-07-08
 ---
 
 # API_CONTRACT — Convenciones REST (fuente de verdad de las reglas, no del catálogo)
@@ -60,6 +60,27 @@ reversiona `/api/v1` completo por un solo endpoint.
 | `TOO_MANY_REQUESTS` | 429 | Rate limiting superado |
 | `RESET_TOKEN_EXPIRED` | 422 | El token de recuperación de contraseña ha expirado |
 | `RESET_TOKEN_INVALID` | 422 | El token de recuperación de contraseña no es válido o ya fue usado |
+| `SYSTEM_CATALOG_READONLY` | 403 | Intento de modificar o eliminar un catálogo del sistema (`organization_id IS NULL`) — regla R-08 de PROPIEDADES |
+| `PROPERTY_TYPE_IN_USE` | 409 | El tipo de propiedad está referenciado por propiedades activas y no puede eliminarse |
+| `PROPERTY_STATUS_IN_USE` | 409 | El estado de propiedad está referenciado por propiedades activas y no puede eliminarse |
+| `PROPERTY_TYPE_NAME_DUPLICATE` | 409 | Ya existe un tipo de propiedad con ese nombre en la misma organización |
+| `PROPERTY_STATUS_NAME_DUPLICATE` | 409 | Ya existe un estado de propiedad con ese nombre en la misma organización |
+| `CONDOMINIUM_NAME_DUPLICATE` | 409 | Ya existe un condominio con ese nombre en la misma organización |
+| `TOWER_NAME_DUPLICATE` | 409 | Ya existe una torre con ese nombre en el mismo condominio |
+| `CONDOMINIUM_HAS_TOWERS` | 409 | El condominio tiene torres activas y no puede eliminarse |
+| `CONDOMINIUM_HAS_PROPERTIES` | 409 | El condominio tiene propiedades activas y no puede eliminarse |
+| `TOWER_HAS_PROPERTIES` | 409 | La torre tiene propiedades activas y no puede eliminarse |
+| `CONDOMINIUM_NOT_FOUND` | 404 | El condominio no existe o no pertenece a la organización del usuario |
+| `TOWER_NOT_FOUND` | 404 | La torre no existe o no pertenece a la organización del usuario |
+| `PROPERTY_NOT_FOUND` | 404 | La propiedad no existe, pertenece a otra organización, o está fuera del scope del usuario |
+| `PROPERTY_CODE_DUPLICATE` | 409 | Ya existe una unidad con ese código en el mismo condominio |
+| `TOWER_CONDOMINIUM_MISMATCH` | 422 | La torre no pertenece al condominio de la unidad |
+| `PROPERTY_HAS_OCCUPANTS` | 409 | La unidad tiene ocupantes activos y no puede eliminarse |
+| `FORBIDDEN` | 403 | El usuario no tiene permisos para acceder a este recurso |
+| `COEFFICIENT_OUT_OF_RANGE` | 422 | El valor del coeficiente está fuera del rango permitido (0–1) |
+| `COEFFICIENT_INVALID_TYPE` | 422 | El tipo de coeficiente no pertenece al set cerrado (R-06-bis: `copropiedad`, `parqueadero`, `deposito`, `mantenimiento`) |
+| `PROPERTY_NOT_IN_CONDOMINIUM` | 422 | La unidad especificada no pertenece al condominio del path |
+| `COEFFICIENT_SUM_MISMATCH` | — | Warning no bloqueante en `200`: la suma de coeficientes de copropiedad no es 1.0 (R-06). Ver §4-bis. |
 
 ## 4. Paginación (para endpoints de listado)
 
@@ -69,6 +90,29 @@ cuando la tabla cambia entre páginas. Respuesta envuelta:
 ```json
 { "data": [...], "meta": { "next_cursor": "..." } }
 ```
+
+## 4-bis. Warnings no bloqueantes (para respuestas `200` con advertencias)
+
+Cuando una operación se completa con éxito pero hay una condición de negocio que el cliente debe
+mostrarle al usuario sin bloquear el guardado (ej. R-06 de `PROPIEDADES`: suma de coeficientes ≠
+100%), la respuesta `200` normal se extiende con un arreglo `warnings`:
+
+```json
+{
+  "data": { ... },
+  "warnings": [
+    { "code": "COEFFICIENT_SUM_MISMATCH", "detail": { "condominium_id": "...", "sum": 0.97 } }
+  ]
+}
+```
+
+- `warnings` es siempre un array, vacío u omitido si no hay advertencias — nunca cambia la forma de
+  `data`.
+- `code`: mismo formato que los errores de §2 (`SCREAMING_SNAKE_CASE`, estable), pero **no** implica
+  fallo — el HTTP status sigue siendo `2xx`.
+- `detail`: objeto libre por `code`, documentado en `api/endpoints/<FEATURE>.md` junto con el
+  endpoint que lo emite.
+- Un endpoint que nunca tiene advertencias no necesita incluir el campo `warnings` en absoluto.
 
 ## 5. Rate limiting
 

@@ -110,7 +110,7 @@ delegá al orquestador de su(s) proyecto(s). Si el bloque tiene más de un proye
 - **Lee:** la tarjeta en estado `verifying`, su sección "Evidencia", y re-ejecuta o re-confirma
   contra el checklist real de [[05_DEFINITION_OF_DONE]] para ese proyecto — no confía en el resumen
   del agente implementador.
-- **Si la tarjeta tiene `verificacion_critica: true`:** invoca al `verify-council` (§13) y basa su
+- **Si la tarjeta tiene `verificacion_critica: true`:** invoca al `verify-council` (§12) y basa su
   decisión en el veredicto consolidado del council. El council no reemplaza al verifier — es un
   input calificado para su decisión final.
 - **Única entidad autorizada a mover una tarjeta a `estado: done`** (o de vuelta a `in_progress` si
@@ -125,7 +125,7 @@ delegá al orquestador de su(s) proyecto(s). Si el bloque tiene más de un proye
 - **Escribe:** `PANORAMA.md`, `BLOCKS.md` y tarjetas nuevas (en `draft`/`backlog`) — nunca las mueve
   a `approved`/`ready` por sí mismo (ver gate de [[03_LIFECYCLE]] §3).
 - **Nota:** para features de alta complejidad, el diseño del `PANORAMA.md` lo hace el
-  `design-council` (§12) — `@doc-agent` sigue siendo responsable de la partición en bloques y
+  `design-council` (§11) — `@doc-agent` sigue siendo responsable de la partición en bloques y
   tarjetas, y del diseño de features simples.
 
 ## 7. Agente de auditoría (`auditor`)
@@ -162,7 +162,7 @@ delegá al orquestador de su(s) proyecto(s). Si el bloque tiene más de un proye
   - **Pre-lanzamiento cross-project:** mini-auditoría de contract locks antes de mover un bloque de
     cliente a `ready`.
   - **Bajo demanda:** siempre disponible.
-- **Verifica 9 checks en orden:**
+- **Verifica 10 checks en orden:**
   1. Drift BOARD vs. tarjetas — cada fila de BOARD coincide con el frontmatter de la tarjeta
   2. Vocabulario de estado — ningún estado fuera de los 6 permitidos
   3. Frontmatter y estructura — todo `.md` tiene frontmatter válido; nombres de archivo correctos
@@ -182,8 +182,13 @@ delegá al orquestador de su(s) proyecto(s). Si el bloque tiene más de un proye
         declarado pero no funciona, es un ⚠️ (anomalía). Si `codebase-memory` está inoperativo
         (sin índice o sin código), es ❌ (crítico — los agentes dependen de él para análisis).
      c. Read-sets actualizados: los agentes que el vault declara como consumidores de
-        `codebase-memory` lo tienen explícitamente en su read-set en este documento (§1, §12,
-        §13, §15). Si no, es ⚠️.
+        `codebase-memory` lo tienen explícitamente en su read-set en este documento (§1, §11,
+        §12, §14). Si no, es ⚠️.
+  10. Alcanzabilidad de pantallas — toda pantalla Web marcada `done` es alcanzable desde la
+      navegación real de la app (sidebar/rutas registradas), no solo desde una URL directa. Si el
+      bloque introdujo una pantalla nueva y no registró su entrada de sidebar (patrón Widget
+      Registry, ver `features/DASHBOARD/PANORAMA.md` §7) ni justificó explícitamente por qué no
+      aplica, es ⚠️.
  - **Si encuentra un `❌`:** no detiene el resto de la auditoría (sigue ejecutando todos los checks),
   pero el reporte final indica severidad general. El `❌` más crítico es siempre **drift BOARD vs.
   tarjetas** (regla #1 del sistema). Las correcciones se aplican de inmediato, no se encolan.
@@ -196,31 +201,19 @@ Ningún agente lee un documento fuera de su read-set "por si acaso". Si un agent
 necesita algo fuera de su lista para hacer bien la tarea, se detiene y lo reporta como un gap de
 esta tabla — no lo resuelve leyendo todo el vault.
 
-## 9. Utilidad de diagnóstico (`shell-executor`)
-
-- **Lee:** nada del vault. Solo recibe el comando a ejecutar del agente que lo invoca.
-- **Ejecuta:** comandos de diagnóstico pre-aprobados y de solo lectura (`git status`, `git log`,
-  `git diff`, `docker compose ps`, `docker compose logs`, `composer diagnose`, `composer show`,
-  `pnpm list`, `pnpm why`, `Test-Path`, `Get-ChildItem`).
-- **Devuelve:** output verbatim entre marcadores `SHELL_INICIO`/`SHELL_FIN`. Sin interpretación.
-- **Lo invoca:** cualquier agente sin acceso a bash (orquestadores, `cross-project`) que
-  necesite confirmar el estado del entorno. `urbania` ya no requiere `shell-executor` — ejecuta
-  comandos de diagnóstico directamente (ver §1).
-- **Nunca:** modifica archivos, edita código, ni toma decisiones — es un proxy pasivo de comandos.
-
-## 10. Context Reader (`context-reader`)
+## 9. Context Reader (`context-reader`)
 
 - **Modo:** subagente de solo lectura — lee documentos y devuelve resúmenes sin interpretar ni decidir. Usado por orquestadores.
 - **Lee:** documentos del vault que el agente invocador le indique.
 - **Nunca:** interpreta, decide, escribe archivos, ni modifica el vault.
 
-## 11. Soporte de infraestructura (`urbania-ops`) — OBSOLETO
+## 10. Soporte de infraestructura (`urbania-ops`) — OBSOLETO
 
 > **Fusionado en `urbania` (2026-07-04).** Las responsabilidades de infraestructura y diagnóstico
 > ahora las ejecuta `urbania` directamente (ver §1). Este agente permanece desactivado
 > (`disable: true`) por referencia histórica; no debe invocarse ni usarse.
 
-## 12. Design Council (`design-council`)
+## 11. Design Council (`design-council`)
 
 - **Modo:** `primary` — agente de diseño de features por consenso multi-perspectiva.
 - **Subagentes:** `design-architect` (arquitectura, datos, escalabilidad), `design-ux` (flujos de usuario, pantallas, experiencia), `design-security` (superficie de ataque, permisos, datos sensibles). Los tres corren en paralelo en la fase de divergencia.
@@ -239,7 +232,7 @@ esta tabla — no lo resuelve leyendo todo el vault.
 - **No reemplaza a `@doc-agent`:** para features simples, `@doc-agent` sigue siendo la ruta de diseño. `urbania` decide según la complejidad declarada.
 - **Nunca:** crea bloques ni `BLOCKS.md` — solo el `PANORAMA.md`. La partición en bloques la hace `@doc-agent` después de que el panorama esté `approved`.
 
-## 13. Verify Council (`verify-council`)
+## 12. Verify Council (`verify-council`)
 
 - **Modo:** `primary` — agente de verificación por consenso para bloques de alta criticidad.
 - **Subagentes:** `sec-reviewer` (seguridad: authZ, inyección, secretos, OWASP), `perf-reviewer` (rendimiento: N+1 queries, memory leaks, race conditions, índices), `code-reviewer` (calidad: DRY, convenciones, cobertura de tests, tipos). Los tres corren en paralelo en la fase de divergencia.
@@ -257,7 +250,7 @@ esta tabla — no lo resuelve leyendo todo el vault.
 - **Disparador mecánico:** si `verificacion_critica: true`, el verifier no puede decidir `done` sin pasar por el `verify-council`. Si es `false` (o no está el campo), el verifier opera solo (comportamiento actual).
 - **Nunca:** mueve estados de tarjeta, modifica código, ni decide por el verifier — entrega un veredicto calificado, no una orden.
 
-## 14. ADR Council (`adr-council`)
+## 13. ADR Council (`adr-council`)
 
 - **Modo:** `primary` — agente de decisión arquitectónica por consenso multi-perspectiva.
 - **Subagentes:** `adr-optimist` (upside, oportunidades, visión a largo plazo), `adr-pessimist` (riesgos, costos ocultos, deuda técnica), `adr-pragmatist` (viabilidad real, esfuerzo, dependencias existentes). Los tres corren en paralelo.
@@ -271,7 +264,7 @@ esta tabla — no lo resuelve leyendo todo el vault.
 - **Lo invoca:** `urbania` cuando un feature o bloque requiere una decisión arquitectónica documentada, o el usuario directamente.
 - **Nunca:** decide por el humano — el ADR queda en estado de revisión hasta que el humano lo aprueba.
 
-## 15. Release Council (`release-council`)
+## 14. Release Council (`release-council`)
 
 - **Modo:** `primary` — agente de gate pre-deploy por consenso multi-perspectiva.
 - **Subagentes (5):** `release-security` (superficie de ataque final, secretos expuestos, authZ), `release-data` (integridad de migraciones, consistencia de datos, rollbacks), `release-ux` (flujos completos, edge cases visuales, accesibilidad), `release-perf` (rendimiento end-to-end, carga esperada), `release-regression` (impacto en features existentes, tests rotos). Los cinco corren en paralelo.
@@ -289,7 +282,7 @@ esta tabla — no lo resuelve leyendo todo el vault.
 - **Disparador automático:** al marcarse `done` el último bloque de un feature (según `BLOCKS.md`), `urbania` invoca `release-council` antes de considerar el feature `SHIPPED`.
 - **Nunca:** hace deploy, modifica código, ni mueve estados de tarjeta — es un gate consultivo. La decisión final de release es del humano.
 
-## 16. Administrador de git (`git-admin`)
+## 15. Administrador de git (`git-admin`)
 
 - **Modo:** `subagent` — no es punto de entrada del usuario; lo invoca `urbania`.
 - **Lee al arrancar:** `_state/RUNBOOK.md` (errores de git ya documentados) y el estado real de los

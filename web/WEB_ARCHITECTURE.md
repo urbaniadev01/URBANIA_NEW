@@ -22,7 +22,7 @@ actualizado: 2026-07-03
 
 ```
 src/
-├── app/              # bootstrap, providers globales, router
+├── app/              # bootstrap, providers globales, router, route guards
 ├── components/
 │   ├── ui/             # componentes base generados vía CLI de shadcn/ui (ver ADR-WEB-001)
 │   └── ...              # composiciones propias sobre esa base

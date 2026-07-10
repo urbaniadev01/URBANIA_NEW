@@ -4,11 +4,11 @@ proyecto: web
 feature: PROPIEDADES
 id: PROPIEDADES-B06
 proyectos: [web]
-estado: backlog
+estado: in_progress
 depende_de: [PROPIEDADES-B02, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false
-actualizado: 2026-07-06
+actualizado: 2026-07-09
 ---
 
 # PROPIEDADES-B06 — Pantallas de catálogos (TiposPropiedad, EstadosPropiedad)
@@ -44,7 +44,9 @@ usando diálogos, e integra con los endpoints de `LOCK-PROPIEDADES-01`.
   - Pantallas de condominios (B07), unidades (B08), coeficientes (B09).
   - Pantalla de login/registro (AUTH).
   - Menú de navegación o sidebar — se asume que existe del bootstrap de web o se agrega en este
-    bloque como ruta simple.
+    bloque como ruta simple. **Auditoría 2026-07-09: esta asunción era falsa** — el bootstrap
+    (`WEB_BOOTSTRAP-B01`) no crea un sidebar real; el sidebar navegable recién lo construyó
+    `DASHBOARD-B01` (patrón Widget Registry, ver `features/DASHBOARD/PANORAMA.md` §7).
   - Catálogos de otras features (document_types, etc.).
 
 ## Criterios de aceptación
@@ -91,3 +93,7 @@ request/response definidos en el contrato congelado.
 > Los catálogos del sistema (`organization_id = NULL`) no son editables ni eliminables. El badge
 > "Sistema" se determina por el campo `organization_id` que viene en la respuesta del API. Si el API
 > no expone ese campo en el listado, este bloque necesita que B02 lo incluya en el Resource.
+
+> **Auditoría 2026-07-09:** revertido de `done` a `in_progress` — la sección Evidencia no cumple
+> `_system/05_DEFINITION_OF_DONE.md` (evidencia vacía). Requiere correr `pnpm ci` real y
+> verificación visual Playwright de los criterios de aceptación antes de volver a `verifying`.

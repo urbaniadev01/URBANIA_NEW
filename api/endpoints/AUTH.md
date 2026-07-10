@@ -525,3 +525,47 @@ Query parameter: `email` (string, required).
 | 422 | `VALIDATION_ERROR` | Falta el parámetro `email` |
 | 404 | `NOT_FOUND` | No hay token vigente para ese email |
 | 404 | — | Entorno production (la ruta no existe) |
+
+## GET /api/v1/auth/me
+
+**Bloque que lo produce:** [[../../features/AUTH/blocks/AUTH-B15-me-endpoint]]
+**Lock de contrato:** [[../../_state/contracts/CONTRACT_LOCKS#LOCK-AUTH-10]]
+
+### Request
+
+Sin body. Requiere Bearer token (`access_token`) en header `Authorization: Bearer <token>`.
+
+### Response — éxito (`200`)
+
+```json
+{
+  "user": {
+    "id": "uuid-string",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "role": "admin",
+    "permissions": ["admin.access", "condominiums.read"]
+  }
+}
+```
+
+- `id`: UUID v7 del usuario.
+- `email`: Email del usuario.
+- `name`: Nombre del contacto asociado (`contacts.nombre`). `null` si no hay contacto.
+- `role`: Primer rol asignado al usuario (`roles.name`). `"user"` si no tiene rol asignado.
+- `permissions`: Lista de permisos efectivos resueltos por `PermissionResolver::resolve()` (nombres únicos).
+
+### Errores
+
+| Código HTTP | `error.code` | Cuándo ocurre |
+|---|---|---|
+| 401 | `UNAUTHENTICATED` | No se envió Bearer token, o el token es inválido/expirado |
+| 429 | `TOO_MANY_REQUESTS` | Rate limiting superado (30 intentos/minuto por IP) |
+
+### Autorización
+
+Requiere autenticación (`auth:api`). Cualquier usuario con un token de acceso válido puede consultar sus propios datos.
+
+### Rate limiting
+
+30 intentos por minuto por IP. Configurado con el middleware `throttle:30,1`.

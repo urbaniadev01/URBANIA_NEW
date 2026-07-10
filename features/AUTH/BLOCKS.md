@@ -55,8 +55,11 @@ AUTH-B02 ──lock──> AUTH-B06 (modificar: manejar mfa_required en login)
 | AUTH-B09 | api | AUTH-B02 | done | [[blocks/AUTH-B09-recuperacion-password]] |
 | AUTH-B10 | web | AUTH-B08 (lock), WEB_BOOTSTRAP-B01 | done | [[blocks/AUTH-B10-mfa-verify-web]] |
 | AUTH-B11 | web | AUTH-B08 (lock), WEB_BOOTSTRAP-B01 | done | [[blocks/AUTH-B11-mfa-enroll-web]] |
-| AUTH-B12 | web | AUTH-B09 (lock), WEB_BOOTSTRAP-B01 | done | [[blocks/AUTH-B12-forgot-password-web]] |
-| AUTH-B13 | web | AUTH-B09 (lock), WEB_BOOTSTRAP-B01 | ready | [[blocks/AUTH-B13-reset-password-web]] |
+| AUTH-B12 | web | AUTH-B09 (lock), WEB_BOOTSTRAP-B01 | in_progress | [[blocks/AUTH-B12-forgot-password-web]] |
+| AUTH-B13 | web | AUTH-B09 (lock), WEB_BOOTSTRAP-B01 | done | [[blocks/AUTH-B13-reset-password-web]] |
+| AUTH-B14 | api | AUTH-B02, AUTH-B08 | ready | [[blocks/AUTH-B14-fix-entorno-local-navegador]] |
+| AUTH-B15 | api, web | AUTH-B02 | ready | [[blocks/AUTH-B15-endpoint-me-dashboard]] |
+| AUTH-B16 | web | — | ready | [[blocks/AUTH-B16-route-guard-rutas-privadas]] |
 
 > Los bloques `ready` para arrancar hoy son `API_BOOTSTRAP-B01` y `WEB_BOOTSTRAP-B01` (ver
 > [[../API_BOOTSTRAP/BLOCKS]] y [[../WEB_BOOTSTRAP/BLOCKS]]) — son los que crean `code/api/` y
@@ -69,3 +72,10 @@ AUTH-B02 ──lock──> AUTH-B06 (modificar: manejar mfa_required en login)
 > Orden canónico Fase 2: AUTH-B10 → AUTH-B12 → AUTH-B11 → AUTH-B13 (verify y forgot primero,
 > enroll y reset después). AUTH-B06 requiere modificación para mfa_required (no es un bloque
 > nuevo, es actualizar el existente).
+>
+> **Auditoría 2026-07-09:** `AUTH-B12` revertido a `in_progress` (evidencia autocontradictoria, ver
+> `_state/CHANGELOG.md#SHIP-013`). Se agregaron 3 bloques nuevos, `ready`, para corregir hallazgos
+> de la auditoría: `AUTH-B14` (bloqueadores de entorno local: cookies `Secure`, CORS, seed), `AUTH-B15`
+> (endpoint `GET /auth/me`, cross-project) y `AUTH-B16` (route guard genérico). No tienen
+> dependencias bloqueantes — el código base de login/MFA ya está `done`. Ver
+> `_state/CHANGELOG.md#SHIP-013` para el detalle completo.

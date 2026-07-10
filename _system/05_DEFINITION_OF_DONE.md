@@ -57,6 +57,12 @@ reportado — eso no es un fallo del proceso, es el proceso funcionando.
       camino.
 - [ ] `web/WEB_API_CLIENT.md` actualizado si el bloque agregó un cliente/hook nuevo hacia un
       endpoint que ese documento indexa.
+- [ ] Si el bloque introduce una pantalla/feature navegable nueva: registrar su entrada de sidebar
+      vía `registerSidebarItem()` en un módulo propio del feature + una línea de import en
+      `bootstrap.ts` (patrón Widget Registry, "garantía zero-touch" — ver
+      `features/DASHBOARD/PANORAMA.md` §7), o justificar explícitamente en la sección "Notas" del
+      bloque por qué no aplica (ej. pantalla accedida solo desde otra pantalla, no desde el menú
+      principal).
 
 ## 4. DoD — cross-project (bloques con `proyectos: [api, web]`)
 

@@ -4,11 +4,11 @@ proyecto: web
 feature: PROPIEDADES
 id: PROPIEDADES-B09
 proyectos: [web]
-estado: backlog
+estado: in_progress
 depende_de: [PROPIEDADES-B05, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false
-actualizado: 2026-07-06
+actualizado: 2026-07-09
 ---
 
 # PROPIEDADES-B09 — Pantalla de coeficientes (tabla editable en lote con suma en tiempo real)
@@ -93,3 +93,7 @@ puede pasar a `ready` sin que ambos locks estén vigentes.
 > La barra de suma en tiempo real es el diferenciador UX de esta pantalla. Debe recalcularse en cada
 > keystroke sin perder rendimiento — usar `useMemo` o `derived` state, no re-renderizar toda la
 > tabla. Si el condominio tiene 200+ unidades, considerar virtualización de la tabla.
+
+> **Auditoría 2026-07-09:** revertido de `done` a `in_progress` — la sección Evidencia no cumple
+> `_system/05_DEFINITION_OF_DONE.md` (evidencia vacía). Requiere correr `pnpm ci` real y
+> verificación visual Playwright de los criterios de aceptación antes de volver a `verifying`.

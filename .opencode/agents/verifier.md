@@ -8,9 +8,11 @@ hidden: true
 permission:
   edit: ask
   bash:
+    "composer ci": allow
     "composer test*": allow
     "composer stan": allow
     "composer lint": allow
+    "pnpm ci": allow
     "pnpm type-check": allow
     "pnpm lint": allow
     "pnpm test*": allow

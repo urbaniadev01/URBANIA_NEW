@@ -1,7 +1,7 @@
 ---
 tipo: referencia
 proyecto: shared
-actualizado: 2026-07-03
+actualizado: 2026-07-08
 ---
 
 # DATA_MODEL — Convenciones de esquema y tablas fundacionales
@@ -22,6 +22,15 @@ actualizado: 2026-07-03
 | Borrado | Soft delete vía `deleted_at` (timestamptz nullable) — nunca `DELETE` físico sobre datos de negocio |
 | Migraciones | Toda migración debe tener un `down()` reversible y probado (ver DoD de API en `_system/05_DEFINITION_OF_DONE.md`) |
 | Valor vs. Referencia | Un campo es **Referencia** (tabla/catálogo propio + FK) cuando necesita lista controlada, integridad referencial, o se filtra/agrupa por él; es **Valor** (columna inline) cuando es texto libre o poco reutilizado. Si es ambiguo, se documenta como pregunta abierta en el panorama del feature — nunca se asume. |
+| Auditoría de autoría | `created_by`/`updated_by` (UUID, FK `→ users.id`, nullable) — el actor (ADR-001 §3) que creó/modificó el registro. Nullable porque catálogos de sistema sembrados por seeders no tienen autor humano. **Vigente para toda tabla nueva a partir de la feature PROPIEDADES** (2026-07-08) — no es retroactivo a las tablas ya `done` de AUTH. |
+
+## 1-bis. Auditoría de autoría — alcance de la convención
+
+Esta convención nace como resolución de un punto ciego identificado por el Design Council de
+[[../features/PROPIEDADES/PANORAMA]] (ver ese documento §X). Aplica a toda tabla que un feature nuevo
+cree de aquí en adelante. Las tablas fundacionales de AUTH (§2 de este documento) no se modifican
+retroactivamente — agregar `created_by`/`updated_by` ahí sería un bloque de migración aparte, fuera
+de alcance de PROPIEDADES, y se evalúa solo si un feature futuro lo necesita explícitamente.
 
 ## 2. Tablas fundacionales (ADR-001 — sustrato de identidad, tenant y autorización)
 

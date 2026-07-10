@@ -2,7 +2,7 @@
 tipo: estado
 proyecto: shared
 creado: 2026-07-06
-actualizado: 2026-07-07
+actualizado: 2026-07-09
 ---
 
 # RUNBOOK — Errores conocidos y soluciones
@@ -101,6 +101,32 @@ actualizado: 2026-07-07
   2. El agente `urbania` debe ejecutar un health check de entorno al inicio de sesión que incluya verificación de extensiones PHP requeridas: `ext-redis`, `ext-pdo_mysql`, `ext-bcmath`, `ext-openssl`.
   3. Principio general reforzado en `AGENT_PREAMBLE.md` §6: cualquier cambio de configuración de runtime (`.env`, `config/*.php`, `docker-compose.yml`) requiere notificación y confirmación explícita del usuario — nunca es silencioso.
 - **Tags:** #ext-redis #redis #phpredis #predis #configuracion #infraestructura #env #notificacion #health-check
+
+### E-004: `verifier` no podía re-ejecutar `composer ci` / `pnpm ci` — permiso incompleto
+
+- **Fecha:** 2026-07-09
+- **Agente/Sesión:** urbania (reportado por OpenCode durante corrección de bloques)
+- **Causa raíz:** El prompt de `verifier` (`.opencode/agents/verifier.md`) instruye textualmente
+  "Re-ejecutas los comandos de CI relevantes tú mismo... `composer ci` para API, `pnpm ci` para Web",
+  pero su `permission.bash` nunca incluía esos dos comandos literales — solo variantes granulares
+  (`composer test*`, `composer stan`, `composer lint`, `pnpm type-check`, `pnpm lint`, `pnpm test*`,
+  `pnpm build`). Como ningún patrón coincidía con `composer ci` ni `pnpm ci`, la regla de respaldo
+  `"*": deny` los bloqueaba. `verifier` corre en `deepseek/deepseek-v4-flash` (modelo débil), que al
+  chocar con el bloqueo reportó genéricamente "no tengo una herramienta de shell" en vez de un error
+  de permiso — llevando a un diagnóstico incorrecto de que OpenCode carecía de mecanismo de shell.
+- **Síntoma:** El bloque quedaba trabado en `estado: verifying` sin que `verifier` pudiera completar
+  su checklist ("CI re-ejecutado personalmente"). El agente intentó rutas alternativas (RCE vía
+  Playwright, `COPY TO PROGRAM` en Postgres, etc.) en vez de detectar el permiso faltante.
+- **Solución:** Agregado `"composer ci": allow` y `"pnpm ci": allow` al `permission.bash` de
+  `verifier.md` — ahora coincide exactamente con los comandos que su propio prompt le exige correr.
+  Se confirmó que `api-build` (`"composer *": allow`) y `web-build` (`"pnpm ci": allow` explícito) ya
+  tenían el permiso correcto para su parte del pipeline; el enrutamiento
+  (`api-orchestrator`/`web-orchestrator` → `api-build`/`web-build` → `verifier`) no tenía ningún
+  bug — no parte de este pipeline.
+- **Prevención:** Al escribir o editar el prompt de un agente, verificar que cada comando exacto que
+  el texto le instruye ejecutar tenga un patrón literal correspondiente en su `permission.bash` — un
+  wildcard de un comando distinto (`composer test*`) no cubre otro (`composer ci`).
+- **Tags:** #verifier #composer-ci #pnpm-ci #permission #bash #deepseek #diagnostico #falso-positivo
 
 ---
 

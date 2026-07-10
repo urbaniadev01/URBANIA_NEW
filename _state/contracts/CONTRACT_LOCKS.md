@@ -1,13 +1,15 @@
 ---
 tipo: contrato
 proyecto: shared
-actualizado: 2026-07-08
+actualizado: 2026-07-09
 ---
 
 # CONTRACT_LOCKS — Contratos de API congelados
 
-> **Estado actual (2026-07-08):** 6 locks implementados (AUTH-01 a AUTH-05, AUTH-08, AUTH-09).
-> Todos los productores en `done`. Consumidores web (B06, B07, B10, B11, B12) en `done`, B13 en `ready`.
+> **Estado actual (2026-07-09):** 10 locks implementados (AUTH-01 a AUTH-05, AUTH-08, AUTH-09, AUTH-10, PROPIEDADES-01, PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04).
+> Todos los productores en `done`. Consumidores web: B10, B11, B13 en `done`; **B06, B07, B12 en
+> `in_progress`** (revertidos por auditoría 2026-07-09 — evidencia vacía o contradictoria, ver
+> `_state/CHANGELOG.md#SHIP-013`). DASHBOARD-B02 consume locks PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04.
 
 > Registro de contratos de endpoint congelados para que un bloque de cliente pueda construir contra
 > ellos. Formato y reglas completas en [[../../_system/04_CROSS_PROJECT]] §4–§5. Una entrada es
@@ -18,6 +20,111 @@ actualizado: 2026-07-08
 > puede pasar a `ready` sin una entrada aquí que lo respalde.
 
 ## Locks activos
+
+### LOCK-PROPIEDADES-04 — Endpoints de coeficientes y tree {#LOCK-PROPIEDADES-04}
+
+- **Bloque productor:** [[../../features/PROPIEDADES/blocks/PROPIEDADES-B05-coeficientes-tree]]
+- **Estado:** Implementado (PROPIEDADES-B05 en done).
+- **Endpoints:**
+  - `GET /api/v1/properties/{property}/coefficients` — listar coeficientes de unidad (activos + históricos)
+  - `PATCH /api/v1/condominiums/{condominium}/coefficients` — gestión masiva atómica de coeficientes
+  - `GET /api/v1/condominiums/{condominium}/tree` — estructura jerárquica del condominio
+- **Request/Response:** Ver detalle en [[../../api/endpoints/PROPIEDADES]]
+- **Errores documentados:** `COEFFICIENT_OUT_OF_RANGE` (422), `COEFFICIENT_INVALID_TYPE` (422), `PROPERTY_NOT_IN_CONDOMINIUM` (422), `PROPERTY_NOT_FOUND` (404), `CONDOMINIUM_NOT_FOUND` (404)
+- **Warnings documentados:** `COEFFICIENT_SUM_MISMATCH` (200 no bloqueante, API_CONTRACT §4-bis)
+- **Autorización:** `auth:api` + tenant isolation (R-09) + staff scoping (R-09-bis) + anti-enumeración (R-10). Gestión de coeficientes y tree requieren scope `organization` o `condominium` — scope `tower` es insuficiente (datos financieros). Residentes solo ven coeficientes de su propia unidad.
+- **Reglas de negocio:**
+  - R-05: Coeficiente vigente único — crear uno nuevo cierra automáticamente el anterior (`vigente_hasta = hoy - 1 día`).
+  - R-06: Suma de coeficientes de copropiedad = 1.0 — validación no bloqueante con warning `COEFFICIENT_SUM_MISMATCH`.
+  - R-06-bis: Set cerrado de `tipo` — `copropiedad`, `parqueadero`, `deposito`, `mantenimiento`.
+  - R-09: Tenant isolation — solo datos de la organización del usuario.
+  - R-09-bis: Staff scoping — usuarios con scope `condominium` gestionan solo su condominio asignado. Scope `tower` no permite gestionar coeficientes ni ver tree.
+  - R-10: Anti-enumeración — 403/404 unificados para recursos fuera del scope.
+  - R-11: Auditoría — `created_by`/`updated_by`.
+- **Atomicidad:** El PATCH masivo es atómico — todas las operaciones en una transacción DB. Si cualquier item falla, rollback completo.
+- **Detalle completo:** [[../../api/endpoints/PROPIEDADES]]
+- **Congelado:** 2026-07-08
+- **Consumido por:** [[../../features/PROPIEDADES/blocks/PROPIEDADES-B09-pantalla-coeficientes]], [[../../features/DASHBOARD/blocks/DASHBOARD-B02-propiedades-widgets]]
+
+### LOCK-PROPIEDADES-03 — Endpoints de unidades (properties) {#LOCK-PROPIEDADES-03}
+
+- **Bloque productor:** [[../../features/PROPIEDADES/blocks/PROPIEDADES-B04-crud-unidades]]
+- **Estado:** Implementado (PROPIEDADES-B04 en `done`).
+- **Endpoints:**
+  - `GET /api/v1/condominiums/{condominium}/properties` — listar unidades (cursor-based + filtros)
+  - `POST /api/v1/condominiums/{condominium}/properties` — crear unidad
+  - `GET /api/v1/properties/{property}` — ver unidad individual (con `area_m2`)
+  - `PATCH /api/v1/properties/{property}` — actualizar unidad
+  - `DELETE /api/v1/properties/{property}` — eliminar unidad (sin ocupantes)
+- **Request/Response:** Ver detalle en [[../../api/endpoints/PROPIEDADES]]
+- **Errores documentados:** `PROPERTY_CODE_DUPLICATE` (409), `TOWER_CONDOMINIUM_MISMATCH` (422), `PROPERTY_HAS_OCCUPANTS` (409), `PROPERTY_NOT_FOUND` (404), `CONDOMINIUM_NOT_FOUND` (404), `FORBIDDEN` (403)
+- **Autorización:** `auth:api` + tenant isolation (R-09) + staff scoping (R-09-bis) + anti-enumeración (R-10). Residentes solo ven su propia unidad; index denegado para residentes.
+- **Reglas de negocio:**
+  - R-02: `codigo` único por `condominium_id` → 409 `PROPERTY_CODE_DUPLICATE`.
+  - R-07: `condominium_id` inmutable — no expuesto en PATCH.
+  - R-03: No eliminar con ocupantes activos → 409 `PROPERTY_HAS_OCCUPANTS`. Con guard clause si la tabla `property_occupants` aún no existe.
+  - R-09: Tenant isolation — solo datos de la organización del usuario.
+  - R-09-bis: Staff scoping — usuarios con scope `condominium` o `tower` solo ven/gestionan su scope asignado.
+  - R-10: Exposición diferenciada — `area_m2` solo en detalle (PropertyResource), no en listado (PropertyListResource). Anti-enumeración 403/404 unificados.
+  - R-11: Auditoría — `created_by`/`updated_by`.
+- **Paginación:** Cursor-based (`?cursor=...&limit=...`), envelope `{ data, meta.next_cursor }` (API_CONTRACT §4).
+- **Filtros:** `tower_id`, `type_id`, `status_id`, `search` (query params combinables).
+- **Detalle completo:** [[../../api/endpoints/PROPIEDADES]]
+- **Congelado:** 2026-07-08
+- **Consumido por:** [[../../features/PROPIEDADES/blocks/PROPIEDADES-B08-pantalla-unidades]], [[../../features/DASHBOARD/blocks/DASHBOARD-B02-propiedades-widgets]]
+
+### LOCK-PROPIEDADES-01 — Endpoints de catálogos de propiedad {#LOCK-PROPIEDADES-01}
+
+- **Bloque productor:** [[../../features/PROPIEDADES/blocks/PROPIEDADES-B02-crud-catalogos]]
+- **Estado:** Implementado (PROPIEDADES-B02 en `done`).
+- **Endpoints:**
+  - `GET /api/v1/property-types` — listar tipos (sistema + tenant)
+  - `POST /api/v1/property-types` — crear tipo (tenant)
+  - `GET /api/v1/property-types/{property_type}` — ver tipo individual
+  - `PATCH /api/v1/property-types/{property_type}` — actualizar tipo (solo tenant)
+  - `DELETE /api/v1/property-types/{property_type}` — eliminar tipo (solo tenant, sin uso)
+  - `GET /api/v1/property-statuses` — listar estados (sistema + tenant)
+  - `POST /api/v1/property-statuses` — crear estado (tenant)
+  - `GET /api/v1/property-statuses/{property_status}` — ver estado individual
+  - `PATCH /api/v1/property-statuses/{property_status}` — actualizar estado (solo tenant)
+  - `DELETE /api/v1/property-statuses/{property_status}` — eliminar estado (solo tenant, sin uso)
+- **Request/Response:** Ver detalle en [[../../api/endpoints/PROPIEDADES]]
+- **Errores documentados:** `SYSTEM_CATALOG_READONLY` (403), `PROPERTY_TYPE_IN_USE` (409), `PROPERTY_STATUS_IN_USE` (409), `PROPERTY_TYPE_NAME_DUPLICATE` (409), `PROPERTY_STATUS_NAME_DUPLICATE` (409), `PROPERTY_TYPE_NOT_FOUND` (404), `PROPERTY_STATUS_NOT_FOUND` (404)
+- **Autorización:** `auth:api` — cualquier usuario autenticado puede leer. Escritura sujeta a tenant isolation (R-09) y protección de catálogos del sistema (R-08).
+- **Detalle completo:** [[../../api/endpoints/PROPIEDADES]]
+- **Congelado:** 2026-07-08
+- **Consumido por:** [[../../features/PROPIEDADES/blocks/PROPIEDADES-B06-pantallas-catalogos]]
+
+### LOCK-PROPIEDADES-02 — Endpoints de condominios y torres {#LOCK-PROPIEDADES-02}
+
+- **Bloque productor:** [[../../features/PROPIEDADES/blocks/PROPIEDADES-B03-crud-condominios-torres]]
+- **Estado:** Implementado (PROPIEDADES-B03 en `done`).
+- **Endpoints:**
+  - `GET /api/v1/condominiums` — listar condominios (tenant + scope)
+  - `POST /api/v1/condominiums` — crear condominio
+  - `GET /api/v1/condominiums/{condominium}` — ver condominio con torres
+  - `PATCH /api/v1/condominiums/{condominium}` — actualizar condominio
+  - `DELETE /api/v1/condominiums/{condominium}` — eliminar condominio (sin torres ni propiedades)
+  - `GET /api/v1/condominiums/{condominium}/towers` — listar torres de un condominio
+  - `POST /api/v1/condominiums/{condominium}/towers` — crear torre bajo condominio
+  - `GET /api/v1/towers/{tower}` — ver torre individual
+  - `PATCH /api/v1/towers/{tower}` — actualizar torre (condominium_id inmutable)
+  - `DELETE /api/v1/towers/{tower}` — eliminar torre (sin propiedades)
+- **Request/Response:** Ver detalle en [[../../api/endpoints/PROPIEDADES]]
+- **Errores documentados:** `CONDOMINIUM_NAME_DUPLICATE` (409), `TOWER_NAME_DUPLICATE` (409), `CONDOMINIUM_HAS_TOWERS` (409), `CONDOMINIUM_HAS_PROPERTIES` (409), `TOWER_HAS_PROPERTIES` (409), `CONDOMINIUM_NOT_FOUND` (404), `TOWER_NOT_FOUND` (404), `FORBIDDEN` (403)
+- **Autorización:** `auth:api` + scope por tenant (R-09) + staff scoping (R-09-bis) + anti-enumeración (R-10). Solo usuarios con scope `organization` o `condominium` pueden listar condominios.
+- **Reglas de negocio:**
+  - R-01: Jerarquía condominio → torres (anidadas). Torres bajo `/condominiums/{id}/towers`.
+  - R-03: No eliminar con hijos activos (409).
+  - R-04: Soft delete en ambas entidades.
+  - R-07: `condominium_id` en torres es inmutable — se ignora en PATCH.
+  - R-09: Tenant isolation — solo datos de la organización del usuario.
+  - R-09-bis: Staff scoping — usuarios con scope `condominium` o `tower` solo ven/gestionan su scope asignado.
+  - R-10: Anti-enumeración — 403/404 unificados para recursos fuera del scope del usuario.
+  - R-11: Auditoría — `created_by`/`updated_by`.
+- **Detalle completo:** [[../../api/endpoints/PROPIEDADES]]
+- **Congelado:** 2026-07-08
+- **Consumido por:** [[../../features/PROPIEDADES/blocks/PROPIEDADES-B07-pantallas-condominios]], [[../../features/DASHBOARD/blocks/DASHBOARD-B02-propiedades-widgets]]
 
 ### LOCK-AUTH-01 — `POST /auth/register` {#LOCK-AUTH-01}
 
@@ -112,3 +219,17 @@ _Vacío._
 - **Detalle completo:** [[../../api/endpoints/AUTH]]
 - **Congelado:** 2026-07-07
 - **Consumido por:** [[../../features/AUTH/blocks/AUTH-B12-forgot-password-web]], [[../../features/AUTH/blocks/AUTH-B13-reset-password-web]]
+
+### LOCK-AUTH-10 — `GET /auth/me` {#LOCK-AUTH-10}
+
+- **Bloque productor:** [[../../features/AUTH/blocks/AUTH-B15-endpoint-me-dashboard]]
+- **Estado:** Implementado (AUTH-B15 Fase API).
+- **Endpoint:** `GET /api/v1/auth/me`
+- **Request:** Sin body. Header `Authorization: Bearer <access_token>` (JWT RS256).
+- **Response (200):** `{ "user": { "id": "<uuid>", "email": "user@example.com", "name": "John Doe", "role": "admin", "permissions": ["admin.access", "condominiums.read"] } }`
+- **Errores documentados:** `401 UNAUTHENTICATED` (token faltante, inválido o expirado), `429` (throttle: 30 req/min por IP)
+- **Autorización:** `auth:api` — solo usuarios autenticados. No requiere scope específico.
+- **Rate limiting:** 30 requests/minuto por IP.
+- **Detalle completo:** [[../../api/endpoints/AUTH#get-apiv1authme]]
+- **Congelado:** 2026-07-09
+- **Consumido por:** [[../../features/AUTH/blocks/AUTH-B15-endpoint-me-dashboard]] (Fase Web — `useUserQuery` en `features/dashboard/hooks/useUserQuery.ts`)

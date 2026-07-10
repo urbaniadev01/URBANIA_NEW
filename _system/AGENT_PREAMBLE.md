@@ -1,7 +1,7 @@
 ---
 tipo: sistema
 proyecto: shared
-actualizado: 2026-07-07
+actualizado: 2026-07-09
 ---
 
 # AGENT_PREAMBLE — Directiva cognitiva compartida
@@ -94,7 +94,21 @@ ejecutar es más barato que una sesión bloqueada.
 - **Desarrollo manual:** el desarrollador levanta `php artisan serve` en su propia terminal — no es
   tarea del agente.
 - **Servicios persistentes:** Docker (`docker compose up -d`) es la herramienta correcta para
-  servicios que deben seguir corriendo entre sesiones.
+  servicios   que deben seguir corriendo entre sesiones.
+
+### 8. Protocolo de herramienta faltante (NO WORKAROUNDS)
+
+Si una tarea requiere una herramienta que **no está disponible** en este entorno
+(ej. bash, shell, acceso a red, escritura en disco, un MCP server caído), el agente
+debe **detenerse inmediatamente** y reportarlo al usuario con:
+
+1. Qué herramienta falta
+2. Qué tarea se iba a ejecutar con ella
+3. Opciones para resolverlo (sin ejecutar ninguna)
+
+**Prohibido:** intentar la misma tarea con otra herramienta, instalar software,
+modificar configuraciones del sistema, o buscar workarounds sin permiso explícito
+del usuario. La regla es: `sin herramienta → notificar → esperar`.
 
 ## Aplicación por capa de agente
 

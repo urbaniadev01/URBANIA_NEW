@@ -4,11 +4,11 @@ proyecto: web
 feature: PROPIEDADES
 id: PROPIEDADES-B07
 proyectos: [web]
-estado: backlog
+estado: in_progress
 depende_de: [PROPIEDADES-B03, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false
-actualizado: 2026-07-06
+actualizado: 2026-07-09
 ---
 
 # PROPIEDADES-B07 — Pantallas de condominios (CondominiosList + DetalleCondominio)
@@ -89,3 +89,7 @@ puede pasar a `ready` sin ese lock vigente.
 > El tab "Torres" y el tab "Configuración" comparten la misma página `DetalleCondominio`. En el
 > futuro, B08 agrega un tercer tab "Unidades" y B09 un cuarto tab "Coeficientes". La estructura de
 > tabs debe ser extensible.
+
+> **Auditoría 2026-07-09:** revertido de `done` a `in_progress` — la sección Evidencia no cumple
+> `_system/05_DEFINITION_OF_DONE.md` (evidencia vacía). Requiere correr `pnpm ci` real y
+> verificación visual Playwright de los criterios de aceptación antes de volver a `verifying`.

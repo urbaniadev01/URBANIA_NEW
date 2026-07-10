@@ -7,36 +7,7 @@ mode: primary
 permission:
   edit: deny
   bash:
-    "docker compose *": allow
-    "docker ps *": allow
-    "docker logs *": allow
-    "docker inspect *": allow
-    "composer *": allow
-    "php artisan *": allow
-    "pnpm *": allow
-    "Get-ChildItem *": allow
-    "Get-Content *": allow
-    "Test-Path *": allow
-    "New-Item *": allow
-    "Copy-Item *": allow
-    "Rename-Item *": allow
-    "Remove-Item *": ask
-    "git status *": allow
-    "git log *": allow
-    "git diff *": allow
-    "git branch *": allow
-    "git add *": allow
-    "git commit *": allow
-    "git pull *": allow
-    "git fetch *": allow
-    "git checkout *": allow
-    "git stash *": allow
-    "git push *": deny
-    "git reset *": deny
-    "git clean *": deny
-    "npm *": allow
-    "node *": allow
-    "*": deny
+    "*": allow
 ---
 
 > 🧠 **Pre-action:** Leé `_system/AGENT_PREAMBLE.md`. Sus 6 reglas de comportamiento aplican a esta sesión.

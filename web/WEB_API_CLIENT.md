@@ -40,6 +40,39 @@ razón, en el propio archivo del hook (no aquí — este documento es de convenc
 
 ## 4. Qué NO va aquí
 
+## 5. Hooks de TanStack Query por feature
+
+Cada feature expone sus hooks en `features/<nombre>/api/`. A continuación el índice de hooks
+implementados:
+
+### Auth (`features/auth/api/`)
+
+| Archivo | Hooks exportados | Endpoint |
+|---|---|---|
+| `login.ts` | `useLoginMutation` | `POST /auth/login` (LOCK-AUTH-02) |
+| `register.ts` | `useRegisterMutation` | `POST /auth/register` (LOCK-AUTH-01) |
+| `mfa-verify.ts` | `useMfaVerifyMutation` | `POST /auth/mfa/verify` (LOCK-AUTH-08) |
+| `mfa-enroll.ts` | `useMfaEnrollMutation`, `useMfaConfirmMutation`, `useMfaDisableMutation`, `useMfaRecoveryMutation` | `POST /auth/mfa/enroll`, `/auth/mfa/confirm`, `/auth/mfa/disable`, `/auth/mfa/recovery` (LOCK-AUTH-08) |
+| `forgot-password.ts` | `useForgotPasswordMutation` | `POST /auth/forgot-password` (LOCK-AUTH-09) |
+| `reset-password.ts` | `useResetPasswordMutation` | `POST /auth/reset-password` (LOCK-AUTH-09) |
+
+### Dashboard (`features/dashboard/hooks/`)
+
+| Archivo | Hooks exportados | Endpoint |
+|---|---|---|
+| `useUserQuery.ts` | `useUserQuery` | `GET /auth/me` (LOCK-AUTH-10) |
+
+### Propiedades — Catálogos (`features/propiedades/api/`)
+
+| Archivo | Hooks exportados | Endpoint |
+|---|---|---|
+| `property-types.ts` | `usePropertyTypesQuery`, `useCreatePropertyTypeMutation`, `useUpdatePropertyTypeMutation`, `useDeletePropertyTypeMutation` | `GET/POST/PATCH/DELETE /property-types` (LOCK-PROPIEDADES-01) |
+| `property-statuses.ts` | `usePropertyStatusesQuery`, `useCreatePropertyStatusMutation`, `useUpdatePropertyStatusMutation`, `useDeletePropertyStatusMutation` | `GET/POST/PATCH/DELETE /property-statuses` (LOCK-PROPIEDADES-01) |
+| `condominiums.ts` | `useCondominiumsQuery`, `useCondominioQuery`, `useCreateCondominioMutation`, `useUpdateCondominioMutation`, `useDeleteCondominioMutation` | `GET/POST /condominiums`, `GET/PATCH/DELETE /condominiums/{id}` (LOCK-PROPIEDADES-02) |
+| `towers.ts` | `useTorresQuery`, `useTorreQuery`, `useCreateTorreMutation`, `useUpdateTorreMutation`, `useDeleteTorreMutation` | `GET/POST /condominiums/{id}/towers`, `GET/PATCH/DELETE /towers/{id}` (LOCK-PROPIEDADES-02) |
+| `properties.ts` | `usePropertiesInfiniteQuery`, `useCreatePropertyMutation`, `useUpdatePropertyMutation`, `useDeletePropertyMutation`, `useBatchUpdateStatusMutation`, `useBatchDeleteMutation`, `flattenProperties` | `GET /condominiums/{id}/properties`, `POST /condominiums/{id}/properties`, `PATCH/DELETE /properties/{id}` (LOCK-PROPIEDADES-03) |
+| `coefficients.ts` | `useCondominioTreeQuery`, `usePropertyCoefficientsQuery`, `useBatchPropertyCoefficientsQueries`, `useUpdateCoefficientsMutation` | `GET /condominiums/{id}/tree`, `GET /properties/{id}/coefficients`, `PATCH /condominiums/{id}/coefficients` (LOCK-PROPIEDADES-04) |
+
 El detalle de qué endpoints existen y su forma exacta vive en `api/endpoints/<FEATURE>.md` y en
 `_state/contracts/CONTRACT_LOCKS.md` — este documento es solo la convención de cómo Web habla con la
 API, no un índice de endpoints.

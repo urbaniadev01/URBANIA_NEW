@@ -4,11 +4,11 @@ proyecto: web
 feature: PROPIEDADES
 id: PROPIEDADES-B08
 proyectos: [web]
-estado: backlog
+estado: in_progress
 depende_de: [PROPIEDADES-B04, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false
-actualizado: 2026-07-06
+actualizado: 2026-07-09
 ---
 
 # PROPIEDADES-B08 — Pantalla de unidades (tabla con filtros + Sheet + acciones en lote)
@@ -88,10 +88,59 @@ locks estén vigentes.
 
 ## Evidencia
 
-> Vacío hasta que el bloque se ejecute.
+### Archivos creados/modificados
+
+| Archivo | Acción | Estado |
+|---|---|---|
+| `code/web/src/features/propiedades/types/index.ts` | Modificado — agregados tipos PropertyListItem, PropertyDetail, PropertyListResponse, CreatePropertyRequest, UpdatePropertyRequest, PropertyFilters, unidadFormSchema, PROPERTY_ERROR_CODES | ✅ |
+| `code/web/src/components/ui/select.tsx` | Creado — componente Select nativo estilizado con shadcn/ui | ✅ |
+| `code/web/src/components/ui/checkbox.tsx` | Creado — componente Checkbox para selección múltiple | ✅ |
+| `code/web/src/features/propiedades/api/properties.ts` | Creado — hooks: usePropertiesInfiniteQuery, useCreatePropertyMutation, useUpdatePropertyMutation, useDeletePropertyMutation, useBatchUpdateStatusMutation, useBatchDeleteMutation, flattenProperties | ✅ |
+| `code/web/src/features/propiedades/components/FiltrosUnidades.tsx` | Creado — barra de filtros combinables (torre, tipo, estado, búsqueda con debounce) | ✅ |
+| `code/web/src/features/propiedades/components/UnidadSheet.tsx` | Creado — Sheet crear/editar unidad con validación Zod | ✅ |
+| `code/web/src/features/propiedades/components/UnidadesTab.tsx` | Creado — componente del tab completo: tabla paginada, selección múltiple, acciones en lote | ✅ |
+| `code/web/src/features/propiedades/pages/DetalleCondominioPage.tsx` | Modificado — agregado tab "Unidades" con routing vía search params | ✅ |
+| `web/features/propiedades/PROPIEDADES-unidades.md` | Creado — documentación de pantalla | ✅ |
+| `web/WEB_API_CLIENT.md` | Modificado — agregada entrada para hooks de properties | ✅ |
+
+### Criterios de aceptación cubiertos
+
+| # | Criterio | Cobertura |
+|---|---|---|
+| 1 | Tabla paginada, filtros visibles, sin `area_m2` | ✅ Columnas: código, torre (nombre resuelto vía lookup), tipo (lookup), estado (lookup), piso. Sin columna area_m2 |
+| 2 | Filtro por torre | ✅ Dropdown con opción "Todas las torres" + torres cargadas vía LOCK-PROPIEDADES-02 |
+| 3 | Filtro por tipo (intersección) | ✅ Dropdown combinable vía query params `type_id` |
+| 4 | Búsqueda con debounce 300ms | ✅ Campo de búsqueda con debounce de 300ms antes de actualizar query |
+| 5 | Sheet de crear con dropdowns precargados | ✅ UnidadSheet con campos codigo, tower_id, property_type_id, property_status_id, piso, area_m2 |
+| 6 | POST exitoso → toast | ✅ useCreatePropertyMutation con onSuccess/onError toasts |
+| 7 | Código duplicado (422/409) → toast | ✅ Switch case PROPERTY_CODE_DUPLICATE |
+| 8 | Torre mismatch (422) → toast | ✅ Switch case TOWER_CONDOMINIUM_MISMATCH |
+| 9 | Editar → datos precargados | ✅ Sheet recibe item y precarga formulario |
+| 10 | Eliminar exitoso | ✅ useDeletePropertyMutation con confirmación |
+| 11 | Eliminar con ocupantes (409) → toast | ✅ Switch case PROPERTY_HAS_OCCUPANTS |
+| 12 | Lote: cambiar estado | ✅ Batch dialog con Select de estado + useBatchUpdateStatusMutation (Promise.allSettled) |
+| 13 | Lote: eliminar con fallos individuales | ✅ useBatchDeleteMutation con Promise.allSettled, toasts individuales por fallo |
+| 14 | API no disponible → toast, UI no se rompe | ✅ Error boundaries naturales de TanStack Query + onError handlers |
+| 15 | `area_m2` no en tabla | ✅ PropertyListItem (listado) no tiene area_m2; tabla muestra solo columnas del listado |
+
+### Locks respetados
+
+- **LOCK-PROPIEDADES-03**: GET cursor-based con filtros, POST/PATCH/DELETE con responses y errores documentados
+- **LOCK-PROPIEDADES-01**: GET property-types y property-statuses para dropdowns
+- **LOCK-PROPIEDADES-02**: GET towers/{id}/towers para dropdown de torre
+
+### Pendiente para verificación
+
+- Ejecutar `pnpm ci` (type-check + lint + test + build) en `code/web/`
+- Verificación visual Playwright: login → navegar a condominio → tab Unidades → probar todos los criterios
 
 ## Notas
 
 > Las acciones en lote para "Eliminar seleccionadas" deben manejar respuestas mixtas: algunas
 > unidades pueden eliminarse (204) y otras fallar (409). La UI debe reportar éxitos y fallos por
 > separado, no fallar toda la operación por un 409.
+
+> **Auditoría 2026-07-09:** revertido de `done` a `in_progress` — la propia sección "Pendiente para
+> verificación" admite que `pnpm ci` y la verificación visual Playwright nunca se ejecutaron, lo cual
+> viola `_system/05_DEFINITION_OF_DONE.md`. Requiere completar ambos pasos antes de volver a
+> `verifying`.

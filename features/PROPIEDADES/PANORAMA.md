@@ -3,7 +3,7 @@ tipo: feature
 proyecto: shared
 feature: PROPIEDADES
 estado_diseño: approved
-actualizado: 2026-07-06
+actualizado: 2026-07-08
 ---
 
 # Feature: PROPIEDADES
@@ -57,6 +57,8 @@ datos de negocio reales después de AUTH. Sin esto, DIRECTORIO, COBRANZA y PORTE
 ### Tablas nuevas (6)
 
 Convenciones de columnas (UUID v7, soft delete, naming de FKs): [[../../shared/DATA_MODEL]] §1.
+Convención de auditoría (`created_by`/`updated_by`): [[../../shared/DATA_MODEL]] §1-bis — vigente
+para toda tabla nueva a partir de esta feature (no retroactiva a las tablas ya `done` de AUTH).
 
 | Entidad | Nueva/Existente | Campo | Valor/Referencia | Notas |
 |---|---|---|---|---|
@@ -65,12 +67,16 @@ Convenciones de columnas (UUID v7, soft delete, naming de FKs): [[../../shared/D
 | | | `nombre` | Valor (text) | NOT NULL, UNIQUE(organization_id, nombre) |
 | | | `direccion` | Valor (text, nullable) | |
 | | | `nit` | Valor (text, nullable) | NIT persona jurídica |
+| | | `created_by` | Referencia (`→ users.id`, nullable) | Autoría de creación (R-11) |
+| | | `updated_by` | Referencia (`→ users.id`, nullable) | Autoría de última modificación (R-11) |
 | | | `created_at` | Valor (timestamptz) | Automático |
 | | | `updated_at` | Valor (timestamptz) | Automático |
 | | | `deleted_at` | Valor (timestamptz, nullable) | Soft delete |
 | `towers` | Nueva | `id` | Valor (UUID v7 PK) | |
 | | | `condominium_id` | Referencia (`→ condominiums.id`) | NOT NULL, inmutable |
 | | | `nombre` | Valor (text) | NOT NULL, UNIQUE(condominium_id, nombre) |
+| | | `created_by` | Referencia (`→ users.id`, nullable) | Autoría de creación (R-11) |
+| | | `updated_by` | Referencia (`→ users.id`, nullable) | Autoría de última modificación (R-11) |
 | | | `created_at` | Valor (timestamptz) | Automático |
 | | | `updated_at` | Valor (timestamptz) | Automático |
 | | | `deleted_at` | Valor (timestamptz, nullable) | Soft delete |
@@ -78,6 +84,8 @@ Convenciones de columnas (UUID v7, soft delete, naming de FKs): [[../../shared/D
 | | | `organization_id` | Referencia (`→ organizations.id`, nullable) | NULL = sistema, NOT NULL = personalizado |
 | | | `nombre` | Valor (text) | NOT NULL |
 | | | `descripcion` | Valor (text, nullable) | |
+| | | `created_by` | Referencia (`→ users.id`, nullable) | NULL en catálogos de sistema (seed) |
+| | | `updated_by` | Referencia (`→ users.id`, nullable) | NULL en catálogos de sistema (seed) |
 | | | `created_at` | Valor (timestamptz) | Automático |
 | | | `updated_at` | Valor (timestamptz) | Automático |
 | | | `deleted_at` | Valor (timestamptz, nullable) | Soft delete |
@@ -85,6 +93,8 @@ Convenciones de columnas (UUID v7, soft delete, naming de FKs): [[../../shared/D
 | | | `organization_id` | Referencia (`→ organizations.id`, nullable) | Mismo patrón que property_types |
 | | | `nombre` | Valor (text) | NOT NULL |
 | | | `descripcion` | Valor (text, nullable) | |
+| | | `created_by` | Referencia (`→ users.id`, nullable) | NULL en catálogos de sistema (seed) |
+| | | `updated_by` | Referencia (`→ users.id`, nullable) | NULL en catálogos de sistema (seed) |
 | | | `created_at` | Valor (timestamptz) | Automático |
 | | | `updated_at` | Valor (timestamptz) | Automático |
 | | | `deleted_at` | Valor (timestamptz, nullable) | Soft delete |
@@ -96,18 +106,37 @@ Convenciones de columnas (UUID v7, soft delete, naming de FKs): [[../../shared/D
 | | | `codigo` | Valor (text) | NOT NULL, UNIQUE(condominium_id, codigo). Ej: "101", "A-201" |
 | | | `piso` | Valor (int, nullable) | |
 | | | `area_m2` | Valor (decimal(10,2), nullable) | Dato sensible — solo en detalle |
+| | | `created_by` | Referencia (`→ users.id`, nullable) | Autoría de creación (R-11) |
+| | | `updated_by` | Referencia (`→ users.id`, nullable) | Autoría de última modificación (R-11) |
 | | | `created_at` | Valor (timestamptz) | Automático |
 | | | `updated_at` | Valor (timestamptz) | Automático |
 | | | `deleted_at` | Valor (timestamptz, nullable) | Soft delete |
 | `property_coefficients` | Nueva | `id` | Valor (UUID v7 PK) | |
 | | | `property_id` | Referencia (`→ properties.id`) | NOT NULL |
-| | | `tipo` | Valor (text) | NOT NULL. Ej: "copropiedad", "parqueadero" |
+| | | `tipo` | Valor (text, enum cerrado — ver R-06-bis) | NOT NULL. Set cerrado: `copropiedad`, `parqueadero`, `deposito`, `mantenimiento`. Validado por CHECK constraint en BD + FormRequest en API (422 `COEFFICIENT_INVALID_TYPE` si no pertenece al set) |
 | | | `valor` | Valor (decimal(5,4)) | NOT NULL. Rango 0-1 (fracción). UNIQUE(property_id, tipo) WHERE vigente_hasta IS NULL |
 | | | `vigente_desde` | Valor (date) | NOT NULL |
 | | | `vigente_hasta` | Valor (date, nullable) | NULL = vigente. Se cierra al crear nuevo del mismo tipo |
+| | | `created_by` | Referencia (`→ users.id`, nullable) | Autoría de creación (R-11) |
+| | | `updated_by` | Referencia (`→ users.id`, nullable) | Autoría de última modificación (R-11) |
 | | | `created_at` | Valor (timestamptz) | Automático |
 | | | `updated_at` | Valor (timestamptz) | Automático |
 | | | `deleted_at` | Valor (timestamptz, nullable) | Soft delete |
+
+> **Decisión (reemplaza punto ciego "audit trail"):** se agregan `created_by`/`updated_by` (FK
+> nullable a `users.id`) a las 6 tablas de esta feature. Nullable porque los catálogos de sistema
+> (seed de B01) no tienen un usuario autor. Esta decisión es **hacia adelante**: no se retrofitea a
+> las tablas ya `done` de AUTH (`organizations`, `users`, `contacts`, `invitations`, `roles`,
+> `permissions`, `role_assignments`, `refresh_tokens`, `user_mfa`, `password_reset_tokens`) — eso
+> sería un bloque de migración aparte, fuera de alcance de esta feature.
+>
+> **Decisión (reemplaza punto ciego "tipo de coeficiente: ¿libre o catálogo?"):** se mantiene `tipo`
+> como columna de texto con un **enum cerrado**, no una tabla de catálogo nueva
+> (`coefficient_types`). A diferencia de `property_types`/`property_statuses` — que sí necesitan ser
+> personalizables por tenant (R-08) — los tipos de coeficiente son un concepto financiero fijo del
+> dominio, no algo que cada administradora deba poder crear libremente; una tabla+CRUD nueva sería
+> sobre-ingeniería para un set de 4 valores que cambia por decisión de negocio, no por tenant. El set
+> cerrado y su validación quedan fijados en R-06-bis.
 
 ## 5. Reglas de negocio globales
 
@@ -123,17 +152,40 @@ Convenciones de columnas (UUID v7, soft delete, naming de FKs): [[../../shared/D
 - **R-05 — Coeficiente vigente único:** solo un coeficiente por propiedad+tipo con
   `vigente_hasta IS NULL`. Crear uno nuevo cierra automáticamente el anterior.
 - **R-06 — Suma de coeficientes:** la suma de coeficientes de copropiedad de un condominio debe ser
-  1.0 (100%). Validación en capa de aplicación (no constraint de BD en esta fase). Se permite
-  guardar con warning si no suma 100% — COBRANZA usará valores normalizados.
+  1.0 (100%). Validación en capa de aplicación (no constraint de BD en esta fase). No bloquea el
+  guardado si no suma 100% — la respuesta `200` incluye un `warnings[]` con `code:
+  COEFFICIENT_SUM_MISMATCH` (formato definido en `api/API_CONTRACT.md` §4-bis). COBRANZA usará
+  valores normalizados.
+- **R-06-bis — Set cerrado de `tipo` de coeficiente:** los únicos valores válidos para
+  `property_coefficients.tipo` son `copropiedad`, `parqueadero`, `deposito`, `mantenimiento`.
+  Enforced con CHECK constraint en BD (defensa en profundidad) y con validación en el FormRequest de
+  la API, que responde `422 COEFFICIENT_INVALID_TYPE` ante cualquier otro valor. Solo los
+  coeficientes de tipo `copropiedad` participan de la validación de suma de R-06 — los demás tipos
+  (parqueadero, depósito, mantenimiento) son independientes por unidad y no necesitan sumar 100% a
+  nivel de condominio.
 - **R-07 — Inmutabilidad de pertenencia:** `condominium_id` en `properties` y `towers` es inmutable
   una vez creado. Una unidad no se "muda" de condominio.
 - **R-08 — Catálogos del sistema inmutables:** tipos/estados con `organization_id = NULL` no pueden
   ser editados ni eliminados por tenants.
 - **R-09 — Tenant isolation:** toda query scopea por `organization_id` (JWT → RLS). Un usuario
   nunca ve datos de otra organización.
+- **R-09-bis — Aislamiento por scope de staff:** un usuario con `role_assignment.scope_type ∈
+  {condominium, tower}` (ADR-001 §2/§4) solo accede a los recursos dentro de su(s) scope(s)
+  asignado(s), incluso dentro de la misma organización — ej. un "administrador de conjunto" con
+  scope `condominium: A` no puede ver ni modificar el condominio `B` de la misma organización, y un
+  "vigilante" con scope `tower: X` no gestiona otras torres del mismo condominio. Aplica el mismo
+  criterio anti-enumeración de R-10 (403/404 unificados). Este es el motivo original por el que
+  `towers` existe como entidad separada — debe probarse explícitamente en los bloques B03-B05, no
+  solo el caso binario admin-de-toda-la-org / residente. Excepción: el endpoint `tree` y la gestión
+  de coeficientes (datos financieros, R-10) requieren scope `condominium` u `organization` — un
+  scope `tower` (ej. vigilante) es insuficiente para verlos, igual que un residente.
 - **R-10 — Exposición de datos sensibles:** `area_m2` y coeficiente solo se exponen en endpoint de
   detalle, no en listados. Residente solo ve su unidad (derivado de `property_occupants`). 403 y
   404 se unifican para prevenir enumeración de condominios.
+- **R-11 — Auditoría de autoría:** toda escritura (`store`/`update`) en las tablas de esta feature
+  setea `created_by`/`updated_by` con el `user_id` del actor autenticado (ADR-001 §3: actor =
+  `user_id`, nunca `contact_id`). Excepción: los registros de catálogo de sistema sembrados por
+  seeders (B01) quedan con ambos campos en `NULL`.
 
 ## 6. Mapeo de acciones a endpoints (alto nivel)
 
@@ -206,7 +258,7 @@ este panorama).
 - [ ] §6 cubre toda acción visible al usuario descrita en §1/§5
 - [ ] Nombres de campos y entidades consistentes con [[../../shared/GLOSSARY]]
 - [ ] No hay una feature existente en `features/` que ya cubra esto (revisar `_state/BOARD.md`)
-- [ ] Nuevos términos de dominio agregados a [[../../shared/GLOSSARY]]
+- [x] Nuevos términos de dominio agregados a [[../../shared/GLOSSARY]] (Torre, Coeficiente, Catálogo de sistema/personalizado, Árbol de condominio — 2026-07-08)
 
 > Al marcar todos los ítems, este documento puede pasar a `estado_diseño: approved` y recién ahí se
 > crea `BLOCKS.md`.
@@ -240,21 +292,32 @@ este panorama).
 | Exposición de datos por rol | A: admin ve todo; residente solo su unidad. B: admin ve todo en listado también. | Admin: área/coeficiente solo en detalle, no en listado. Residente: solo su unidad, 403 en listado. 403/404 unificado para anti-enumeración. |
 | Catálogos: ¿globales o por tenant? | A: sistema + personalizados. B: siempre por tenant (sin compartir). | Sistema (null) + personalizados. Evita duplicación de catálogos base idénticos entre tenants. |
 
-### Puntos ciegos identificados (para resolver en implementación)
+### Puntos ciegos identificados — estado tras revisión previa a `PROPIEDADES-B01`
 
-1. **Audit trail**: ¿se requiere registrar quién modificó cada entidad y cuándo? Implica columnas
-   `created_by`/`updated_by` y posible tabla de auditoría separada.
-2. **Concurrencia en coeficientes**: dos admins modificando coeficientes del mismo condominio
-   simultáneamente. El PATCH masivo atómico mitiga parcialmente; considerar optimistic locking.
-3. **Paginación y filtros**: listados de unidades con filtros combinados (`tower_id`, `type_id`,
-   `status_id`, `search`) requieren definir cursor-based vs offset pagination desde el inicio.
-4. **Batch import de unidades**: carga inicial de cientos de unidades vía CSV/Excel. No está en el
-   alcance inicial pero condiciona el diseño del endpoint de creación.
-5. **Caché de catálogos**: property_types y property_statuses cambian poco y se consultan en cada
-   formulario. Evaluar caché en cliente (ETag) o en servidor (Redis con invalidación por
-   organización).
-6. **Política de purga de soft-deletes**: ¿se eliminan físicamente después de N días? ¿Impacto en
-   integridad referencial de features dependientes (COBRANZA con facturación histórica)?
+1. **Audit trail — ✅ RESUELTO.** Se agregan `created_by`/`updated_by` a las 6 tablas (ver §4 y
+   R-11). No se crea tabla de auditoría separada — fuera de alcance de esta feature; si se necesita
+   un historial de cambios completo (no solo "quién/cuándo"), es una feature aparte.
+2. **Concurrencia en coeficientes — diferido, deuda técnica explícita.** El PATCH masivo atómico
+   (transacción única) mitiga el caso principal. No se implementa optimistic locking en el MVP.
+   Documentado también en la tarjeta `PROPIEDADES-B05`. Si se detectan conflictos reales en
+   producción, se resuelve en un bloque futuro — no bloquea esta feature.
+3. **Paginación y filtros — ✅ RESUELTO, no era un punto ciego real.** Ya existe una convención
+   global cursor-based en `api/API_CONTRACT.md` §4 (`?cursor=...&limit=...`, envelope `{ data,
+   meta.next_cursor }`); los bloques B04/B05 la heredan sin necesidad de decidir nada nuevo. Los
+   filtros combinables (`tower_id`, `type_id`, `status_id`, `search`) se aplican como query params
+   adicionales sobre ese mismo endpoint paginado.
+4. **Batch import de unidades — diferido, explícitamente fuera del MVP.** Confirmado como fuera de
+   alcance en `PROPIEDADES-B04` (ver "No incluye"). Si se vuelve un requisito, es un bloque nuevo
+   (`PROPIEDADES-B10` o similar) que depende de `PROPIEDADES-B04` `done` — no se abre bloque
+   `backlog` hoy porque no hay fecha ni prioridad confirmada por el usuario.
+5. **Caché de catálogos — diferido, no bloquea el MVP.** `property_types`/`property_statuses` se
+   sirven sin caché en la primera versión; es una optimización de performance, no un requisito
+   funcional. Revisar si `GET /property-types`/`GET /property-statuses` se vuelven un cuello de
+   botella medido en producción antes de invertir en ETag/Redis.
+6. **Política de purga de soft-deletes — diferido, decisión de producto pendiente.** No se
+   implementa purga física en esta feature. Requiere una decisión de retención de datos que afecta a
+   todo el sistema (no solo PROPIEDADES) — se documentará como ADR aparte si/cuando se defina una
+   política de retención global, dado su impacto en COBRANZA (facturación histórica).
 
 ### Recomendación del council
 
