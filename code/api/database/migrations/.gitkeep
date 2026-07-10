@@ -1,0 +1,4 @@
+<?php
+
+// Migrations are created as features are implemented.
+// First migrations: AUTH-B01 (organizations, users, contacts, invitations).

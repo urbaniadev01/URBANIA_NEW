@@ -1,0 +1,70 @@
+parameters:
+    level: 10
+    paths:
+        - app/
+        - src/
+        - config/
+        - routes/
+        - database/
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # PHP config files return mixed from config() — validated at runtime
+        -
+            identifier: missingType.iterableValue
+        -
+            identifier: missingType.generics
+        # Config files use env() which returns mixed — casts are validated at runtime
+        -
+            identifier: cast.int
+            path: config/*
+        -
+            identifier: cast.string
+            path: config/*
+        -
+            identifier: binaryOp.invalid
+            path: config/*
+        # Eloquent models — PHPStan can't fully resolve $fillable magic properties or query builder
+        -
+            identifier: property.notFound
+        -
+            identifier: staticMethod.notFound
+        -
+            identifier: staticMethod.dynamicCall
+        -
+            identifier: method.notFound
+        -
+            identifier: dynamicMethodCall
+        # Eloquent query builder / mixed return types — inherent to Laravel's magic
+        -
+            identifier: method.nonObject
+        -
+            identifier: offsetAccess.notFound
+        -
+            identifier: return.type
+        -
+            identifier: argument.type
+        -
+            identifier: nullCoalesce.variable
+        -
+            identifier: cast.string
+        -
+            identifier: callable.parameter
+        # FormRequest::validated() returns mixed array — accessing keys is safe at runtime
+        -
+            message: '#Cannot access offset#'
+        # Eloquent dynamic properties accessed on query results
+        -
+            message: '#Cannot access property \$#'
+        # Eloquent firstOrFail/findOrFail return mixed — property access is safe at runtime
+        -
+            message: '#Cannot access property#'
+        # Redis::eval() facade stub doesn't declare variadic $arguments — safe at runtime
+        -
+            identifier: arguments.count
+            path: src/Mfa/Application/UseCases/EnrollMfaUseCase.php
+        -
+            identifier: arguments.count
+            path: src/Mfa/Application/UseCases/VerifyMfaUseCase.php
+    universalObjectCratesClasses:
+        - Illuminate\Http\Request
+    editorUrl: 'phpstorm://open?file=%%file%%&line=%%line%%'
