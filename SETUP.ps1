@@ -87,6 +87,21 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "✓ Test database ready" -ForegroundColor Green
 Write-Host ""
 
+# Step 5.5: Migrate and seed main database
+Write-Host "[5.5/7] Migrating and seeding main database..." -ForegroundColor Yellow
+Start-Sleep -Seconds 3
+php artisan migrate --seed
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "NOTE: migrate --seed failed, trying migrate:fresh --seed..." -ForegroundColor Yellow
+    php artisan migrate:fresh --seed
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Database migration and seeding failed." -ForegroundColor Red
+        exit 1
+    }
+}
+Write-Host "✓ Main database migrated and seeded" -ForegroundColor Green
+Write-Host ""
+
 # Step 6: Run composer ci (lint + stan + test)
 Write-Host "[6/7] Running composer ci (lint + stan + test)..." -ForegroundColor Yellow
 composer ci

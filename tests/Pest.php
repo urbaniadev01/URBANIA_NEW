@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Tests\TestCase;
 use Urbania\Shared\JWT\JwtService;
 
-uses(TestCase::class)->in('Feature', 'Integration', 'Security');
+uses(TestCase::class)->in('Feature', 'Integration', 'Security', 'Unit');
 
 expect()->extend('toBeOne', function () {
     return $this->toBe(1);

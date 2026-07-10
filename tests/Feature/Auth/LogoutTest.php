@@ -79,7 +79,7 @@ test('valid refresh token is revoked and cookie is cleared', function () {
     expect($cookie->getValue())->toBe('');
     expect((int) $cookie->getExpiresTime())->toBeLessThan(time());
     expect($cookie->isHttpOnly())->toBeTrue();
-    expect($cookie->isSecure())->toBeTrue();
+    expect($cookie->isSecure())->toBeFalse();
     expect($cookie->getSameSite())->toBe('strict');
     expect($cookie->getPath())->toBe('/api/v1/auth');
 

@@ -101,7 +101,7 @@ final readonly class MfaController
                 (int) $refreshMinutes,
                 '/api/v1/auth',
                 null,
-                true,
+                config('session.secure'),
                 true,
                 false,
                 'Strict',

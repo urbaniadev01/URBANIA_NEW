@@ -8,7 +8,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('APP_URL', 'http://localhost:8081')],
+    'allowed_origins' => [env('APP_FRONTEND_URL', 'http://localhost:5173')],
 
     'allowed_origins_patterns' => [],
 

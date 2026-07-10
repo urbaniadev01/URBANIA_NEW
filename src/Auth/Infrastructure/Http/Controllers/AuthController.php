@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Urbania\Auth\Infrastructure\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Urbania\Auth\Application\DTOs\LoginRequestDto;
 use Urbania\Auth\Application\DTOs\RegisterUserRequestDto;
@@ -21,7 +23,9 @@ use Urbania\Auth\Domain\Exceptions\RefreshTokenMissingException;
 use Urbania\Auth\Domain\Exceptions\RefreshTokenReusedException;
 use Urbania\Auth\Infrastructure\Http\Requests\LoginRequest;
 use Urbania\Auth\Infrastructure\Http\Requests\RegisterRequest;
+use Urbania\Auth\Infrastructure\Http\Resources\MeResource;
 use Urbania\Auth\Infrastructure\Http\Resources\UserResource;
+use Urbania\Authorization\Application\Services\PermissionResolver;
 
 final readonly class AuthController
 {
@@ -30,6 +34,7 @@ final readonly class AuthController
         private LoginUseCase $login,
         private RefreshTokenUseCase $refreshToken,
         private LogoutUseCase $logout,
+        private PermissionResolver $permissionResolver,
     ) {}
 
     public function register(RegisterRequest $request): JsonResponse
@@ -113,7 +118,7 @@ final readonly class AuthController
                     5, // 5 minutes
                     '/api/v1/auth',
                     null,
-                    true,
+                    config('session.secure'),
                     true,
                     false,
                     'Strict',
@@ -134,7 +139,7 @@ final readonly class AuthController
                 (int) $refreshMinutes,
                 '/api/v1/auth',
                 null,
-                true,
+                config('session.secure'),
                 true,
                 false,
                 'Strict',
@@ -211,7 +216,7 @@ final readonly class AuthController
                 (int) $refreshMinutes,
                 '/api/v1/auth',
                 null,
-                true,
+                config('session.secure'),
                 true,
                 false,
                 'Strict',
@@ -239,10 +244,45 @@ final readonly class AuthController
                 -1,
                 '/api/v1/auth',
                 null,
-                true,
+                config('session.secure'),
                 true,
                 false,
                 'Strict',
             ));
+    }
+
+    public function me(): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if ($user === null) {
+            return response()->json([
+                'error' => [
+                    'code' => 'UNAUTHENTICATED',
+                    'message' => 'No autenticado.',
+                    'trace_id' => (string) Str::orderedUuid(),
+                ],
+            ], 401);
+        }
+
+        // Resolve role from role_assignments → roles
+        $roleAssignment = DB::table('role_assignments')
+            ->join('roles', 'role_assignments.role_id', '=', 'roles.id')
+            ->where('role_assignments.user_id', $user->id)
+            ->select('roles.name')
+            ->first();
+
+        $role = $roleAssignment !== null ? (string) $roleAssignment->name : 'user';
+
+        // Resolve permissions via PermissionResolver
+        $permissions = $this->permissionResolver->resolve((string) $user->id);
+        $permissionNames = array_values(array_unique(array_column($permissions, 'permission')));
+
+        $resource = new MeResource($user);
+        $resource->role = (string) $role;
+        $resource->permissions = $permissionNames;
+
+        return $resource->response();
     }
 }

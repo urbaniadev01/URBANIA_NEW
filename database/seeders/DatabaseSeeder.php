@@ -15,6 +15,10 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RbacDemoSeeder::class,
+            PropertyTypeSeeder::class,
+            PropertyStatusSeeder::class,
+            DemoUserSeeder::class,
+            MfaDemoSeeder::class,
         ]);
     }
 }

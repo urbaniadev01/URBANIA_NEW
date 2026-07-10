@@ -7,6 +7,13 @@ use Urbania\Auth\Infrastructure\Http\Controllers\AuthController;
 use Urbania\Auth\Infrastructure\Http\Controllers\PasswordResetController;
 use Urbania\Authorization\Infrastructure\Http\Controllers\AdminController;
 use Urbania\Mfa\Infrastructure\Http\Controllers\MfaController;
+use Urbania\Properties\Infrastructure\Http\Controllers\CondominiumController;
+use Urbania\Properties\Infrastructure\Http\Controllers\CondominiumTreeController;
+use Urbania\Properties\Infrastructure\Http\Controllers\PropertyCoefficientController;
+use Urbania\Properties\Infrastructure\Http\Controllers\PropertyController;
+use Urbania\Properties\Infrastructure\Http\Controllers\PropertyStatusController;
+use Urbania\Properties\Infrastructure\Http\Controllers\PropertyTypeController;
+use Urbania\Properties\Infrastructure\Http\Controllers\TowerController;
 
 // API v1 routes — endpoints for each bounded context are registered here
 // as the corresponding feature blocks are implemented (AUTH-B01 onwards).
@@ -57,10 +64,78 @@ Route::prefix('v1')->group(function () {
         // AUTH-B09: Reset password
         Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])
             ->middleware('throttle:10,1');
+
+        // AUTH-B15: Current user info
+        Route::get('/me', [AuthController::class, 'me'])
+            ->middleware(['auth:api', 'throttle:30,1']);
     });
 
     // Authorization bounded context — AUTH-B05
     // Example protected endpoint: admin dashboard, scoped to an organization
     Route::get('/organizations/{organization}/admin', [AdminController::class, 'index'])
         ->middleware(['auth:api', 'require_permission:admin.access,organization']);
+
+    // Properties bounded context — PROPIEDADES-B02
+    Route::prefix('property-types')->middleware('auth:api')->group(function () {
+        Route::get('/', [PropertyTypeController::class, 'index']);
+        Route::post('/', [PropertyTypeController::class, 'store']);
+        Route::get('/{property_type}', [PropertyTypeController::class, 'show']);
+        Route::patch('/{property_type}', [PropertyTypeController::class, 'update']);
+        Route::delete('/{property_type}', [PropertyTypeController::class, 'destroy']);
+    });
+
+    Route::prefix('property-statuses')->middleware('auth:api')->group(function () {
+        Route::get('/', [PropertyStatusController::class, 'index']);
+        Route::post('/', [PropertyStatusController::class, 'store']);
+        Route::get('/{property_status}', [PropertyStatusController::class, 'show']);
+        Route::patch('/{property_status}', [PropertyStatusController::class, 'update']);
+        Route::delete('/{property_status}', [PropertyStatusController::class, 'destroy']);
+    });
+
+    // Properties bounded context — PROPIEDADES-B03
+    // Condominiums (top-level resource)
+    Route::prefix('condominiums')->middleware('auth:api')->group(function () {
+        Route::get('/', [CondominiumController::class, 'index']);
+        Route::post('/', [CondominiumController::class, 'store']);
+        Route::get('/{condominium}', [CondominiumController::class, 'show']);
+        Route::patch('/{condominium}', [CondominiumController::class, 'update']);
+        Route::delete('/{condominium}', [CondominiumController::class, 'destroy']);
+
+        // Towers nested under a condominium (R-01 hierarchy)
+        Route::get('/{condominium}/towers', [TowerController::class, 'index']);
+        Route::post('/{condominium}/towers', [TowerController::class, 'store']);
+    });
+
+    // Towers (non-nested endpoints for show/update/destroy)
+    Route::prefix('towers')->middleware('auth:api')->group(function () {
+        Route::get('/{tower}', [TowerController::class, 'show']);
+        Route::patch('/{tower}', [TowerController::class, 'update']);
+        Route::delete('/{tower}', [TowerController::class, 'destroy']);
+    });
+
+    // Properties bounded context — PROPIEDADES-B04
+    // Properties nested under condominiums (index, store)
+    Route::prefix('condominiums')->middleware('auth:api')->group(function () {
+        Route::get('/{condominium}/properties', [PropertyController::class, 'index']);
+        Route::post('/{condominium}/properties', [PropertyController::class, 'store']);
+    });
+
+    // Properties (non-nested endpoints for show/update/destroy)
+    Route::prefix('properties')->middleware('auth:api')->group(function () {
+        Route::get('/{property}', [PropertyController::class, 'show']);
+        Route::patch('/{property}', [PropertyController::class, 'update']);
+        Route::delete('/{property}', [PropertyController::class, 'destroy']);
+    });
+
+    // Properties bounded context — PROPIEDADES-B05
+    // Property coefficients (nested under property)
+    Route::prefix('properties')->middleware('auth:api')->group(function () {
+        Route::get('/{property}/coefficients', [PropertyCoefficientController::class, 'index']);
+    });
+
+    // Condominium coefficients (bulk PATCH) + tree
+    Route::prefix('condominiums')->middleware('auth:api')->group(function () {
+        Route::patch('/{condominium}/coefficients', [PropertyCoefficientController::class, 'patch']);
+        Route::get('/{condominium}/tree', [CondominiumTreeController::class, 'tree']);
+    });
 });

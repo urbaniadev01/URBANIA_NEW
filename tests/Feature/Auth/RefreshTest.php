@@ -80,7 +80,7 @@ test('valid refresh token returns new access token and refresh token cookie', fu
     $cookie = $cookies[0];
     expect($cookie->getName())->toBe('refresh_token');
     expect($cookie->isHttpOnly())->toBeTrue();
-    expect($cookie->isSecure())->toBeTrue();
+    expect($cookie->isSecure())->toBeFalse();
     expect($cookie->getSameSite())->toBe('strict');
     expect($cookie->getPath())->toBe('/api/v1/auth');
 
