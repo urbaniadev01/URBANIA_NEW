@@ -1,0 +1,260 @@
+import { type ReactNode, useState, useCallback } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { getVisibleSidebar } from "@/features/dashboard/registry";
+import type { AuthUser, SidebarNavItem } from "@/features/dashboard/types";
+import { cn } from "@/lib/utils";
+
+interface DashboardShellProps {
+  /** Usuario autenticado (null durante carga de permisos). */
+  user: AuthUser | null;
+  /** Contenido del área principal (DashboardPage, etc.). */
+  children: ReactNode;
+  /** Slot para el widget de bienvenida en el header (renderizado por B03). */
+  headerSlot?: ReactNode;
+}
+
+/**
+ * DashboardShell — layout RBAC-aware del panel principal.
+ *
+ * Estructura (PANORAMA §8.1):
+ * - Skip link "Saltar al contenido principal"
+ * - Sidebar colapsable con ítems dinámicos desde sidebarRegistry
+ * - Header con slot para WelcomeWidget (B03)
+ * - main[aria-label="Panel principal"] con el contenido
+ *
+ * Responsive (PANORAMA §8.5):
+ * - Desktop (>= 768px): sidebar fija + contenido desplazado
+ * - Mobile (< 768px): sidebar en Sheet (drawer lateral)
+ */
+export function DashboardShell({
+  user,
+  children,
+  headerSlot,
+}: DashboardShellProps): ReactNode {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const location = useLocation();
+
+  const sidebarItems = user ? getVisibleSidebar(user) : [];
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
+  }, []);
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      {/* ── Skip link ───────────────────────────────────────────── */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        Saltar al contenido principal
+      </a>
+
+      {/* ── Sidebar desktop ─────────────────────────────────────── */}
+      <aside
+        className={cn(
+          "hidden border-r bg-card md:flex md:flex-col md:transition-all md:duration-300",
+          sidebarOpen ? "md:w-64" : "md:w-16",
+        )}
+      >
+        <SidebarContent
+          items={sidebarItems}
+          collapsed={!sidebarOpen}
+          currentPath={location.pathname}
+        />
+      </aside>
+
+      {/* ── Área principal ──────────────────────────────────────── */}
+      <div className="flex flex-1 flex-col">
+        {/* ── Header ──────────────────────────────────────────── */}
+        <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
+          {/* Mobile sidebar trigger */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Abrir menú</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64 p-0">
+              <SidebarContent
+                items={sidebarItems}
+                collapsed={false}
+                currentPath={location.pathname}
+              />
+            </SheetContent>
+          </Sheet>
+
+          {/* Desktop sidebar toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex"
+            onClick={toggleSidebar}
+            aria-label={sidebarOpen ? "Colapsar menú" : "Expandir menú"}
+          >
+            {sidebarOpen ? (
+              <PanelLeftClose className="h-5 w-5" />
+            ) : (
+              <PanelLeftOpen className="h-5 w-5" />
+            )}
+          </Button>
+
+          {/* Slot para WelcomeWidget (renderizado por B03) */}
+          <div className="flex flex-1 items-center justify-end gap-4">
+            {headerSlot}
+          </div>
+        </header>
+
+        {/* ── Contenido principal ──────────────────────────────── */}
+        <main id="main-content" aria-label="Panel principal" className="flex-1">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Contenido interno de la sidebar — compartido entre desktop y mobile (Sheet).
+ */
+function SidebarContent({
+  items,
+  collapsed,
+  currentPath,
+}: {
+  items: SidebarNavItem[];
+  collapsed: boolean;
+  currentPath: string;
+}): ReactNode {
+  // Agrupar ítems por group
+  const grouped = new Map<string, SidebarNavItem[]>();
+  const ungrouped: SidebarNavItem[] = [];
+
+  for (const item of items) {
+    if (item.group) {
+      const group = grouped.get(item.group) ?? [];
+      group.push(item);
+      grouped.set(item.group, group);
+    } else {
+      ungrouped.push(item);
+    }
+  }
+
+  return (
+    <nav aria-label="Navegación principal" className="flex flex-col gap-1 p-3">
+      {/* Ítem Dashboard siempre presente */}
+      <SidebarLink
+        to="/"
+        label="Inicio"
+        active={currentPath === "/" || currentPath === "/dashboard"}
+        collapsed={collapsed}
+      />
+
+      {/* Grupos */}
+      {[...grouped.entries()].map(([group, groupItems]) => (
+        <div key={group} className="mt-4 first:mt-0">
+          {!collapsed && (
+            <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {group}
+            </p>
+          )}
+          {groupItems.map((item) => (
+            <SidebarItemNode
+              key={item.id}
+              item={item}
+              collapsed={collapsed}
+              currentPath={currentPath}
+            />
+          ))}
+        </div>
+      ))}
+
+      {/* Sin grupo */}
+      {ungrouped.length > 0 && (
+        <div className="mt-4">
+          {ungrouped.map((item) => (
+            <SidebarItemNode
+              key={item.id}
+              item={item}
+              collapsed={collapsed}
+              currentPath={currentPath}
+            />
+          ))}
+        </div>
+      )}
+    </nav>
+  );
+}
+
+function SidebarItemNode({
+  item,
+  collapsed,
+  currentPath,
+}: {
+  item: SidebarNavItem;
+  collapsed: boolean;
+  currentPath: string;
+}): ReactNode {
+  const isActive = currentPath.startsWith(item.to);
+
+  return (
+    <div>
+      <SidebarLink
+        to={item.to}
+        label={item.label}
+        active={isActive}
+        collapsed={collapsed}
+      />
+      {item.children && !collapsed && (
+        <div className="ml-4">
+          {item.children.map((child) => (
+            <SidebarLink
+              key={child.id}
+              to={child.to}
+              label={child.label}
+              active={currentPath.startsWith(child.to)}
+              collapsed={false}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SidebarLink({
+  to,
+  label,
+  active,
+  collapsed,
+}: {
+  to: string;
+  label: string;
+  active: boolean;
+  collapsed: boolean;
+}): ReactNode {
+  return (
+    <Link
+      to={to}
+      className={cn(
+        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        active
+          ? "bg-accent text-accent-foreground"
+          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+        collapsed && "justify-center px-2",
+      )}
+      title={collapsed ? label : undefined}
+    >
+      {collapsed ? (
+        <span className="text-base font-semibold">{label.charAt(0)}</span>
+      ) : (
+        label
+      )}
+    </Link>
+  );
+}
