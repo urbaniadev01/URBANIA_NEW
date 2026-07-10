@@ -28,3 +28,7 @@ coverage/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Scratch scripts (no forman parte del alcance de ningún bloque)
+start-dev.bat
+verify-b03.bat
