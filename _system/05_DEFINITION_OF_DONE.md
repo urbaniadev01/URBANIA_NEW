@@ -43,8 +43,10 @@ reportado — eso no es un fallo del proceso, es el proceso funcionando.
 
 - [ ] `pnpm ci` (type-check + lint + test + build) ejecutado — salida completa pegada.
 - [ ] Si el bloque tocó UI: verificación visual real (Playwright MCP o equivalente) recorriendo el
-      flujo afectado — camino feliz y los casos límite de la tabla de criterios de aceptación.
-      `pnpm ci` verifica tipos/lint/build, no comportamiento — no sustituye este paso.
+      flujo afectado — camino feliz y los casos límite de la tabla de criterios de aceptación,
+      contrastado además contra lo declarado en el §7 (UI/UX) del `PANORAMA.md` del feature
+      (pantallas, componentes y estados esperados). `pnpm ci` verifica tipos/lint/build, no
+      comportamiento — no sustituye este paso.
 - [ ] Si el bloque consumió un endpoint: confirmar contra `_state/contracts/CONTRACT_LOCKS.md` que
       la integración respeta exactamente el contrato congelado (no una suposición de lo que el
       endpoint "debería" devolver).

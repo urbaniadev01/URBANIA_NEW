@@ -20,6 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { AuthLayout } from "@/components/auth-layout";
 import {
   useMfaEnrollMutation,
   useMfaConfirmMutation,
@@ -240,8 +241,8 @@ function MfaEnrollContent(): React.ReactNode {
   }
 
   return (
-    <div className="flex min-h-screen items-start justify-center bg-muted/50 px-4 pt-16">
-      <Card className="w-full max-w-lg">
+    <AuthLayout contentClassName="w-full max-w-lg">
+      <Card className="w-full">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
             Autenticación en dos pasos
@@ -379,8 +380,8 @@ function MfaEnrollContent(): React.ReactNode {
           {step === "active" && (
             <div className="space-y-6">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-green-600" />
-                <span className="rounded-full bg-green-100 px-3 py-0.5 text-sm font-medium text-green-800">
+                <ShieldCheck className="h-5 w-5 text-success" />
+                <span className="rounded-full bg-success/15 px-3 py-0.5 text-sm font-medium text-success">
                   MFA activo
                 </span>
               </div>
@@ -543,6 +544,6 @@ function MfaEnrollContent(): React.ReactNode {
           )}
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }

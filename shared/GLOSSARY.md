@@ -62,6 +62,21 @@ actualizado: 2026-07-09
 |---|---|---|
 | **Dashboard** | Pantalla principal post-login que compone widgets de múltiples features según los permisos del usuario. No es un módulo de negocio — es una superficie de composición. El nombre en UI es "Inicio". | Web |
 
+## Términos de portería (feature PORTERIA)
+
+| Término | Significado | Dónde se usa |
+|---|---|---|
+| **Visita** | Registro real de ingreso/salida de un visitante a una unidad (minuta digital). `salida_at NULL` = visita activa (dentro del condominio). Tabla `visits`. | API, Web |
+| **Paquete (Package)** | Registro de correspondencia recibida en portería para una unidad. `entregado_at NULL` = pendiente de reclamar. Tabla `packages`. | API, Web |
+| **Vigilante** | Rol de staff que opera la consola de portería, scope típico `condominium` o `tower` (mismo mecanismo de `role_assignment` que cualquier otro rol de staff). Creado como catálogo real en la feature `PORTERIA` — antes solo se citaba como ejemplo en la documentación de RBAC. | API, Web |
+
+## Términos de comunicaciones (feature COMUNICACIONES)
+
+| Término | Significado | Dónde se usa |
+|---|---|---|
+| **Anuncio (Announcement)** | Comunicado simple publicado por staff, visible a todo usuario vinculado al condominio (cartelera digital). Versión básica: sin segmentación de destinatarios, sin canales externos, sin ciclo borrador/programado. Tabla `announcements`. | API, Web |
+| **Fijado** | Flag booleano en `announcements` que sube el anuncio al tope de la lista, sin límite de cuántos pueden estar fijados a la vez. | API, Web |
+
 ## Términos de cobranza (feature COBRANZA)
 
 | Término | Significado | Dónde se usa |

@@ -76,6 +76,7 @@ function createUserWithRoleAndPermissions(): array
 
     // Create contact (required for name resolution)
     $contact = new EloquentContact([
+        'organization_id' => $org->id,
         'user_id' => $user->id,
         'nombre' => 'John Doe',
         'email' => 'me-test@urbania.test',

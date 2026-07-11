@@ -1,11 +1,22 @@
 import { type ReactNode, useState, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Home, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getVisibleSidebar } from "@/features/dashboard/registry";
 import type { AuthUser, SidebarNavItem } from "@/features/dashboard/types";
 import { cn } from "@/lib/utils";
+import { ModeToggle } from "@/components/mode-toggle";
+import { ThemeCustomizer } from "@/components/theme-customizer";
+import { CommandMenu } from "@/components/command-menu";
+import { UserMenu } from "@/components/user-menu";
 
 interface DashboardShellProps {
   /** Usuario autenticado (null durante carga de permisos). */
@@ -44,77 +55,106 @@ export function DashboardShell({
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* ── Skip link ───────────────────────────────────────────── */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-      >
-        Saltar al contenido principal
-      </a>
+    <TooltipProvider delayDuration={200}>
+      <div className="flex min-h-screen bg-background">
+        {/* ── Skip link ───────────────────────────────────────────── */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          Saltar al contenido principal
+        </a>
 
-      {/* ── Sidebar desktop ─────────────────────────────────────── */}
-      <aside
-        className={cn(
-          "hidden border-r bg-card md:flex md:flex-col md:transition-all md:duration-300",
-          sidebarOpen ? "md:w-64" : "md:w-16",
-        )}
-      >
-        <SidebarContent
-          items={sidebarItems}
-          collapsed={!sidebarOpen}
-          currentPath={location.pathname}
-        />
-      </aside>
-
-      {/* ── Área principal ──────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col">
-        {/* ── Header ──────────────────────────────────────────── */}
-        <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
-          {/* Mobile sidebar trigger */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Abrir menú</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0">
-              <SidebarContent
-                items={sidebarItems}
-                collapsed={false}
-                currentPath={location.pathname}
-              />
-            </SheetContent>
-          </Sheet>
-
-          {/* Desktop sidebar toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden md:flex"
-            onClick={toggleSidebar}
-            aria-label={sidebarOpen ? "Colapsar menú" : "Expandir menú"}
-          >
-            {sidebarOpen ? (
-              <PanelLeftClose className="h-5 w-5" />
-            ) : (
-              <PanelLeftOpen className="h-5 w-5" />
-            )}
-          </Button>
-
-          {/* Slot para WelcomeWidget (renderizado por B03) */}
-          <div className="flex flex-1 items-center justify-end gap-4">
-            {headerSlot}
+        {/* ── Sidebar desktop ─────────────────────────────────────── */}
+        <aside
+          className={cn(
+            "hidden border-r bg-card md:flex md:flex-col md:transition-all md:duration-300",
+            sidebarOpen ? "md:w-64" : "md:w-16",
+          )}
+        >
+          <div className="flex h-16 items-center gap-2 border-b px-4">
+            <img
+              src="/logo.png"
+              alt="Urbania"
+              className="h-8 w-8 shrink-0 object-contain"
+            />
+            <span
+              className={cn(
+                "text-base font-semibold tracking-tight text-foreground",
+                !sidebarOpen && "sr-only",
+              )}
+            >
+              Urbania
+            </span>
           </div>
-        </header>
+          <SidebarContent
+            items={sidebarItems}
+            collapsed={!sidebarOpen}
+            currentPath={location.pathname}
+          />
+        </aside>
 
-        {/* ── Contenido principal ──────────────────────────────── */}
-        <main id="main-content" aria-label="Panel principal" className="flex-1">
-          {children}
-        </main>
+        {/* ── Área principal ──────────────────────────────────────── */}
+        <div className="flex flex-1 flex-col">
+          {/* ── Header ──────────────────────────────────────────── */}
+          <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
+            {/* Mobile sidebar trigger */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Abrir menú</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0">
+                <SidebarContent
+                  items={sidebarItems}
+                  collapsed={false}
+                  currentPath={location.pathname}
+                />
+              </SheetContent>
+            </Sheet>
+
+            {/* Desktop sidebar toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:flex"
+              onClick={toggleSidebar}
+              aria-label={sidebarOpen ? "Colapsar menú" : "Expandir menú"}
+            >
+              {sidebarOpen ? (
+                <PanelLeftClose className="h-5 w-5" />
+              ) : (
+                <PanelLeftOpen className="h-5 w-5" />
+              )}
+            </Button>
+
+            {/* Búsqueda de features (Cmd/Ctrl+K) */}
+            <div className="hidden md:block">
+              <CommandMenu user={user} />
+            </div>
+
+            {/* Slot para WelcomeWidget (renderizado por B03) */}
+            <div className="flex flex-1 items-center justify-end gap-2">
+              {headerSlot}
+              <ThemeCustomizer />
+              <ModeToggle />
+              {user && <UserMenu user={user} />}
+            </div>
+          </header>
+
+          {/* ── Contenido principal ──────────────────────────────── */}
+          <main
+            id="main-content"
+            aria-label="Panel principal"
+            className="flex-1"
+          >
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 
@@ -150,6 +190,7 @@ function SidebarContent({
       <SidebarLink
         to="/"
         label="Inicio"
+        icon={Home}
         active={currentPath === "/" || currentPath === "/dashboard"}
         collapsed={collapsed}
       />
@@ -206,6 +247,7 @@ function SidebarItemNode({
       <SidebarLink
         to={item.to}
         label={item.label}
+        icon={item.icon}
         active={isActive}
         collapsed={collapsed}
       />
@@ -216,6 +258,7 @@ function SidebarItemNode({
               key={child.id}
               to={child.to}
               label={child.label}
+              icon={child.icon}
               active={currentPath.startsWith(child.to)}
               collapsed={false}
             />
@@ -229,32 +272,39 @@ function SidebarItemNode({
 function SidebarLink({
   to,
   label,
+  icon: Icon,
   active,
   collapsed,
 }: {
   to: string;
   label: string;
+  icon?: LucideIcon;
   active: boolean;
   collapsed: boolean;
 }): ReactNode {
-  return (
+  const link = (
     <Link
       to={to}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active
-          ? "bg-accent text-accent-foreground"
+          ? "bg-primary/10 text-primary"
           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
         collapsed && "justify-center px-2",
       )}
-      title={collapsed ? label : undefined}
     >
-      {collapsed ? (
-        <span className="text-base font-semibold">{label.charAt(0)}</span>
-      ) : (
-        label
-      )}
+      {Icon && <Icon className="h-4 w-4 shrink-0" />}
+      {!collapsed && label}
     </Link>
+  );
+
+  if (!collapsed) return link;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
   );
 }

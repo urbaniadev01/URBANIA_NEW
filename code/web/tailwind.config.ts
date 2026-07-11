@@ -37,6 +37,37 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
+        "accent-brand": {
+          DEFAULT: "hsl(var(--accent-brand))",
+          foreground: "hsl(var(--accent-brand-foreground))",
+        },
+        "brand-cta": {
+          DEFAULT: "hsl(var(--brand-cta))",
+          hover: "hsl(var(--brand-cta-hover))",
+          active: "hsl(var(--brand-cta-active))",
+          foreground: "hsl(var(--brand-cta-foreground))",
+        },
+        "surface-glass": {
+          DEFAULT: "hsl(var(--surface-glass))",
+          border: "hsl(var(--surface-glass-border))",
+          foreground: "hsl(var(--surface-glass-foreground))",
+        },
+        "input-accent": {
+          bg: "hsl(var(--input-accent-bg))",
+          border: "hsl(var(--input-accent-border))",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -56,6 +87,13 @@ export default {
           "Roboto",
           '"Helvetica Neue"',
           "Arial",
+          "sans-serif",
+        ],
+        display: [
+          '"Space Grotesk"',
+          "Inter",
+          "system-ui",
+          "-apple-system",
           "sans-serif",
         ],
         mono: [

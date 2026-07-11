@@ -51,6 +51,7 @@ final readonly class RegisterUserUseCase
             ]);
 
             $contact = $this->contactRepository->create([
+                'organization_id' => $invitation->organization_id,
                 'user_id' => $user->id,
                 'nombre' => $dto->name,
                 'email' => $invitation->email,

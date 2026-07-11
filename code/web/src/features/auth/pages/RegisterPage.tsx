@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { AuthLayout } from "@/components/auth-layout";
 import { useRegisterMutation } from "@/features/auth/api/register";
 import type { RegisterRequestDto } from "@/features/auth/types/auth.types";
 import { Loader2 } from "lucide-react";
@@ -96,8 +97,8 @@ export function RegisterPage(): React.ReactNode {
 
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4">
-        <Card className="w-full max-w-md">
+      <AuthLayout>
+        <Card className="w-full">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
               Enlace inválido
@@ -112,13 +113,13 @@ export function RegisterPage(): React.ReactNode {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4">
-      <Card className="w-full max-w-md">
+    <AuthLayout>
+      <Card className="w-full">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
             Crear cuenta
@@ -242,6 +243,6 @@ export function RegisterPage(): React.ReactNode {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }

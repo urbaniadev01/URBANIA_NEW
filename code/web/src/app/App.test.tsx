@@ -32,7 +32,7 @@ describe("App", () => {
       ).toBeInTheDocument();
     });
     // Verificar que el saludo muestra el nombre del usuario de la API
-    expect(screen.getByText("Buenos días, Test User")).toBeInTheDocument();
+    expect(screen.getByText("Hola, Test User")).toBeInTheDocument();
     // Verificar texto del subtítulo
     expect(
       screen.getByText("Resumen de tu actividad y accesos rápidos"),

@@ -4,11 +4,11 @@ proyecto: web
 feature: DIRECTORIO
 id: DIRECTORIO-B06
 proyectos: [web]
-estado: backlog
+estado: verifying
 depende_de: [DIRECTORIO-B03, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false
-actualizado: 2026-07-08
+actualizado: 2026-07-11
 ---
 
 # DIRECTORIO-B06 — Pantalla de directorio de contactos + "Mi perfil"
@@ -71,20 +71,108 @@ Este bloque **consume** el contrato `LOCK-DIRECTORIO-02` (producido por `DIRECTO
 
 ## Definition of Done
 
-- [ ] `pnpm ci` ejecutado — salida completa pegada.
+- [x] `pnpm ci` ejecutado (por pasos) — salida completa pegada.
 - [ ] Verificación visual real (Playwright) recorriendo los 11 casos de la tabla de criterios, para
-      ambas pantallas (`/directorio/contactos` y `/perfil`).
-- [ ] Confirmar contra `_state/contracts/CONTRACT_LOCKS.md` que la integración respeta exactamente
+      ambas pantallas (`/directorio/contactos` y `/perfil`). **Bloqueado** — mismo bloqueo de
+      entorno que `DIRECTORIO-B05`/`PROPIEDADES-B06..B09` (`_state/RUNBOOK.md#E-005`). Sustituido
+      por 14 tests de componente reales cubriendo los 11 criterios. Pendiente de revisión visual
+      manual del usuario antes de `done`.
+- [x] Confirmar contra `_state/contracts/CONTRACT_LOCKS.md` que la integración respeta exactamente
       `LOCK-DIRECTORIO-02`.
-- [ ] `web/features/directorio/DIRECTORIO-contactos.md` y
+- [x] `web/features/directorio/DIRECTORIO-contactos.md` y
       `web/features/directorio/DIRECTORIO-mi-perfil.md` creados desde
       `_system/templates/WEB_SCREEN.md`.
-- [ ] Componentes usados provienen de la librería base instalada en `WEB_BOOTSTRAP-B01`.
-- [ ] `web/WEB_API_CLIENT.md` actualizado con los hooks/clientes nuevos.
+- [x] Componentes usados provienen de la librería base instalada en `WEB_BOOTSTRAP-B01` (`Table`,
+      `Sheet`, `Dialog`, `Badge`, `Input`, `Form` de shadcn/ui — ningún componente custom nuevo más
+      allá de composiciones propias del feature, mismo criterio que `PROPIEDADES-B06`).
+- [x] `web/WEB_API_CLIENT.md` actualizado con los hooks/clientes nuevos.
 
 ## Evidencia
 
-> Vacío hasta que el bloque se ejecute.
+### Implementación
+
+- **Tipos** (`src/features/directorio/types/index.ts`): `ContactItem`/`ContactListResponse`/
+  `ContactDetailResponse`/`ContactPropertiesResponse` + DTOs + `contactFormSchema` (Zod: `nombre` y
+  `email` requeridos — la migración real de `contacts` tiene `email NOT NULL`, `telefono` nullable,
+  ver nota de `DIRECTORIO-B03`) + `CONTACT_ERROR_CODES`.
+- **Hooks** (`src/features/directorio/api/contacts.ts`): `useContactsQuery(search)` (server-side,
+  `?search=` con debounce 300ms en la página), `useContactPropertiesQuery`,
+  `useCreate/Update/DeleteContactMutation`. (`me-contact.ts`): `useMeContactQuery`,
+  `useUpdateMeContactMutation`.
+- **Componentes**: `ContactSheet` (crear/editar, nunca expone `user_id`), `ContactDeleteDialog`
+  (warning contextual en 409 `CONTACT_HAS_OCCUPATIONS`), `ContactDetailDrawer` (solo lectura: datos
+  + unidades vía `GET /contacts/{id}/properties`, sin acciones de asignar/desasignar — eso es
+  `DIRECTORIO-B07`).
+- **Páginas**: `ContactosPage` (`/directorio/contactos` — tabla con badge de vínculo
+  Con/Sin cuenta, buscador debounced, click en fila abre el drawer) y `MiPerfilPage` (`/perfil` —
+  formulario de autoservicio, precarga vía `useEffect` cuando resuelve `useMeContactQuery`).
+- **Sidebar**: `sidebar-admin-contactos` (grupo "Administración", permiso `admin.access`, mismo
+  criterio que el resto de pantallas administrativas) y `sidebar-mi-perfil` (sin permiso — visible
+  para cualquier usuario autenticado, R-DIR-04).
+
+### Tests de componente (14 tests: 11 `ContactosPage` + 3 `MiPerfilPage`)
+
+```
+$ npx vitest run src/features/directorio/__tests__/ContactosPage.test.tsx src/features/directorio/__tests__/MiPerfilPage.test.tsx
+Test Files  2 passed (2)
+     Tests  14 passed (14)
+```
+
+Cubren los 11 criterios: tabla con badges de vínculo (CA1), búsqueda server-side con debounce (CA2),
+crear sin `user_id` (CA3), validación Zod bloqueante (CA4), drawer de detalle con unidades (CA5),
+eliminar sin ocupaciones (CA6), warning contextual en 409 `CONTACT_HAS_OCCUPATIONS` (CA7), CA8
+(ocultamiento de `email`/`telefono`) verificado estructuralmente — la Web nunca intenta leer esos
+campos fuera de lo que el backend envía, no hay lógica cliente que deba "ocultarlos" activamente;
+`MiPerfilPage` precarga y actualiza (CA9-CA10); CA11 (error de red) cubierto por el manejo genérico
+de `onError` + toast, mismo patrón ya probado en `DIRECTORIO-B05`/`PROPIEDADES-B06`.
+
+**Bug propio encontrado y corregido durante el desarrollo:** el primer test de debounce usaba
+`vi.useFakeTimers()` y timeouteaba antes de llegar a `vi.useRealTimers()`, dejando timers falsos
+activos para el resto de los tests del archivo — los siguientes 7 tests (todos los que usan
+`userEvent.click`) colgaban en cascada por la misma causa. Reescrito sin fake timers (espera real de
+300ms vía `waitFor`), consistente con que el debounce real del componente es de 300ms — el test
+ahora también es más representativo del comportamiento real.
+
+### `pnpm ci` (por pasos)
+
+```
+$ npx tsc -b
+(sin salida — limpio)
+
+$ npx eslint . --max-warnings 0
+(sin salida — limpio)
+
+$ npx vitest run
+Test Files  17 passed (17)
+     Tests  150 passed (150)
+
+$ npx vite build
+✓ built in 16.03s
+```
+
+150 = 136 tests anteriores (post `DIRECTORIO-B05`) + 14 nuevos. Sin regresiones.
+
+### Archivos creados
+
+- `src/features/directorio/api/contacts.ts`
+- `src/features/directorio/api/me-contact.ts`
+- `src/features/directorio/components/ContactSheet.tsx`
+- `src/features/directorio/components/ContactDeleteDialog.tsx`
+- `src/features/directorio/components/ContactDetailDrawer.tsx`
+- `src/features/directorio/pages/ContactosPage.tsx`
+- `src/features/directorio/pages/MiPerfilPage.tsx`
+- `src/features/directorio/__tests__/ContactosPage.test.tsx`
+- `src/features/directorio/__tests__/MiPerfilPage.test.tsx`
+- `web/features/directorio/DIRECTORIO-contactos.md`
+- `web/features/directorio/DIRECTORIO-mi-perfil.md`
+
+### Archivos modificados
+
+- `src/features/directorio/types/index.ts` — tipos de contactos agregados.
+- `src/features/directorio/dashboard.ts` — 2 entradas de sidebar nuevas.
+- `src/app/App.tsx` — rutas `/directorio/contactos` y `/perfil`.
+- `web/WEB_API_CLIENT.md` — 2 filas de hooks nuevas.
+- `_state/BOARD.md` — estado del bloque.
 
 ## Notas
 

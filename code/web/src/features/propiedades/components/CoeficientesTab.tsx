@@ -358,9 +358,9 @@ export function CoeficientesTab({ condominioId }: CoeficientesTabProps): ReactNo
                     key={key}
                     className={
                       row.modified
-                        ? "bg-amber-50/30 dark:bg-amber-950/20"
+                        ? "bg-warning/10"
                         : isCurrentVigente && verHistorial
-                          ? "bg-green-50/30 dark:bg-green-950/20"
+                          ? "bg-success/10"
                           : undefined
                     }
                   >
@@ -381,7 +381,7 @@ export function CoeficientesTab({ condominioId }: CoeficientesTabProps): ReactNo
                       <TableCell className="text-xs text-muted-foreground">
                         {row.vigente?.vigente_hasta ?? (
                           isCurrentVigente ? (
-                            <span className="text-green-600 dark:text-green-400 font-medium">
+                            <span className="font-medium text-success">
                               Vigente
                             </span>
                           ) : "—"
@@ -406,7 +406,7 @@ export function CoeficientesTab({ condominioId }: CoeficientesTabProps): ReactNo
                         placeholder="0.0000"
                         className={`w-full rounded-md border px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring ${
                           row.modified
-                            ? "border-amber-400 bg-amber-50/30 dark:border-amber-600 dark:bg-amber-950/20"
+                            ? "border-warning bg-warning/10"
                             : "border-input bg-background"
                         }`}
                         aria-label={`Coeficiente ${row.codigo} - ${COEFFICIENT_TYPE_LABELS[row.tipo]}`}
@@ -418,7 +418,7 @@ export function CoeficientesTab({ condominioId }: CoeficientesTabProps): ReactNo
                       <TableCell className="text-center">
                         {isCurrentVigente ? (
                           <span
-                            className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-success/15 text-success"
                             title="Coeficiente vigente"
                           >
                             ✓

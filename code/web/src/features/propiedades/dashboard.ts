@@ -14,10 +14,8 @@
  * 3. property-tree        — "Estructura" (árbol colapsable)
  */
 import { lazy } from "react";
-import {
-  registerWidget,
-  registerSidebarItem,
-} from "@/features/dashboard/registry";
+import { Tags, Workflow } from "lucide-react";
+import { registerWidget, registerSidebarItem } from "@/features/dashboard/registry";
 
 // ── Widget 1: Mis Condominios ────────────────────────────────────────────
 
@@ -83,19 +81,30 @@ registerWidget({
 });
 
 // ── Sidebar Items ────────────────────────────────────────────────────────
+// El ítem de sidebar de Condominios ya lo registra
+// features/dashboard/widgets/index.ts (id "sidebar-condominios", ruta real
+// /condominios). Los dos ítems que estaban acá apuntaban a rutas
+// inexistentes (/condominiums con typo, /properties sin ruta) — se
+// eliminaron en vez de arreglar el duplicado.
 
+// Catálogos — pantallas de administración del sistema (mantenimiento de
+// tipos/estados de propiedad). El permiso "admin.access" es el mismo que
+// usa el backend para los roles admin/manager (ver RbacDemoSeeder) — un
+// usuario 'resident' nunca lo tiene y por lo tanto no ve este grupo.
 registerSidebarItem({
-  id: "sidebar-condominiums",
-  to: "/condominiums",
-  label: "Condominios",
-  permission: "condominiums.ver",
-  group: "Gestión",
+  id: "sidebar-admin-tipos-propiedad",
+  to: "/catalogos/tipos-propiedad",
+  label: "Tipos de propiedad",
+  icon: Tags,
+  permission: "admin.access",
+  group: "Administración",
 });
 
 registerSidebarItem({
-  id: "sidebar-properties",
-  to: "/properties",
-  label: "Unidades",
-  permission: "condominiums.ver",
-  group: "Gestión",
+  id: "sidebar-admin-estados-propiedad",
+  to: "/catalogos/estados-propiedad",
+  label: "Estados de propiedad",
+  icon: Workflow,
+  permission: "admin.access",
+  group: "Administración",
 });

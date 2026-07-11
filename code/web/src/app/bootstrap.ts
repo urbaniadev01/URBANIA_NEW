@@ -18,5 +18,5 @@ import "@/features/dashboard/registry";
 // ── Features (una línea por feature — se agregan en B02, B03, ...) ─────────
 import "@/features/dashboard/widgets"; // B03 — widgets core + placeholders
 import "@/features/propiedades/dashboard";   // B02 — widgets de PROPIEDADES
-// import "@/features/directorio/dashboard";    // Cuando DIRECTORIO esté SHIPPED
+import "@/features/directorio/dashboard";    // DIRECTORIO-B05 — sidebar de tipos de ocupante
 // import "@/features/cobranza/dashboard";      // Cuando COBRANZA esté SHIPPED

@@ -4,11 +4,11 @@ proyecto: web
 feature: DIRECTORIO
 id: DIRECTORIO-B07
 proyectos: [web]
-estado: backlog
+estado: verifying
 depende_de: [DIRECTORIO-B04, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false
-actualizado: 2026-07-08
+actualizado: 2026-07-11
 ---
 
 # DIRECTORIO-B07 — Pantalla de asignación de ocupantes por unidad
@@ -65,21 +65,116 @@ pasar a `ready` sin ese lock vigente. También consume, de forma read-only, `LOC
 
 ## Definition of Done
 
-- [ ] `pnpm ci` ejecutado — salida completa pegada.
+- [x] `pnpm ci` ejecutado (por pasos) — salida completa pegada.
 - [ ] Verificación visual real (Playwright) recorriendo los 9 casos de la tabla de criterios.
-- [ ] Confirmar contra `_state/contracts/CONTRACT_LOCKS.md` que la integración respeta exactamente
+      **Bloqueado** — mismo bloqueo de entorno que el resto de la feature
+      (`_state/RUNBOOK.md#E-005`). Sustituido por 9 tests de componente reales. Pendiente de
+      revisión visual manual del usuario antes de `done`.
+- [x] Confirmar contra `_state/contracts/CONTRACT_LOCKS.md` que la integración respeta exactamente
       `LOCK-DIRECTORIO-03` (y el uso read-only de `LOCK-DIRECTORIO-01`/`02`).
-- [ ] `web/features/directorio/DIRECTORIO-asignacion-ocupantes.md` creado desde
-      `_system/templates/WEB_SCREEN.md`.
-- [ ] Componentes usados provienen de la librería base instalada en `WEB_BOOTSTRAP-B01`.
-- [ ] `web/WEB_API_CLIENT.md` actualizado con los hooks/clientes nuevos.
-- [ ] Confirmar que `PROPIEDADES-B08` ya está `done` antes de empezar — este bloque depende de esa
-      pantalla existiendo, aunque `BLOCKS.md`/`BOARD.md` no lo modelen como dependencia mecánica de
-      bloque (es una dependencia de UI, no de contrato de API).
+- [x] `web/features/directorio/DIRECTORIO-asignacion-ocupantes.md` creado desde
+      `_system/templates/WEB_SCREEN.md` — incluye una sección explícita de "Desviación de alcance"
+      documentando por qué no existe la ruta de detalle de unidad que la tarjeta asumía.
+- [x] Componentes usados provienen de la librería base instalada en `WEB_BOOTSTRAP-B01`.
+- [x] `web/WEB_API_CLIENT.md` actualizado con los hooks/clientes nuevos.
+- [x] Confirmado: `PROPIEDADES-B08` está `done` (ver `_state/BOARD.md`).
 
 ## Evidencia
 
-> Vacío hasta que el bloque se ejecute.
+### Desviación de alcance encontrada y resuelta (ver detalle en la ficha de pantalla)
+
+La tarjeta asumía una "vista de detalle de unidad" (`/condominios/{id}/propiedades/{propertyId}`)
+sobre la cual insertar la sección de ocupantes. Verificado el código real de `PROPIEDADES-B08`
+(`DetalleCondominioPage.tsx` + `UnidadesTab.tsx`): las unidades se gestionan **inline** en una tabla
+con un `Sheet` de crear/editar — no existe ninguna página de detalle de unidad independiente. En vez
+de inventar una pantalla nueva (fuera de alcance: "no se toca su lógica de edición de la unidad en
+sí") se agregó un botón "Ocupantes" por fila en `UnidadesTab` que abre `OcupantesSheet` — mismo
+resultado funcional, sin romper la IA existente ni exceder el alcance declarado. Documentado en
+`web/features/directorio/DIRECTORIO-asignacion-ocupantes.md` como sección explícita, mismo criterio
+que la corrección de la asunción de sidebar de `DIRECTORIO-B05`.
+
+### Implementación
+
+- **Tipos** (`types/index.ts`): `PropertyOccupantItem` (con `contact`/`occupant_type` anidados,
+  `contact` siempre minimal — solo `id`/`nombre`, nunca `email`/`telefono`, R-DIR-06) +
+  `PROPERTY_OCCUPANT_ERROR_CODES`.
+- **Hooks** (`api/property-occupants.ts`): `usePropertyOccupantsQuery`,
+  `useAssignOccupantMutation`, `useUpdatePropertyOccupantMutation`, `useUnassignOccupantMutation`.
+- **Componentes**: `AssignOccupantDialog` (búsqueda de contacto con debounce reutilizando
+  `useContactsQuery` de `DIRECTORIO-B06` en modo read-only, selector de tipo reutilizando
+  `useOccupantTypesQuery` de `DIRECTORIO-B05`, checkbox de principal, enlace a "Crear contacto
+  nuevo" cuando no hay resultados — CA8), `EditOccupantDialog` (tipo + principal, contacto
+  inmutable), `OcupantesSheet` (orquesta lista + los 2 diálogos + confirmación de desasignar).
+- **Integración con `PROPIEDADES-B08`**: edición mínima y quirúrgica de `UnidadesTab.tsx` — 1 import,
+  2 líneas de estado, 1 handler, 1 botón nuevo por fila (ícono `Users`), 1 render del `Sheet` al
+  final. Cero cambios a la lógica de crear/editar/eliminar/batch ya existente (verificado: el test
+  suite completo de `UnidadesTab.test.tsx`, 10 tests preexistentes, sigue en verde sin modificar
+  ninguno de ellos).
+
+### Tests de componente (9 tests, `OcupantesSheet.test.tsx`)
+
+```
+$ npx vitest run src/features/directorio/__tests__/OcupantesSheet.test.tsx
+Test Files  1 passed (1)
+     Tests  9 passed (9)
+```
+
+Cubren los 9 criterios: tabla con tipo + badge principal (CA1), abrir diálogo de asignar (CA2),
+asignar con payload correcto incluyendo `es_principal` (CA3), duplicado 409 (CA4, verificado a nivel
+de hook igual que bloques anteriores — el flujo de UI hasta el `mutate()` se prueba end-to-end, el
+manejo del error específico ya está cubierto por `useAssignOccupantMutation`), R-DIR-07 (CA5,
+delegado al backend + `invalidateQueries`, sin lógica especial en la UI que probar), editar tipo
+(CA6), desasignar con confirmación (CA7), "sin resultados" + enlace a crear contacto (CA8), error de
+red (CA9, mismo patrón `onError` genérico ya probado en bloques anteriores).
+
+**Verificación de no-regresión:** `UnidadesTab.test.tsx` (10 tests preexistentes de
+`PROPIEDADES-B08`, sin modificar) sigue pasando 10/10 tras la integración.
+
+### `pnpm ci` (por pasos)
+
+```
+$ npx tsc -b
+(sin salida tras corregir un error de tipos — ver nota abajo)
+
+$ npx eslint . --max-warnings 0
+(sin salida — limpio)
+
+$ npx vitest run
+Test Files  18 passed (18)
+     Tests  159 passed (159)
+
+$ npx vite build
+✓ built in 15.91s
+```
+
+159 = 150 tests anteriores (post `DIRECTORIO-B06`) + 9 nuevos. Sin regresiones.
+
+**Bug propio encontrado y corregido:** `PropertyOccupantItem.occupant_type` usaba `OccupantTypeItem`
+(un `export type { CatalogoItem as OccupantTypeItem } from ...`) como tipo local — válido para
+consumidores externos del módulo, pero no resoluble dentro del propio archivo bajo `tsc -b`
+(`isolatedModules`: un re-export puro no crea un binding local). `npx tsc --noEmit` no lo detectó
+(resolución menos estricta), pero `npx tsc -b` (el que corre `pnpm run build`/`type-check`
+realmente) sí. Corregido agregando `import type { CatalogoItem } from "@/features/propiedades/types"`
+y usando `CatalogoItem` directamente. Buen recordatorio de por qué el DoD exige `pnpm ci` completo y
+no solo `tsc --noEmit` suelto.
+
+### Archivos creados
+
+- `src/features/directorio/api/property-occupants.ts`
+- `src/features/directorio/components/AssignOccupantDialog.tsx`
+- `src/features/directorio/components/EditOccupantDialog.tsx`
+- `src/features/directorio/components/OcupantesSheet.tsx`
+- `src/features/directorio/__tests__/OcupantesSheet.test.tsx`
+- `web/features/directorio/DIRECTORIO-asignacion-ocupantes.md`
+
+### Archivos modificados
+
+- `src/features/directorio/types/index.ts` — tipos de asignación de ocupantes agregados; fix de
+  `import type` para `CatalogoItem`.
+- `src/features/propiedades/components/UnidadesTab.tsx` — botón "Ocupantes" por fila + integración
+  de `OcupantesSheet` (cambio mínimo, sin tocar lógica existente).
+- `web/WEB_API_CLIENT.md` — fila de hooks nueva.
+- `_state/BOARD.md` — estado del bloque.
 
 ## Notas
 

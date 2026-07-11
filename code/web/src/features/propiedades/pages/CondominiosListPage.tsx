@@ -2,7 +2,11 @@ import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, Search, Building2 } from "lucide-react";
+import { Plus, Search, Building2 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { LoadingState } from "@/components/loading-state";
+import { PAGE_CONTAINER } from "@/lib/layout";
 import { CondominioCard } from "../components/CondominioCard";
 import { CondominioSheet } from "../components/CondominioSheet";
 import {
@@ -66,20 +70,17 @@ export function CondominiosListPage(): React.ReactNode {
   // ── Render ──────────────────────────────────────────────────────────
 
   return (
-    <div className="container mx-auto max-w-6xl px-8 py-8">
-      {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Condominios</h1>
-          <p className="text-sm text-muted-foreground">
-            Gestiona los condominios de tu organización.
-          </p>
-        </div>
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nuevo condominio
-        </Button>
-      </div>
+    <div className={PAGE_CONTAINER}>
+      <PageHeader
+        title="Condominios"
+        description="Gestiona los condominios de tu organización."
+        actions={
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo condominio
+          </Button>
+        }
+      />
 
       {/* Search bar */}
       <div className="relative mb-6">
@@ -94,37 +95,28 @@ export function CondominiosListPage(): React.ReactNode {
 
       {/* Content */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <LoadingState />
       ) : filteredItems.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-          <Building2 className="mb-4 h-10 w-10 text-muted-foreground/60" />
-          {searchTerm ? (
-            <>
-              <p className="text-sm text-muted-foreground">
-                No se encontraron condominios con &quot;{searchTerm}&quot;.
-              </p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => setSearchTerm("")}
-              >
+        <EmptyState
+          icon={Building2}
+          message={
+            searchTerm
+              ? `No se encontraron condominios con "${searchTerm}".`
+              : "No hay condominios registrados."
+          }
+          action={
+            searchTerm ? (
+              <Button variant="outline" onClick={() => setSearchTerm("")}>
                 Limpiar búsqueda
               </Button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground">
-                No hay condominios registrados.
-              </p>
-              <Button variant="outline" className="mt-4" onClick={handleCreate}>
+            ) : (
+              <Button variant="outline" onClick={handleCreate}>
                 <Plus className="mr-2 h-4 w-4" />
                 Crear primero
               </Button>
-            </>
-          )}
-        </div>
+            )
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredItems.map((item) => (

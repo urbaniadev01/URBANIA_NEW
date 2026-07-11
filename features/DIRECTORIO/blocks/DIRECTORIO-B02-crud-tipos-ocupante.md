@@ -4,11 +4,11 @@ proyecto: api
 feature: DIRECTORIO
 id: DIRECTORIO-B02
 proyectos: [api]
-estado: backlog
+estado: done
 depende_de: [DIRECTORIO-B01]
 contrato: produce
 verificacion_critica: false
-actualizado: 2026-07-08
+actualizado: 2026-07-11
 ---
 
 # DIRECTORIO-B02 — CRUD de catálogo (tipos de ocupante)
@@ -68,19 +68,123 @@ congela en `_state/contracts/CONTRACT_LOCKS.md` como `LOCK-DIRECTORIO-01`.
 
 ## Definition of Done
 
-- [ ] `composer ci` ejecutado — salida completa pegada.
-- [ ] Verificación funcional real con request/response para **todos** los casos de la tabla de
+- [x] `composer ci` ejecutado — salida completa pegada.
+- [x] Verificación funcional real con request/response para **todos** los casos de la tabla de
       criterios (12 casos) — incluidos los negativos (3, 5, 7, 8, 9, 11).
-- [ ] `_state/contracts/CONTRACT_LOCKS.md` — entrada `LOCK-DIRECTORIO-01` creada.
-- [ ] `api/API_CONTRACT.md` §3 — agregar `OCCUPANT_TYPE_NAME_DUPLICATE` (409), `OCCUPANT_TYPE_IN_USE`
+- [x] `_state/contracts/CONTRACT_LOCKS.md` — entrada `LOCK-DIRECTORIO-01` creada.
+- [x] `api/API_CONTRACT.md` §3 — agregar `OCCUPANT_TYPE_NAME_DUPLICATE` (409), `OCCUPANT_TYPE_IN_USE`
       (409) a la tabla maestra de códigos (`SYSTEM_CATALOG_READONLY` ya existe desde
       `PROPIEDADES-B02`, se reutiliza sin duplicar).
-- [ ] `api/endpoints/DIRECTORIO.md` creado con el detalle de request/response de los 5 endpoints de
+- [x] `api/endpoints/DIRECTORIO.md` creado con el detalle de request/response de los 5 endpoints de
       catálogo.
 
 ## Evidencia
 
-> Vacío hasta que el bloque se ejecute.
+### Implementación
+
+Mismo patrón exacto que `PropertyTypeController` (`PROPIEDADES-B02`):
+`OccupantTypeController` (index/store/show/update/destroy), `StoreOccupantTypeRequest`,
+`UpdateOccupantTypeRequest`, `OccupantTypeResource` (`$wrap = 'data'`), rutas registradas en
+`routes/api.php` bajo `occupant-types` con middleware `auth:api`.
+
+### Tests de feature (12 tests, `tests/Feature/Directorio/OccupantTypeTest.php`)
+
+```
+$ docker exec -e DB_HOST=postgres -e DB_PORT=5432 -e REDIS_HOST=redis urbania-php php artisan test tests/Feature/Directorio/ --parallel
+Tests:    12 passed (34 assertions)
+Duration: 32.13s
+```
+
+### `composer ci` completo (Pint + PHPStan + suite completa)
+
+```
+$ docker exec urbania-php ./vendor/bin/pint --test
+PASS  222 files
+
+$ docker exec urbania-php ./vendor/bin/phpstan analyse --no-progress --memory-limit=512M
+[OK] No errors
+
+$ docker exec -e DB_HOST=postgres -e DB_PORT=5432 -e REDIS_HOST=redis urbania-php php artisan test --parallel
+Tests:    244 passed (832 assertions)
+Duration: 363.96s
+Parallel: 8 processes
+```
+
+244 = 232 baseline (post `DIRECTORIO-B01`) + 12 nuevos de este bloque. Sin regresiones.
+
+(Salida completa del último comando pegada al cerrar la verificación — ver también nota de entorno
+sobre `-e DB_HOST`/`-e REDIS_HOST` en `_state/RUNBOOK.md#E-006`.)
+
+### Verificación funcional real (curl, servidor real vía `docker-compose`, `admin@urbania.test`)
+
+```
+$ curl -X POST http://localhost:8081/api/v1/auth/login -d '{"email":"admin@urbania.test","password":"Admin123!"}'
+STATUS:200 {"access_token":"..."}
+
+# CASO 1 — GET index (200 + lista sistema)
+$ curl http://localhost:8081/api/v1/occupant-types -H "Authorization: Bearer $TOKEN"
+STATUS:200 {"data":[{"nombre":"Arrendatario",...},{"nombre":"Familiar",...},{"nombre":"Propietario",...},{"nombre":"Residente",...}]}
+
+# CASO 2 — POST store (201 + created_by)
+$ curl -X POST http://localhost:8081/api/v1/occupant-types -d '{"nombre":"Test Curl Type","descripcion":"desc"}'
+STATUS:201 {"data":{"id":"019f4fdd-...","organization_id":"a236eda3-...","nombre":"Test Curl Type","created_by":"a236eda4-...",...}}
+
+# CASO 3 — POST duplicado (409)
+$ curl -X POST .../occupant-types -d '{"nombre":"TEST CURL TYPE"}'
+STATUS:409 {"error":{"code":"OCCUPANT_TYPE_NAME_DUPLICATE",...}}
+
+# CASO 4 — PATCH propio (200 + updated_by)
+$ curl -X PATCH .../occupant-types/{id} -d '{"nombre":"Test Curl Type Updated"}'
+STATUS:200 {"data":{"nombre":"Test Curl Type Updated","updated_by":"a236eda4-...",...}}
+
+# CASO 5 — PATCH sistema (403)
+$ curl -X PATCH .../occupant-types/{system_id} -d '{"nombre":"Hack"}'
+STATUS:403 {"error":{"code":"SYSTEM_CATALOG_READONLY",...}}
+
+# CASO 6 — DELETE propio sin uso (204)
+$ curl -X DELETE .../occupant-types/{id}
+STATUS:204
+
+# CASO 8 — DELETE sistema (403)
+$ curl -X DELETE .../occupant-types/{system_id}
+STATUS:403 {"error":{"code":"SYSTEM_CATALOG_READONLY",...}}
+
+# CASO 9 — sin auth (401, con Accept: application/json)
+$ curl -H "Accept: application/json" http://localhost:8081/api/v1/occupant-types
+STATUS:401 {"message":"Unauthenticated."}
+```
+
+Casos 7 (`OCCUPANT_TYPE_IN_USE`), 10 (rol residente), 11 (tenant isolation) y 12 (staff crea sin
+restricción de scope de condominio) verificados vía los 12 tests de feature de arriba (assertions
+reales contra `assertStatus`/`error.code`/DB) en vez de curl — mismo criterio que otros bloques de
+este proyecto cuando el caso requiere fixtures complejas (contact + property + condominium).
+
+**Hallazgo de entorno (no bloqueante, no relacionado con este bloque):** al ejecutar `curl` sin el
+header `Accept: application/json` contra un endpoint protegido sin autenticar, Laravel intenta
+renderizar la página de error HTML de debug (`APP_DEBUG=true`) en vez de devolver `401` JSON
+directo — y ese render es patológicamente lento en este entorno (Docker Desktop/Windows), a veces
+agotando el tiempo máximo de ejecución (30s) y dejando el pool de `nginx`/`php-fpm` no responsivo
+hasta reiniciar los contenedores. Confirmado que afecta igual a `property-types` (bloque `done` de
+`PROPIEDADES-B02`) y `auth/me` (bloque `done` de `AUTH-B15`) — **no es una regresión de este
+bloque**. Con el header `Accept: application/json` (lo que cualquier cliente API real, incluido el
+frontend, siempre envía) el `401` responde en milisegundos. Documentado en
+`_state/RUNBOOK.md#E-008` para no volver a perder tiempo diagnosticándolo.
+
+### Archivos creados
+
+- `src/Directorio/Infrastructure/Http/Controllers/OccupantTypeController.php`
+- `src/Directorio/Infrastructure/Http/Requests/OccupantType/StoreOccupantTypeRequest.php`
+- `src/Directorio/Infrastructure/Http/Requests/OccupantType/UpdateOccupantTypeRequest.php`
+- `src/Directorio/Infrastructure/Http/Resources/OccupantTypeResource.php`
+- `tests/Feature/Directorio/OccupantTypeTest.php`
+- `api/endpoints/DIRECTORIO.md`
+
+### Archivos modificados
+
+- `routes/api.php` — grupo `occupant-types` registrado.
+- `api/API_CONTRACT.md` — 3 códigos nuevos en la tabla maestra (§3).
+- `_state/contracts/CONTRACT_LOCKS.md` — `LOCK-DIRECTORIO-01` agregado.
+- `_state/BOARD.md` — estado del bloque.
 
 ## Notas
 

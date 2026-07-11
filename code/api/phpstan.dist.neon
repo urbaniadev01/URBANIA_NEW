@@ -65,6 +65,13 @@ parameters:
         -
             identifier: arguments.count
             path: src/Mfa/Application/UseCases/VerifyMfaUseCase.php
+        # PHPStan over-narrows an Eloquent ->first() result routed through a private
+        # bool-returning scope helper as always-false, wrongly concluding the caller's
+        # nullable-model return branch is dead code — same class of false positive as the
+        # query-builder ignores above, just surfaced through the return.unusedType rule.
+        -
+            identifier: return.unusedType
+            path: src/Directorio/Infrastructure/Http/Controllers/PropertyOccupantController.php
     universalObjectCratesClasses:
         - Illuminate\Http\Request
     editorUrl: 'phpstorm://open?file=%%file%%&line=%%line%%'

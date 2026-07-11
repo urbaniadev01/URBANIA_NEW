@@ -8,7 +8,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Urbania\Authorization\Infrastructure\Models\EloquentRoleAssignment;
 use Urbania\Properties\Infrastructure\Http\Requests\Property\StorePropertyRequest;
@@ -342,8 +341,6 @@ final readonly class PropertyController
      * DELETE /properties/{id}
      *
      * R-03: Cannot delete if it has active occupants → 409 PROPERTY_HAS_OCCUPANTS.
-     *   If property_occupants table does not exist yet (DIRECTORIO pending),
-     *   uses a guard clause that assumes "no occupants" with @todo.
      * R-04: Soft delete.
      */
     public function destroy(Request $request, string $id): Response|JsonResponse
@@ -355,22 +352,19 @@ final readonly class PropertyController
         }
 
         // R-03: Cannot delete if it has active occupants
-        // @todo: When DIRECTORIO-B01 creates property_occupants table,
-        // replace this guard clause with a real query against property_occupants.
-        if (Schema::hasTable('property_occupants')) {
-            $hasOccupants = DB::table('property_occupants')
-                ->where('property_id', $id)
-                ->exists();
+        $hasOccupants = DB::table('property_occupants')
+            ->where('property_id', $id)
+            ->whereNull('deleted_at')
+            ->exists();
 
-            if ($hasOccupants) {
-                return response()->json([
-                    'error' => [
-                        'code' => 'PROPERTY_HAS_OCCUPANTS',
-                        'message' => 'No se puede eliminar la unidad porque tiene ocupantes activos. Retire los ocupantes primero.',
-                        'trace_id' => (string) Str::orderedUuid(),
-                    ],
-                ], 409);
-            }
+        if ($hasOccupants) {
+            return response()->json([
+                'error' => [
+                    'code' => 'PROPERTY_HAS_OCCUPANTS',
+                    'message' => 'No se puede eliminar la unidad porque tiene ocupantes activos. Retire los ocupantes primero.',
+                    'trace_id' => (string) Str::orderedUuid(),
+                ],
+            ], 409);
         }
 
         $property->delete();

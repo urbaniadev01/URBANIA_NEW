@@ -11,6 +11,9 @@ use function Pest\Laravel\artisan;
 // so we can test migrate → rollback → migrate cycle explicitly.
 
 beforeEach(function (): void {
+    // Isolated per-process database — see useIsolatedMigrationTestDatabase() in tests/Pest.php
+    useIsolatedMigrationTestDatabase('properties');
+
     // Start each test with a clean, fully-migrated database
     artisan('migrate:fresh', ['--force' => true])->assertSuccessful();
 });

@@ -25,6 +25,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import { AuthLayout } from "@/components/auth-layout";
 import { useResetPasswordMutation } from "@/features/auth/api/reset-password";
 import {
   passwordSchema,
@@ -104,8 +105,8 @@ export function ResetPasswordPage(): React.ReactNode {
   // ── Faltan params en la URL ──
   if (!token || !email) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4">
-        <Card className="w-full max-w-md">
+      <AuthLayout>
+        <Card className="w-full">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
               Enlace inválido
@@ -123,14 +124,14 @@ export function ResetPasswordPage(): React.ReactNode {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </AuthLayout>
     );
   }
 
   // ── Formulario normal ──
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4">
-      <Card className="w-full max-w-md">
+    <AuthLayout>
+      <Card className="w-full">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
             Nueva contraseña
@@ -247,7 +248,7 @@ export function ResetPasswordPage(): React.ReactNode {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }
 
@@ -269,11 +270,11 @@ function CheckItem({
   return (
     <div className="flex items-center gap-2">
       {met ? (
-        <Check className="h-4 w-4 text-green-500" aria-label="Cumple" />
+        <Check className="h-4 w-4 text-success" aria-label="Cumple" />
       ) : (
-        <X className="h-4 w-4 text-red-500" aria-label="No cumple" />
+        <X className="h-4 w-4 text-destructive" aria-label="No cumple" />
       )}
-      <span className={met ? "text-green-600" : "text-muted-foreground"}>
+      <span className={met ? "text-success" : "text-muted-foreground"}>
         {label}
       </span>
     </div>

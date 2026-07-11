@@ -6,7 +6,7 @@ actualizado: 2026-07-10
 
 # CONTRACT_LOCKS — Contratos de API congelados
 
-> **Estado actual (2026-07-10):** 10 locks implementados (AUTH-01 a AUTH-05, AUTH-08, AUTH-09, AUTH-10, PROPIEDADES-01, PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04).
+> **Estado actual (2026-07-11):** 13 locks implementados (AUTH-01 a AUTH-05, AUTH-08, AUTH-09, AUTH-10, PROPIEDADES-01, PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04, DIRECTORIO-01, DIRECTORIO-02, DIRECTORIO-03).
 > Todos los productores en `done`. Consumidores web: B10, B11, B12, B13 en `done`; **B06, B07, B08,
 > B09 en `verifying`** desde el 2026-07-10 — DoD cerrado con `pnpm ci` limpio y tests de componente
 > nuevos, pendiente solo de verificación visual Playwright bloqueada por un bug de entorno (ver
@@ -126,6 +126,70 @@ actualizado: 2026-07-10
 - **Detalle completo:** [[../../api/endpoints/PROPIEDADES]]
 - **Congelado:** 2026-07-08
 - **Consumido por:** [[../../features/PROPIEDADES/blocks/PROPIEDADES-B07-pantallas-condominios]], [[../../features/DASHBOARD/blocks/DASHBOARD-B02-propiedades-widgets]]
+
+### LOCK-DIRECTORIO-01 — Endpoints de catálogo de tipos de ocupante {#LOCK-DIRECTORIO-01}
+
+- **Bloque productor:** [[../../features/DIRECTORIO/blocks/DIRECTORIO-B02-crud-tipos-ocupante]]
+- **Estado:** Implementado (DIRECTORIO-B02 en `verifying`).
+- **Endpoints:**
+  - `GET /api/v1/occupant-types` — listar tipos (sistema + tenant)
+  - `POST /api/v1/occupant-types` — crear tipo (tenant)
+  - `GET /api/v1/occupant-types/{occupant_type}` — ver tipo individual
+  - `PATCH /api/v1/occupant-types/{occupant_type}` — actualizar tipo (solo tenant)
+  - `DELETE /api/v1/occupant-types/{occupant_type}` — eliminar tipo (solo tenant, sin uso)
+- **Request\Response:** Ver detalle en [[../../api/endpoints/DIRECTORIO]]
+- **Errores documentados:** `SYSTEM_CATALOG_READONLY` (403, reutilizado de `LOCK-PROPIEDADES-01`), `OCCUPANT_TYPE_IN_USE` (409), `OCCUPANT_TYPE_NAME_DUPLICATE` (409), `OCCUPANT_TYPE_NOT_FOUND` (404)
+- **Autorización:** `auth:api` — cualquier usuario autenticado puede leer (incluido rol `residente`). Escritura sujeta a tenant isolation (R-DIR-01) y protección de catálogos del sistema (R-DIR-09). El catálogo es a nivel organización, sin scope de condominio/torre.
+- **Detalle completo:** [[../../api/endpoints/DIRECTORIO]]
+- **Congelado:** 2026-07-11
+- **Consumido por:** [[../../features/DIRECTORIO/blocks/DIRECTORIO-B05-pantalla-tipos-ocupante]]
+
+### LOCK-DIRECTORIO-02 — Endpoints de contactos y autoservicio {#LOCK-DIRECTORIO-02}
+
+- **Bloque productor:** [[../../features/DIRECTORIO/blocks/DIRECTORIO-B03-crud-contactos]]
+- **Estado:** Implementado (DIRECTORIO-B03 en `verifying`).
+- **Endpoints:**
+  - `GET /api/v1/contacts` — listar contactos (paginado cursor, `?search=`)
+  - `POST /api/v1/contacts` — crear contacto (siempre `user_id = NULL`)
+  - `GET /api/v1/contacts/{contact}` — ver contacto (detalle completo)
+  - `PATCH /api/v1/contacts/{contact}` — actualizar contacto
+  - `DELETE /api/v1/contacts/{contact}` — eliminar contacto (sin ocupaciones activas)
+  - `GET /api/v1/contacts/{contact}/properties` — unidades donde el contacto tiene una ocupación activa
+  - `GET /api/v1/me/contact` — autoservicio: propio contacto (sin permisos especiales)
+  - `PATCH /api/v1/me/contact` — autoservicio: editar propio contacto
+- **Request\Response:** Ver detalle en [[../../api/endpoints/DIRECTORIO]]
+- **Errores documentados:** `CONTACT_HAS_OCCUPATIONS` (409), `CONTACT_NOT_FOUND` (404), `VALIDATION_ERROR` (422)
+- **Autorización:** `auth:api`. `/contacts/*` requiere scope de gestión (`organization`, `condominium` o `tower` vía `role_assignments`) — usuarios sin ese scope (ej. `residente`) reciben `403`. `/me/contact` no requiere ningún scope — cualquier usuario autenticado accede a su propio contacto (R-DIR-04).
+- **Reglas de negocio:**
+  - R-DIR-01: Tenant isolation.
+  - R-DIR-03: Staff scoping (condominium/tower) vía ocupaciones activas del contacto; anti-enumeración (404 unificado).
+  - R-DIR-06: Habeas data — `email`/`telefono` solo visibles en el listado para actores con scope `organization`; el detalle (`show`) siempre los incluye.
+  - R-DIR-08: No eliminar contacto con ocupaciones activas.
+  - R-DIR-10: Auditoría — `created_by`/`updated_by`.
+- **Detalle completo:** [[../../api/endpoints/DIRECTORIO]]
+- **Congelado:** 2026-07-11
+- **Consumido por:** [[../../features/DIRECTORIO/blocks/DIRECTORIO-B06-pantalla-directorio-contactos]]
+
+### LOCK-DIRECTORIO-03 — Endpoints de asignación de ocupantes {#LOCK-DIRECTORIO-03}
+
+- **Bloque productor:** [[../../features/DIRECTORIO/blocks/DIRECTORIO-B04-asignacion-ocupantes]]
+- **Estado:** Implementado (DIRECTORIO-B04 en `verifying`).
+- **Endpoints:**
+  - `GET /api/v1/properties/{property}/occupants` — listar ocupantes activos de una unidad
+  - `POST /api/v1/properties/{property}/occupants` — asignar un contacto a una unidad
+  - `PATCH /api/v1/property-occupants/{property_occupant}` — actualizar una asignación (tipo/principal)
+  - `DELETE /api/v1/property-occupants/{property_occupant}` — des-asignar (soft delete)
+- **Request\Response:** Ver detalle en [[../../api/endpoints/DIRECTORIO]]
+- **Errores documentados:** `OCCUPANT_ASSIGNMENT_DUPLICATE` (409), `PROPERTY_NOT_FOUND` (404, reutilizado de `PROPIEDADES-B04`), `FORBIDDEN` (403), `VALIDATION_ERROR` (422)
+- **Autorización:** `auth:api`. Escritura (`POST`/`PATCH`/`DELETE`) requiere scope de gestión (`organization`/`condominium`/`tower`) — `403` si el actor no tiene ninguno, `404` (anti-enumeración) si tiene scope pero no cubre la unidad. Lectura (`GET`) además permite scope `unit` (residente viendo su propia unidad, CA 13).
+- **Reglas de negocio:**
+  - R-DIR-07: marcar `es_principal: true` desmarca automáticamente cualquier otro principal activo para el mismo `property_id` + `occupant_type_id` (transacción).
+  - R-DIR-11: unicidad `(contact_id, property_id, occupant_type_id)` entre registros activos.
+  - R-DIR-06: el listado nunca incluye `email`/`telefono` del contacto (solo `id`/`nombre` anidado) — a diferencia de `/contacts`, aquí no hay caso en que se exponga el dato sensible.
+  - R-DIR-10: Auditoría — `created_by`/`updated_by`.
+- **Detalle completo:** [[../../api/endpoints/DIRECTORIO]]
+- **Congelado:** 2026-07-11
+- **Consumido por:** [[../../features/DIRECTORIO/blocks/DIRECTORIO-B07-pantalla-asignacion-ocupantes]]
 
 ### LOCK-AUTH-01 — `POST /auth/register` {#LOCK-AUTH-01}
 

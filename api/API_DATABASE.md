@@ -1,7 +1,7 @@
 ---
 tipo: referencia
 proyecto: api
-actualizado: 2026-07-05
+actualizado: 2026-07-10
 ---
 
 # API_DATABASE — Esquema real implementado
@@ -51,16 +51,28 @@ de AUTH.
 
 #### `contacts`
 
+> Corregida por `DIRECTORIO-B01` (2026-07-10) para cumplir su propio diseño aprobado de AUTH
+> (`user_id` nullable + `organization_id` propio, ADR-001) — `AUTH-B01` la había implementado con
+> `user_id` NOT NULL. Backfill de datos reales ejecutado sobre las filas existentes. Ver
+> `_state/BOARD.md` (nota de `DIRECTORIO-B01`) y
+> [[../features/DIRECTORIO/blocks/DIRECTORIO-B01-fundacion-contactos-ocupantes]].
+
 | Columna | Tipo | Constraints |
 |---|---|---|
 | `id` | `uuid` | PK, UUID v7 |
-| `user_id` | `uuid` | FK → `users.id`, UNIQUE |
+| `organization_id` | `uuid` | FK → `organizations.id`, NOT NULL, CASCADE ON DELETE |
+| `user_id` | `uuid` | FK → `users.id`, nullable — un contacto puede existir sin user (R-DIR-02) |
 | `nombre` | `text` | NOT NULL |
 | `email` | `text` | NOT NULL |
 | `telefono` | `text` | nullable |
+| `created_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
 | `created_at` | `timestamptz` | |
 | `updated_at` | `timestamptz` | |
 | `deleted_at` | `timestamptz` | nullable — soft delete |
+
+Partial unique index: `UNIQUE (user_id) WHERE user_id IS NOT NULL` — reemplaza el `UNIQUE` simple
+original; varios contactos sin `user_id` no colisionan entre sí.
 
 #### `invitations`
 
@@ -251,3 +263,47 @@ asignación de rol duplicada para el mismo scope.
 | `deleted_at` | `timestamptz` | nullable — soft delete |
 
 Partial unique index: `UNIQUE (property_id, tipo) WHERE vigente_hasta IS NULL` — solo un coeficiente activo por propiedad+tipo.
+
+### Tablas de DIRECTORIO (DIRECTORIO-B01)
+
+#### `occupant_types`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `organization_id` | `uuid` | FK → `organizations.id`, nullable (NULL = sistema) |
+| `nombre` | `text` | NOT NULL |
+| `descripcion` | `text` | nullable |
+| `created_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` | `timestamptz` | |
+| `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+Catálogo de sistema sembrado por `OccupantTypeSeeder` (`propietario`, `residente`, `arrendatario`,
+`familiar`, `organization_id = NULL`).
+
+#### `property_occupants`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `contact_id` | `uuid` | FK → `contacts.id`, NOT NULL, CASCADE ON DELETE |
+| `property_id` | `uuid` | FK → `properties.id`, NOT NULL, CASCADE ON DELETE |
+| `occupant_type_id` | `uuid` | FK → `occupant_types.id`, NOT NULL, RESTRICT ON DELETE |
+| `es_principal` | `boolean` | NOT NULL, DEFAULT `false` |
+| `created_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` | `timestamptz` | |
+| `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+Partial unique indexes:
+- `UNIQUE (contact_id, property_id, occupant_type_id) WHERE deleted_at IS NULL` (R-DIR-11) — un
+  contacto no puede tener el mismo tipo de ocupante repetido en la misma unidad mientras esté activo.
+- `UNIQUE (property_id, occupant_type_id) WHERE es_principal = true AND deleted_at IS NULL`
+  (R-DIR-07) — un solo ocupante principal por unidad+tipo mientras esté activo.
+
+`PropertyController::destroy` (PROPIEDADES-B04) consulta esta tabla directamente para la regla R-03
+("no eliminar unidad con ocupantes activos") — el guard clause temporal que asumía "sin ocupantes"
+se reemplazó por la consulta real en esta misma sesión.

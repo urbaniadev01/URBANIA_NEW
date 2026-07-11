@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Urbania\Directorio\Infrastructure\Models\EloquentPropertyOccupant;
 use Urbania\Shared\Infrastructure\Concerns\HasUuidV7;
 
 class EloquentProperty extends Model
@@ -80,6 +81,14 @@ class EloquentProperty extends Model
     public function coefficients(): HasMany
     {
         return $this->hasMany(EloquentPropertyCoefficient::class, 'property_id');
+    }
+
+    /**
+     * @return HasMany<EloquentPropertyOccupant, $this>
+     */
+    public function occupants(): HasMany
+    {
+        return $this->hasMany(EloquentPropertyOccupant::class, 'property_id');
     }
 
     /**

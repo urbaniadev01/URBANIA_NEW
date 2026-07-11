@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\Route;
 use Urbania\Auth\Infrastructure\Http\Controllers\AuthController;
 use Urbania\Auth\Infrastructure\Http\Controllers\PasswordResetController;
 use Urbania\Authorization\Infrastructure\Http\Controllers\AdminController;
+use Urbania\Directorio\Infrastructure\Http\Controllers\ContactController;
+use Urbania\Directorio\Infrastructure\Http\Controllers\MeContactController;
+use Urbania\Directorio\Infrastructure\Http\Controllers\OccupantTypeController;
+use Urbania\Directorio\Infrastructure\Http\Controllers\PropertyOccupantController;
 use Urbania\Mfa\Infrastructure\Http\Controllers\MfaController;
 use Urbania\Properties\Infrastructure\Http\Controllers\CondominiumController;
 use Urbania\Properties\Infrastructure\Http\Controllers\CondominiumTreeController;
@@ -137,5 +141,41 @@ Route::prefix('v1')->group(function () {
     Route::prefix('condominiums')->middleware('auth:api')->group(function () {
         Route::patch('/{condominium}/coefficients', [PropertyCoefficientController::class, 'patch']);
         Route::get('/{condominium}/tree', [CondominiumTreeController::class, 'tree']);
+    });
+
+    // Directorio bounded context — DIRECTORIO-B02
+    Route::prefix('occupant-types')->middleware('auth:api')->group(function () {
+        Route::get('/', [OccupantTypeController::class, 'index']);
+        Route::post('/', [OccupantTypeController::class, 'store']);
+        Route::get('/{occupant_type}', [OccupantTypeController::class, 'show']);
+        Route::patch('/{occupant_type}', [OccupantTypeController::class, 'update']);
+        Route::delete('/{occupant_type}', [OccupantTypeController::class, 'destroy']);
+    });
+
+    // Directorio bounded context — DIRECTORIO-B03
+    Route::prefix('contacts')->middleware('auth:api')->group(function () {
+        Route::get('/', [ContactController::class, 'index']);
+        Route::post('/', [ContactController::class, 'store']);
+        Route::get('/{contact}', [ContactController::class, 'show']);
+        Route::patch('/{contact}', [ContactController::class, 'update']);
+        Route::delete('/{contact}', [ContactController::class, 'destroy']);
+        Route::get('/{contact}/properties', [ContactController::class, 'properties']);
+    });
+
+    // Self-service — DIRECTORIO-B03 (R-DIR-04)
+    Route::prefix('me')->middleware('auth:api')->group(function () {
+        Route::get('/contact', [MeContactController::class, 'show']);
+        Route::patch('/contact', [MeContactController::class, 'update']);
+    });
+
+    // Directorio bounded context — DIRECTORIO-B04
+    Route::prefix('properties')->middleware('auth:api')->group(function () {
+        Route::get('/{property}/occupants', [PropertyOccupantController::class, 'index']);
+        Route::post('/{property}/occupants', [PropertyOccupantController::class, 'store']);
+    });
+
+    Route::prefix('property-occupants')->middleware('auth:api')->group(function () {
+        Route::patch('/{property_occupant}', [PropertyOccupantController::class, 'update']);
+        Route::delete('/{property_occupant}', [PropertyOccupantController::class, 'destroy']);
     });
 });

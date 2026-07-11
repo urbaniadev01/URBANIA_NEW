@@ -22,6 +22,9 @@ import {
   Home,
   AlertTriangle,
 } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
+import { LoadingState } from "@/components/loading-state";
+import { PAGE_CONTAINER } from "@/lib/layout";
 import { CondominioSheet } from "../components/CondominioSheet";
 import { TorreSheet } from "../components/TorreSheet";
 import { UnidadesTab } from "../components/UnidadesTab";
@@ -216,30 +219,24 @@ export function DetalleCondominioPage(): React.ReactNode {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-4xl px-8 py-8">
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+      <div className={PAGE_CONTAINER}>
+        <LoadingState />
       </div>
     );
   }
 
   if (isError || !condominio) {
     return (
-      <div className="container mx-auto max-w-4xl px-8 py-8">
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-          <AlertTriangle className="mb-4 h-10 w-10 text-destructive/60" />
-          <p className="text-sm text-muted-foreground">
-            El condominio no existe o no tienes acceso.
-          </p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => navigate("/condominios")}
-          >
-            Volver a la lista
-          </Button>
-        </div>
+      <div className={PAGE_CONTAINER}>
+        <EmptyState
+          icon={AlertTriangle}
+          message="El condominio no existe o no tienes acceso."
+          action={
+            <Button variant="outline" onClick={() => navigate("/condominios")}>
+              Volver a la lista
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -252,7 +249,7 @@ export function DetalleCondominioPage(): React.ReactNode {
   // ── Render ──────────────────────────────────────────────────────────
 
   return (
-    <div className="container mx-auto max-w-4xl px-8 py-8">
+    <div className={PAGE_CONTAINER}>
       {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
         <Link

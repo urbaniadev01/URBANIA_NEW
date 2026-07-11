@@ -5,8 +5,13 @@ import { type ReactNode, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { NotFoundPage } from "@/components/not-found-page";
 import { DashboardPage } from "@/app/DashboardPage";
 import { RequireAuth } from "@/app/RequireAuth";
+import { AppLayout } from "@/app/AppLayout";
+import { RouteSuspenseFallback } from "@/components/route-fallback";
 
 const LoginPageLazy = lazy(() =>
   import("@/features/auth/pages/LoginPage").then((m) => ({
@@ -68,6 +73,24 @@ const DetalleCondominioPageLazy = lazy(() =>
   })),
 );
 
+const TiposOcupantePageLazy = lazy(() =>
+  import("@/features/directorio/pages/TiposOcupantePage").then((m) => ({
+    default: m.TiposOcupantePage,
+  })),
+);
+
+const ContactosPageLazy = lazy(() =>
+  import("@/features/directorio/pages/ContactosPage").then((m) => ({
+    default: m.ContactosPage,
+  })),
+);
+
+const MiPerfilPageLazy = lazy(() =>
+  import("@/features/directorio/pages/MiPerfilPage").then((m) => ({
+    default: m.MiPerfilPage,
+  })),
+);
+
 const DevIndicatorLazy = import.meta.env.DEV
   ? lazy(() =>
       import("@/components/DevIndicator").then((m) => ({
@@ -99,160 +122,142 @@ function DevIndicatorWrapper(): ReactNode {
 
 export function App(): ReactNode {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          {/* Public routes — no authentication required */}
-          <Route
-            path="/login"
-            element={
-              <Suspense
-                fallback={
-                  <div className="flex min-h-screen items-center justify-center">
-                    <p className="text-muted-foreground">Cargando...</p>
-                  </div>
+    <ThemeProvider defaultTheme="system" storageKey="urbania-ui-theme">
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes — no authentication required */}
+              <Route
+                path="/login"
+                element={
+                  <Suspense fallback={<RouteSuspenseFallback />}>
+                    <LoginPageLazy />
+                  </Suspense>
                 }
-              >
-                <LoginPageLazy />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/register/:token?"
-            element={
-              <Suspense
-                fallback={
-                  <div className="flex min-h-screen items-center justify-center">
-                    <p className="text-muted-foreground">Cargando...</p>
-                  </div>
+              />
+              <Route
+                path="/register/:token?"
+                element={
+                  <Suspense fallback={<RouteSuspenseFallback />}>
+                    <RegisterPageLazy />
+                  </Suspense>
                 }
-              >
-                <RegisterPageLazy />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/mfa/verify"
-            element={
-              <Suspense
-                fallback={
-                  <div className="flex min-h-screen items-center justify-center">
-                    <p className="text-muted-foreground">Cargando...</p>
-                  </div>
+              />
+              <Route
+                path="/mfa/verify"
+                element={
+                  <Suspense fallback={<RouteSuspenseFallback />}>
+                    <MfaVerifyPageLazy />
+                  </Suspense>
                 }
-              >
-                <MfaVerifyPageLazy />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/forgot-password"
-            element={
-              <Suspense
-                fallback={
-                  <div className="flex min-h-screen items-center justify-center">
-                    <p className="text-muted-foreground">Cargando...</p>
-                  </div>
+              />
+              <Route
+                path="/forgot-password"
+                element={
+                  <Suspense fallback={<RouteSuspenseFallback />}>
+                    <ForgotPasswordPageLazy />
+                  </Suspense>
                 }
-              >
-                <ForgotPasswordPageLazy />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/reset-password"
-            element={
-              <Suspense
-                fallback={
-                  <div className="flex min-h-screen items-center justify-center">
-                    <p className="text-muted-foreground">Cargando...</p>
-                  </div>
+              />
+              <Route
+                path="/reset-password"
+                element={
+                  <Suspense fallback={<RouteSuspenseFallback />}>
+                    <ResetPasswordPageLazy />
+                  </Suspense>
                 }
-              >
-                <ResetPasswordPageLazy />
-              </Suspense>
-            }
-          />
+              />
 
-          {/* Private routes — RequireAuth wrapper checks for access token */}
-          <Route element={<RequireAuth />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route
-              path="/mfa/enroll"
-              element={
-                <Suspense
-                  fallback={
-                    <div className="flex min-h-screen items-center justify-center">
-                      <p className="text-muted-foreground">Cargando...</p>
-                    </div>
+              {/* MFA enroll — requiere auth pero es conceptualmente parte del flujo
+                  de auth (mismo shell tipo Card que login/register), no lleva
+                  DashboardShell. */}
+              <Route element={<RequireAuth />}>
+                <Route
+                  path="/mfa/enroll"
+                  element={
+                    <Suspense fallback={<RouteSuspenseFallback />}>
+                      <MfaEnrollPageLazy />
+                    </Suspense>
                   }
-                >
-                  <MfaEnrollPageLazy />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/catalogos/tipos-propiedad"
-              element={
-                <Suspense
-                  fallback={
-                    <div className="flex min-h-screen items-center justify-center">
-                      <p className="text-muted-foreground">Cargando...</p>
-                    </div>
-                  }
-                >
-                  <TiposPropiedadPageLazy />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/catalogos/estados-propiedad"
-              element={
-                <Suspense
-                  fallback={
-                    <div className="flex min-h-screen items-center justify-center">
-                      <p className="text-muted-foreground">Cargando...</p>
-                    </div>
-                  }
-                >
-                  <EstadosPropiedadPageLazy />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/condominios"
-              element={
-                <Suspense
-                  fallback={
-                    <div className="flex min-h-screen items-center justify-center">
-                      <p className="text-muted-foreground">Cargando...</p>
-                    </div>
-                  }
-                >
-                  <CondominiosListPageLazy />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/condominios/:id"
-              element={
-                <Suspense
-                  fallback={
-                    <div className="flex min-h-screen items-center justify-center">
-                      <p className="text-muted-foreground">Cargando...</p>
-                    </div>
-                  }
-                >
-                  <DetalleCondominioPageLazy />
-                </Suspense>
-              }
-            />
-          </Route>
-        </Routes>
-        <DevIndicatorWrapper />
-      </BrowserRouter>
-      <Toaster richColors closeButton />
-    </QueryClientProvider>
+                />
+              </Route>
+
+              {/* Private routes — RequireAuth wrapper checks for access token,
+                  AppLayout instancia DashboardShell una única vez para todas
+                  las rutas anidadas (antes cada página se envolvía sola, o no
+                  se envolvía en absoluto — ver plan de rediseño, Fase 1). */}
+              <Route element={<RequireAuth />}>
+                <Route element={<AppLayout />}>
+                  <Route index element={<DashboardPage />} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route
+                    path="/catalogos/tipos-propiedad"
+                    element={
+                      <Suspense fallback={<RouteSuspenseFallback />}>
+                        <TiposPropiedadPageLazy />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/catalogos/estados-propiedad"
+                    element={
+                      <Suspense fallback={<RouteSuspenseFallback />}>
+                        <EstadosPropiedadPageLazy />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/condominios"
+                    element={
+                      <Suspense fallback={<RouteSuspenseFallback />}>
+                        <CondominiosListPageLazy />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/condominios/:id"
+                    element={
+                      <Suspense fallback={<RouteSuspenseFallback />}>
+                        <DetalleCondominioPageLazy />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/catalogos/tipos-ocupante"
+                    element={
+                      <Suspense fallback={<RouteSuspenseFallback />}>
+                        <TiposOcupantePageLazy />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/directorio/contactos"
+                    element={
+                      <Suspense fallback={<RouteSuspenseFallback />}>
+                        <ContactosPageLazy />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/perfil"
+                    element={
+                      <Suspense fallback={<RouteSuspenseFallback />}>
+                        <MiPerfilPageLazy />
+                      </Suspense>
+                    }
+                  />
+                </Route>
+              </Route>
+
+              {/* Catch-all — cualquier ruta no reconocida, pública o privada. */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+            <DevIndicatorWrapper />
+          </BrowserRouter>
+          <Toaster richColors closeButton />
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }

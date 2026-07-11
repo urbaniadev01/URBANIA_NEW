@@ -3,17 +3,19 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Database\Seeders\OccupantTypeSeeder;
 use Database\Seeders\PropertyStatusSeeder;
 use Database\Seeders\PropertyTypeSeeder;
 use Database\Seeders\RbacDemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Urbania\Auth\Infrastructure\Models\EloquentContact;
 use Urbania\Auth\Infrastructure\Models\EloquentOrganization;
 use Urbania\Authorization\Infrastructure\Models\EloquentRole;
 use Urbania\Authorization\Infrastructure\Models\EloquentRoleAssignment;
+use Urbania\Directorio\Infrastructure\Models\EloquentOccupantType;
 use Urbania\Properties\Infrastructure\Models\EloquentCondominium;
 use Urbania\Properties\Infrastructure\Models\EloquentProperty;
 use Urbania\Properties\Infrastructure\Models\EloquentPropertyStatus;
@@ -59,6 +61,7 @@ beforeEach(function (): void {
     seed(RbacDemoSeeder::class);
     seed(PropertyTypeSeeder::class);
     seed(PropertyStatusSeeder::class);
+    seed(OccupantTypeSeeder::class);
 });
 
 // ---------------------------------------------------------------
@@ -198,16 +201,26 @@ function createB04TowerStaffUser(EloquentOrganization $org, string $towerId): ar
     return ['user' => $user, 'token' => generateB04AccessToken($user)];
 }
 
-function createB04MinimalOccupantsTable(): void
+function createB04TestOccupant(EloquentProperty $property): void
 {
-    if (! Schema::hasTable('property_occupants')) {
-        Schema::create('property_occupants', function ($table): void {
-            $table->uuid('id')->primary();
-            $table->uuid('property_id');
-            $table->timestampsTz();
-            $table->softDeletesTz();
-        });
-    }
+    $contact = new EloquentContact([
+        'organization_id' => $property->condominium->organization_id,
+        'nombre' => 'Ocupante B04',
+        'email' => 'ocupante-b04@urbania.test',
+    ]);
+    $contact->save();
+
+    $occupantType = EloquentOccupantType::query()->whereNull('organization_id')->first();
+
+    DB::table('property_occupants')->insert([
+        'id' => (string) Str::orderedUuid(),
+        'contact_id' => $contact->id,
+        'property_id' => $property->id,
+        'occupant_type_id' => $occupantType->id,
+        'es_principal' => false,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
 }
 
 // ---------------------------------------------------------------
@@ -516,15 +529,7 @@ test('delete property with occupants returns 409', function () {
     $condo = createB04TestCondominium($auth['org'], $auth['user']);
     $property = createB04TestProperty($condo, $auth['user'], null, 'OCC-101');
 
-    // Create minimal property_occupants table and insert occupant
-    createB04MinimalOccupantsTable();
-
-    DB::table('property_occupants')->insert([
-        'id' => (string) Str::orderedUuid(),
-        'property_id' => $property->id,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+    createB04TestOccupant($property);
 
     $response = deleteJson("/api/v1/properties/{$property->id}", [], createB04AuthHeader($auth['token']));
 
@@ -539,11 +544,6 @@ test('delete property without occupants returns 204 soft delete', function () {
     $auth = createB04AuthUser();
     $condo = createB04TestCondominium($auth['org'], $auth['user']);
     $property = createB04TestProperty($condo, $auth['user'], null, 'DEL-101');
-
-    // Ensure no occupants table or empty occupants
-    if (! Schema::hasTable('property_occupants')) {
-        createB04MinimalOccupantsTable();
-    }
 
     $response = deleteJson("/api/v1/properties/{$property->id}", [], createB04AuthHeader($auth['token']));
 

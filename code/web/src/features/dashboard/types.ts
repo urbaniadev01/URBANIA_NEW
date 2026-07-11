@@ -1,4 +1,5 @@
 import type { ComponentType, LazyExoticComponent } from "react";
+import type { LucideIcon } from "lucide-react";
 
 /**
  * Usuario autenticado — resuelto desde GET /auth/me (mejora pendiente de AUTH).
@@ -68,6 +69,8 @@ export interface SidebarNavItem {
   id: string;
   to: string;
   label: string;
+  /** Ícono mostrado siempre — es lo único visible cuando la sidebar está colapsada. */
+  icon?: LucideIcon;
   /** Permiso RBAC requerido. Si no se cumple, el ítem no aparece. */
   permission?: string;
   /** Agrupación visual — ej. "Gestión", "Administración" */

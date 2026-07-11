@@ -20,6 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { AuthLayout } from "@/components/auth-layout";
 import { useMfaVerifyMutation } from "@/features/auth/api/mfa-verify";
 import type { MfaVerifyRequest } from "@/features/auth/types/auth.types";
 import { MFA_VERIFY_ERROR_CODES } from "@/features/auth/types/auth.types";
@@ -77,8 +78,8 @@ export function MfaVerifyPage(): React.ReactNode {
 
   if (tokenExpired) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4">
-        <Card className="w-full max-w-md">
+      <AuthLayout>
+        <Card className="w-full">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
               Sesión expirada
@@ -93,13 +94,13 @@ export function MfaVerifyPage(): React.ReactNode {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4">
-      <Card className="w-full max-w-md">
+    <AuthLayout>
+      <Card className="w-full">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
             Verificación en dos pasos
@@ -152,6 +153,6 @@ export function MfaVerifyPage(): React.ReactNode {
           </Form>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }

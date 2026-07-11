@@ -26,16 +26,16 @@ export function SumaBar({ sum, isLoading = false }: SumaBarProps) {
         isLoading
           ? "border-muted bg-muted/20"
           : isExact
-            ? "border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-200"
-            : "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
+            ? "border-success/30 bg-success/10 text-success"
+            : "border-warning/30 bg-warning/10 text-warning"
       }`}
     >
       {isLoading ? (
         <span className="h-4 w-4 animate-pulse rounded-full bg-muted-foreground/30" />
       ) : isExact ? (
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600 dark:text-green-400" />
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
       ) : (
-        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+        <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
       )}
 
       <span className="flex-1 font-medium">

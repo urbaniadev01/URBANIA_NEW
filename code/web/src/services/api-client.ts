@@ -91,7 +91,7 @@ async function request<T>(url: string, options: RequestOptions): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function tryRefresh(): Promise<boolean> {
+export async function tryRefresh(): Promise<boolean> {
   try {
     const response = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
       method: "POST",

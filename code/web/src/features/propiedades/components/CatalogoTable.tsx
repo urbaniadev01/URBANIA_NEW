@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -8,7 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Pencil, Plus, Trash2, Building2 } from "lucide-react";
+import { Pencil, Plus, Trash2, Building2 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { LoadingState } from "@/components/loading-state";
+import { PAGE_CONTAINER } from "@/lib/layout";
 import type { CatalogoItem } from "../types";
 import { isSystemCatalog } from "../types";
 
@@ -35,37 +40,32 @@ export function CatalogoTable({
   onDelete,
 }: CatalogoTableProps): ReactNode {
   return (
-    <div className="container mx-auto max-w-5xl px-8 py-8">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          <p className="text-sm text-muted-foreground">
-            Gestiona los catálogos de tu organización.
-          </p>
-        </div>
-        <Button onClick={onCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nuevo
-        </Button>
-      </div>
+    <div className={PAGE_CONTAINER}>
+      <PageHeader
+        title={title}
+        description="Gestiona los catálogos de tu organización."
+        actions={
+          <Button onClick={onCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo
+          </Button>
+        }
+      />
 
       {/* Content */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <LoadingState />
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-          <Building2 className="mb-4 h-10 w-10 text-muted-foreground/60" />
-          <p className="text-sm text-muted-foreground">
-            No hay elementos registrados.
-          </p>
-          <Button variant="outline" className="mt-4" onClick={onCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            Crear primero
-          </Button>
-        </div>
+        <EmptyState
+          icon={Building2}
+          message="No hay elementos registrados."
+          action={
+            <Button variant="outline" onClick={onCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Crear primero
+            </Button>
+          }
+        />
       ) : (
         <div className="rounded-md border">
           <Table>
@@ -86,13 +86,9 @@ export function CatalogoTable({
                   </TableCell>
                   <TableCell>
                     {isSystemCatalog(item) ? (
-                      <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                        Sistema
-                      </span>
+                      <Badge variant="info">Sistema</Badge>
                     ) : (
-                      <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                        Personalizado
-                      </span>
+                      <Badge variant="success">Personalizado</Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-right">

@@ -10,6 +10,7 @@
  * Ver features/DASHBOARD/PANORAMA.md §7.2
  */
 import { lazy } from "react";
+import { Building2 } from "lucide-react";
 import { registerWidget, registerSidebarItem } from "@/features/dashboard/registry";
 
 // ── Widgets ────────────────────────────────────────────────────────────────
@@ -63,43 +64,15 @@ registerWidget({
 });
 
 // ── Sidebar items ──────────────────────────────────────────────────────────
+// Unidades, Coeficientes, Directorio y Cobranza se sacaron de acá: apuntaban
+// a rutas que no existen todavía en App.tsx (/properties, /contacts,
+// /billing) — se vuelven a agregar cuando esas features tengan una ruta real.
 
 registerSidebarItem({
   id: "sidebar-condominios",
   to: "/condominios",
   label: "Condominios",
+  icon: Building2,
   permission: "condominiums.ver",
-  group: "Gestión",
-});
-
-registerSidebarItem({
-  id: "sidebar-unidades",
-  to: "/properties",
-  label: "Unidades",
-  permission: "properties.ver",
-  group: "Gestión",
-});
-
-registerSidebarItem({
-  id: "sidebar-coeficientes",
-  to: "/properties/coefficients",
-  label: "Coeficientes",
-  permission: "properties.ver",
-  group: "Gestión",
-});
-
-registerSidebarItem({
-  id: "sidebar-directorio",
-  to: "/contacts",
-  label: "Directorio",
-  permission: "contacts.ver",
-  group: "Gestión",
-});
-
-registerSidebarItem({
-  id: "sidebar-cobranza",
-  to: "/billing",
-  label: "Cobranza",
-  permission: "billing.ver",
   group: "Gestión",
 });

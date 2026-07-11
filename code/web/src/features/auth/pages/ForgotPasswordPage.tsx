@@ -20,6 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { AuthLayout } from "@/components/auth-layout";
 import { useForgotPasswordMutation } from "@/features/auth/api/forgot-password";
 import type { ForgotPasswordRequest } from "@/features/auth/types/auth.types";
 import { Loader2 } from "lucide-react";
@@ -78,8 +79,8 @@ export function ForgotPasswordPage(): React.ReactNode {
   // Estado éxito: formulario reemplazado por mensaje genérico
   if (sent) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4">
-        <Card className="w-full max-w-md">
+      <AuthLayout>
+        <Card className="w-full">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
               Urbania
@@ -103,14 +104,14 @@ export function ForgotPasswordPage(): React.ReactNode {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </AuthLayout>
     );
   }
 
   // Estado inicial / carga
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4">
-      <Card className="w-full max-w-md">
+    <AuthLayout>
+      <Card className="w-full">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
             Urbania
@@ -169,6 +170,6 @@ export function ForgotPasswordPage(): React.ReactNode {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }

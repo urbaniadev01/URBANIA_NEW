@@ -11,13 +11,6 @@ import { useActiveCondominiumStore } from "@/stores/activeCondominiumStore";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function getGreeting(name: string): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return `Buenos días, ${name}`;
-  if (hour < 18) return `Buenas tardes, ${name}`;
-  return `Buenas noches, ${name}`;
-}
-
 function formatDate(): string {
   return new Date().toLocaleDateString("es-ES", {
     weekday: "long",
@@ -102,7 +95,7 @@ export default function WelcomeWidget({ user }: WidgetProps): ReactNode {
     state = { status: "normal" };
   }
 
-  const greeting = getGreeting(user.name);
+  const greeting = `Hola, ${user.name}`;
   const today = formatDate();
 
   return (

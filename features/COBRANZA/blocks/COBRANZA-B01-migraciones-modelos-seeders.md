@@ -4,11 +4,11 @@ proyecto: api
 feature: COBRANZA
 id: COBRANZA-B01
 proyectos: [api]
-estado: backlog
+estado: ready
 depende_de: [PROPIEDADES-B01, DIRECTORIO-B01]
 contrato: null
 verificacion_critica: false
-actualizado: 2026-07-09
+actualizado: 2026-07-11
 ---
 
 # COBRANZA-B01 — Migraciones, modelos y seeders de las 8 tablas de facturación

@@ -133,3 +133,10 @@ routes/api.php, api/endpoints/PROPIEDADES.md, CONTRACT_LOCKS.md (LOCK-PROPIEDADE
 > directamente (sin crear el guard clause temporal). Si `PROPIEDADES-B04` ya está `done`,
 > `DIRECTORIO-B01` reemplaza el guard clause por la verificación real y lo anota en su propia
 > Evidencia — revisar ahí antes de asumir que este `@todo` sigue vigente.
+>
+> **Resuelto (2026-07-10, por `DIRECTORIO-B01`):** el guard clause se reemplazó por una consulta
+> real a `property_occupants` (`DB::table('property_occupants')->where('property_id', $id)
+> ->whereNull('deleted_at')->exists()`) en `PropertyController::destroy` — el `@todo` y el
+> `Schema::hasTable('property_occupants')` condicional ya no existen. Test de feature `PropertyTest`
+> (criterio 11) actualizado para insertar un ocupante real (`contact_id`/`occupant_type_id`
+> válidos) en vez de crear una tabla mínima ad-hoc.

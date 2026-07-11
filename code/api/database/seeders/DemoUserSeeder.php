@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
+use Urbania\Auth\Infrastructure\Models\EloquentContact;
 use Urbania\Auth\Infrastructure\Models\EloquentOrganization;
 use Urbania\Authorization\Infrastructure\Models\EloquentRole;
 use Urbania\Authorization\Infrastructure\Models\EloquentRoleAssignment;
@@ -41,6 +42,18 @@ class DemoUserSeeder extends Seeder
             'email' => 'admin@urbania.test',
             'password_hash' => password_hash('Admin123!', PASSWORD_BCRYPT),
             'estado' => 'active',
+        ]);
+
+        // -----------------------------------------------------------
+        // Contact — nombre mostrado en UI (AuthController/MeResource
+        // leen name desde user.contact?->nombre, no desde la tabla users)
+        // -----------------------------------------------------------
+        EloquentContact::create([
+            'id' => (string) Str::orderedUuid(),
+            'organization_id' => $org->id,
+            'user_id' => $user->id,
+            'nombre' => 'Administrador Demo',
+            'email' => $user->email,
         ]);
 
         // -----------------------------------------------------------

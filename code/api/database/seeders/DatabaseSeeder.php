@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             RbacDemoSeeder::class,
             PropertyTypeSeeder::class,
             PropertyStatusSeeder::class,
+            OccupantTypeSeeder::class,
             DemoUserSeeder::class,
             MfaDemoSeeder::class,
         ]);

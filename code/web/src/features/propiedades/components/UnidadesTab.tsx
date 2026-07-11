@@ -33,9 +33,11 @@ import {
   Trash2,
   Home,
   AlertTriangle,
+  Users,
 } from "lucide-react";
 import { FiltrosUnidades } from "./FiltrosUnidades";
 import { UnidadSheet } from "./UnidadSheet";
+import { OcupantesSheet } from "@/features/directorio/components/OcupantesSheet";
 import {
   usePropertiesInfiniteQuery,
   useCreatePropertyMutation,
@@ -173,6 +175,17 @@ export function UnidadesTab({ condominioId }: UnidadesTabProps): ReactNode {
   const [deletingUnit, setDeletingUnit] = useState<PropertyListItem | null>(
     null,
   );
+
+  // ── Ocupantes sheet (DIRECTORIO-B07) ────────────────────────────────
+  const [ocupantesOpen, setOcupantesOpen] = useState(false);
+  const [ocupantesUnit, setOcupantesUnit] = useState<PropertyListItem | null>(
+    null,
+  );
+
+  const handleOpenOcupantes = useCallback((unit: PropertyListItem) => {
+    setOcupantesUnit(unit);
+    setOcupantesOpen(true);
+  }, []);
 
   // ── Lookup maps ──────────────────────────────────────────────────────
   const towerMap = useMemo(() => {
@@ -440,7 +453,7 @@ export function UnidadesTab({ condominioId }: UnidadesTabProps): ReactNode {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="w-[100px]">Piso</TableHead>
-                  <TableHead className="w-[100px] text-right">Acciones</TableHead>
+                  <TableHead className="w-[140px] text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -472,6 +485,15 @@ export function UnidadesTab({ condominioId }: UnidadesTabProps): ReactNode {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleOpenOcupantes(unit)}
+                          title="Ocupantes"
+                        >
+                          <Users className="h-4 w-4" />
+                          <span className="sr-only">Ocupantes</span>
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -710,6 +732,14 @@ export function UnidadesTab({ condominioId }: UnidadesTabProps): ReactNode {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Ocupantes sheet (DIRECTORIO-B07) ────────────────────────── */}
+      <OcupantesSheet
+        open={ocupantesOpen}
+        onOpenChange={setOcupantesOpen}
+        propertyId={ocupantesUnit?.id ?? null}
+        propertyCodigo={ocupantesUnit?.codigo ?? ""}
+      />
     </div>
   );
 }

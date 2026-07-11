@@ -4,11 +4,11 @@ proyecto: api
 feature: DIRECTORIO
 id: DIRECTORIO-B04
 proyectos: [api]
-estado: backlog
+estado: done
 depende_de: [DIRECTORIO-B01]
 contrato: produce
 verificacion_critica: false
-actualizado: 2026-07-08
+actualizado: 2026-07-11
 ---
 
 # DIRECTORIO-B04 — Asignación de ocupantes (persona↔unidad)
@@ -75,19 +75,111 @@ Este bloque **produce** el contrato de los endpoints `/properties/{id}/occupants
 
 ## Definition of Done
 
-- [ ] `composer ci` ejecutado — salida completa pegada.
-- [ ] Verificación funcional real con request/response para **todos** los casos de la tabla de
+- [x] `composer ci` ejecutado — salida completa pegada.
+- [x] Verificación funcional real con request/response para **todos** los casos de la tabla de
       criterios (13 casos) — incluidos los negativos (3, 5, 9, 10, 11, 12), con énfasis en el
       desmarcado automático de `es_principal` (caso 6).
-- [ ] `_state/contracts/CONTRACT_LOCKS.md` — entrada `LOCK-DIRECTORIO-03` creada.
-- [ ] `api/API_CONTRACT.md` §3 — agregar `OCCUPANT_ASSIGNMENT_DUPLICATE` (409) a la tabla maestra de
+- [x] `_state/contracts/CONTRACT_LOCKS.md` — entrada `LOCK-DIRECTORIO-03` creada.
+- [x] `api/API_CONTRACT.md` §3 — agregar `OCCUPANT_ASSIGNMENT_DUPLICATE` (409) a la tabla maestra de
       códigos.
-- [ ] `api/endpoints/DIRECTORIO.md` actualizado con el detalle de request/response de los endpoints
+- [x] `api/endpoints/DIRECTORIO.md` actualizado con el detalle de request/response de los endpoints
       de asignación de ocupantes.
 
 ## Evidencia
 
-> Vacío hasta que el bloque se ejecute.
+### Implementación
+
+`PropertyOccupantController` (index/store/update/destroy). Dos niveles de scope reutilizando el
+patrón de `PropertyController`/`ContactController`: `canAccessProperty()` (lectura — org/condo/tower
+**+ unit**, permite a un residente ver su propia unidad, CA 13) y `canManageProperty()` (escritura —
+solo org/condo/tower, CA 12). R-DIR-07 (desmarcado automático de `es_principal`) implementado en
+`unmarkOtherPrincipals()`, corrido dentro de `DB::transaction()` antes del `save()` para no violar
+el índice único parcial `property_occupants_principal_unique`. R-DIR-11 (duplicados) chequeado
+explícitamente antes del insert/update para devolver `409` limpio en vez de una violación de
+constraint cruda. `StorePropertyOccupantRequest`/`UpdatePropertyOccupantRequest` validan
+`contact_id`/`occupant_type_id` contra la organización del actor vía `withValidator()` → `422`
+(criterio 5, deliberadamente un error de validación y no un 404/403 de dominio, según el alcance de
+la tarjeta). `PropertyOccupantResource` nunca expone `email`/`telefono` del contacto anidado
+(R-DIR-06) — el detalle completo vive en `GET /contacts/{id}` (`DIRECTORIO-B03`).
+
+**Nota técnica (PHPStan):** `findOccupantForManagement()` disparaba `return.unusedType` en nivel 10
+— PHPStan sobre-infería que `canManageProperty()` (llamado dentro) siempre retorna `false`,
+concluyendo que la rama que retorna el modelo era código muerto. Confirmado como falso positivo: los
+tests de feature (`update`/`delete` de una asignación) ejercitan exactamente esa rama y pasan.
+Agregado un `ignoreErrors` acotado a este archivo en `phpstan.dist.neon`, con comentario explicando
+la causa — mismo criterio que el resto de ignores ya existentes para ruido de Eloquent/query builder
+a nivel 10.
+
+### Tests de feature (13 tests, `tests/Feature/Directorio/PropertyOccupantTest.php`)
+
+```
+$ docker exec -e DB_HOST=postgres -e DB_PORT=5432 -e REDIS_HOST=redis urbania-php php artisan test tests/Feature/Directorio/PropertyOccupantTest.php
+Tests:    13 passed (28 assertions)
+Duration: 34.28s
+```
+
+### `composer ci` completo (Pint + PHPStan + suite completa)
+
+```
+$ docker exec urbania-php ./vendor/bin/pint --test
+PASS  234 files
+
+$ docker exec urbania-php ./vendor/bin/phpstan analyse --no-progress --memory-limit=512M
+[OK] No errors
+
+$ docker exec -e DB_HOST=postgres -e DB_PORT=5432 -e REDIS_HOST=redis urbania-php php artisan test --parallel
+Tests:    275 passed (906 assertions)
+Duration: 160.42s
+Parallel: 8 processes
+```
+
+275 = 262 baseline (post `DIRECTORIO-B03`) + 13 nuevos. Sin regresiones.
+
+### Verificación funcional real (curl, servidor real, `-H "Accept: application/json"`)
+
+Foco en el criterio más importante del bloque — R-DIR-07 (desmarcado automático de `es_principal`),
+con datos reales (condominio + unidad + 2 contactos creados por API):
+
+```
+# Asignar Contacto 1 como principal (201)
+$ curl -X POST .../properties/{id}/occupants -d '{"contact_id":"...1","occupant_type_id":"...","es_principal":true}'
+STATUS 201 {"data":{"id":"019f501a-816a-...","es_principal":true,"contact":{"nombre":"Curl Occ 1"},...}}
+
+# Asignar Contacto 2 como principal (201) — debe desmarcar al 1
+$ curl -X POST .../properties/{id}/occupants -d '{"contact_id":"...2","occupant_type_id":"...","es_principal":true}'
+STATUS 201 {"data":{"id":"019f501a-9136-...","es_principal":true,"contact":{"nombre":"Curl Occ 2"},...}}
+
+# GET index — confirma que solo el Contacto 2 quedó como principal
+$ curl .../properties/{id}/occupants
+{"data":[
+  {"contact":{"nombre":"Curl Occ 1"}, "es_principal": false, ...},
+  {"contact":{"nombre":"Curl Occ 2"}, "es_principal": true, ...}
+]}
+```
+
+Resto de los 13 criterios (listado con `occupant_type` anidado sin `email`/`telefono`, duplicado
+409, mismo contacto con tipo distinto 201, `contact_id` de otra org → 422, PATCH con `updated_by`,
+DELETE 204, sin auth 401, unidad de otra org 404, staff fuera de scope 404, `residente` → 403 en
+POST, `residente` → 200 en GET de su propia unidad) verificados vía los 13 tests de feature de
+arriba — mismo criterio que `DIRECTORIO-B02`/`B03` para casos que requieren fixtures complejas
+(condominio + unidad + contacto + `role_assignment`).
+
+### Archivos creados
+
+- `src/Directorio/Infrastructure/Http/Controllers/PropertyOccupantController.php`
+- `src/Directorio/Infrastructure/Http/Requests/PropertyOccupant/StorePropertyOccupantRequest.php`
+- `src/Directorio/Infrastructure/Http/Requests/PropertyOccupant/UpdatePropertyOccupantRequest.php`
+- `src/Directorio/Infrastructure/Http/Resources/PropertyOccupantResource.php`
+- `tests/Feature/Directorio/PropertyOccupantTest.php`
+
+### Archivos modificados
+
+- `routes/api.php` — rutas de `properties/{id}/occupants` y `property-occupants/{id}`.
+- `api/API_CONTRACT.md` — `OCCUPANT_ASSIGNMENT_DUPLICATE` en la tabla maestra (§3).
+- `api/endpoints/DIRECTORIO.md` — 4 endpoints nuevos documentados.
+- `_state/contracts/CONTRACT_LOCKS.md` — `LOCK-DIRECTORIO-03` agregado.
+- `phpstan.dist.neon` — ignore acotado para el falso positivo descrito arriba.
+- `_state/BOARD.md` — estado del bloque.
 
 ## Notas
 

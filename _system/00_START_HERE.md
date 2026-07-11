@@ -51,8 +51,13 @@ Si no hay ningún bloque en `ready`, reportarlo — no se improvisa trabajo fuer
 Ambos agentes son `hidden: true` — el usuario no los invoca directamente.
 
 1. El agente asignado crea `features/<NOMBRE>/PANORAMA.md`:
-   - **Simple:** completando §1–§6 con el usuario.
+   - **Simple:** completando §1–§7 con el usuario.
    - **Complejo:** mediante el protocolo council (divergencia → peer review → síntesis), agregando una sección "Veredicto del Design Council".
+
+   > UI/UX (§7 del panorama) ya no es criterio de enrutamiento: toda feature que marque Web en §2
+   > completa §7, sin importar el camino. El council se reserva para complejidad real de negocio
+   > (endpoints/reglas múltiples) — cuando corre, su subagente `design-ux` alimenta §7 durante la
+   > síntesis en vez de quedar en texto libre (ver [[06_AGENT_ROLES]]).
 2. Dejarlo en `estado_diseño: draft` — **no se crean bloques todavía** (gate de [[03_LIFECYCLE]] §3).
 3. Reportar al humano que el panorama está listo para revisión. Detenerse ahí.
 4. Una vez `estado_diseño: approved`, `@doc-agent` crea `BLOCKS.md` y las tarjetas de bloque.

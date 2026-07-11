@@ -4,11 +4,11 @@ proyecto: web
 feature: DIRECTORIO
 id: DIRECTORIO-B05
 proyectos: [web]
-estado: backlog
+estado: verifying
 depende_de: [DIRECTORIO-B02, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false
-actualizado: 2026-07-08
+actualizado: 2026-07-11
 ---
 
 # DIRECTORIO-B05 — Pantalla de catálogo (TiposOcupante)
@@ -67,18 +67,96 @@ pasar a `ready` sin ese lock vigente.
 
 ## Definition of Done
 
-- [ ] `pnpm ci` ejecutado — salida completa pegada.
+- [x] `pnpm ci` ejecutado (por pasos — ver nota de `pnpm run lint` en bloques anteriores, ya resuelto)
+      — salida completa pegada.
 - [ ] Verificación visual real (Playwright) recorriendo los 9 casos de la tabla de criterios.
-- [ ] Confirmar contra `_state/contracts/CONTRACT_LOCKS.md` que la integración respeta exactamente
+      **Bloqueado** — `@playwright/test` sigue roto en este entorno (`_state/RUNBOOK.md#E-005`),
+      mismo bloqueo que `PROPIEDADES-B06..B09`. Sustituido por 10 tests de componente reales (no
+      mocks de red completos — mockean solo los hooks de API, ejercitan el DOM real) que cubren los
+      9 criterios. Pendiente de revisión visual manual del usuario antes de `done`.
+- [x] Confirmar contra `_state/contracts/CONTRACT_LOCKS.md` que la integración respeta exactamente
       `LOCK-DIRECTORIO-01`.
-- [ ] `web/features/directorio/DIRECTORIO-tipos-ocupante.md` creado desde
+- [x] `web/features/directorio/DIRECTORIO-tipos-ocupante.md` creado desde
       `_system/templates/WEB_SCREEN.md`.
-- [ ] Componentes usados provienen de la librería base instalada en `WEB_BOOTSTRAP-B01`.
-- [ ] `web/WEB_API_CLIENT.md` actualizado con los hooks/clientes nuevos.
+- [x] Componentes usados provienen de la librería base instalada en `WEB_BOOTSTRAP-B01` — de hecho
+      reutiliza directamente los componentes de catálogo ya existentes de `PROPIEDADES-B06`
+      (`CatalogoTable`, `CatalogoDialog`, `DeleteConfirmDialog`), sin crear ninguno nuevo.
+- [x] `web/WEB_API_CLIENT.md` actualizado con los hooks/clientes nuevos.
 
 ## Evidencia
 
-> Vacío hasta que el bloque se ejecute.
+### Implementación
+
+Mismo patrón exacto que `TiposPropiedadPage` (`PROPIEDADES-B06`), reutilizando sus componentes
+compartidos de catálogo (`CatalogoTable`/`CatalogoDialog`/`DeleteConfirmDialog`) en vez de
+reconstruirlos — la entidad `occupant_types` tiene exactamente la misma forma que
+`property_types`/`property_statuses` (id, organization_id, nombre, descripcion, created_by,
+updated_by, timestamps), así que `src/features/directorio/types/index.ts` reexporta los tipos
+genéricos de `@/features/propiedades/types` en vez de duplicarlos, agregando solo los códigos de
+error propios de `/occupant-types`. `src/features/directorio/api/occupant-types.ts`
+(`useOccupantTypesQuery`/`useCreate.../useUpdate.../useDelete...`), `TiposOcupantePage.tsx`, ruta
+`/catalogos/tipos-ocupante` registrada en `App.tsx`, entrada de sidebar (`sidebar-admin-tipos-
+ocupante`, grupo "Administración", permiso `admin.access`) vía el patrón Widget Registry
+(`src/features/directorio/dashboard.ts` + línea de import en `bootstrap.ts`) — no una asunción de
+que "ya existe", corrigiendo la nota de alcance de la propia tarjeta.
+
+### Tests de componente (10 tests, `src/features/directorio/__tests__/TiposOcupantePage.test.tsx`)
+
+```
+$ npx vitest run src/features/directorio/__tests__/TiposOcupantePage.test.tsx
+Test Files  1 passed (1)
+     Tests  10 passed (10)
+```
+
+Cubren los 9 criterios de aceptación: tabla con badges Sistema/Personalizado (CA1), abrir diálogo
+"Nuevo" (CA2), crear con payload correcto (CA3), bloqueo de validación Zod con nombre vacío (CA4),
+sin acciones en filas de sistema (CA5), precarga + actualizar en edición (CA6), confirmar +
+eliminar (CA7), warning inline en el diálogo cuando el DELETE devuelve 409 `OCCUPANT_TYPE_IN_USE`
+sin cerrar el diálogo (CA8), estados de carga/vacío (CA9 — falta de red se maneja igual que
+`PROPIEDADES-B06`, vía el `onError` genérico de TanStack Query + toast, ya cubierto por el patrón
+compartido).
+
+### `pnpm ci` (por pasos)
+
+```
+$ npx tsc -b
+(sin salida — limpio)
+
+$ npx eslint . --max-warnings 0
+(sin salida — limpio)
+
+$ npx vitest run
+Test Files  15 passed (15)
+     Tests  136 passed (136)
+
+$ npx vite build
+✓ 1840 modules transformed
+✓ built in 53.30s
+```
+
+136 = 126 tests anteriores (post `PROPIEDADES-B09`) + 10 nuevos de este bloque. Sin regresiones.
+
+**Bug preexistente encontrado y corregido (no relacionado con este bloque):** `src/app/App.test.tsx`
+afirmaba `"Buenos días, Test User"` pero el saludo real del dashboard es `"Hola, {nombre}"` desde la
+tercera pasada de rediseño visual (2026-07-10, ver nota en `_state/BOARD.md` — el test nunca se
+actualizó en esa sesión). Corregido el assert; sin cambios de comportamiento en código de producto.
+
+### Archivos creados
+
+- `src/features/directorio/types/index.ts`
+- `src/features/directorio/api/occupant-types.ts`
+- `src/features/directorio/pages/TiposOcupantePage.tsx`
+- `src/features/directorio/dashboard.ts`
+- `src/features/directorio/__tests__/TiposOcupantePage.test.tsx`
+- `web/features/directorio/DIRECTORIO-tipos-ocupante.md`
+
+### Archivos modificados
+
+- `src/app/App.tsx` — ruta `/catalogos/tipos-ocupante`.
+- `src/app/bootstrap.ts` — import de `@/features/directorio/dashboard`.
+- `src/app/App.test.tsx` — fix del assert de saludo desactualizado.
+- `web/WEB_API_CLIENT.md` — sección de hooks de Directorio.
+- `_state/BOARD.md` — estado del bloque.
 
 ## Notas
 

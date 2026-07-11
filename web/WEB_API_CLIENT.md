@@ -73,6 +73,15 @@ implementados:
 | `properties.ts` | `usePropertiesInfiniteQuery`, `useCreatePropertyMutation`, `useUpdatePropertyMutation`, `useDeletePropertyMutation`, `useBatchUpdateStatusMutation`, `useBatchDeleteMutation`, `flattenProperties` | `GET /condominiums/{id}/properties`, `POST /condominiums/{id}/properties`, `PATCH/DELETE /properties/{id}` (LOCK-PROPIEDADES-03) |
 | `coefficients.ts` | `useCondominioTreeQuery`, `usePropertyCoefficientsQuery`, `useBatchPropertyCoefficientsQueries`, `useUpdateCoefficientsMutation` | `GET /condominiums/{id}/tree`, `GET /properties/{id}/coefficients`, `PATCH /condominiums/{id}/coefficients` (LOCK-PROPIEDADES-04) |
 
+### Directorio (`features/directorio/api/`)
+
+| Archivo | Hooks exportados | Endpoint |
+|---|---|---|
+| `occupant-types.ts` | `useOccupantTypesQuery`, `useCreateOccupantTypeMutation`, `useUpdateOccupantTypeMutation`, `useDeleteOccupantTypeMutation` | `GET/POST/PATCH/DELETE /occupant-types` (LOCK-DIRECTORIO-01) |
+| `contacts.ts` | `useContactsQuery`, `useContactPropertiesQuery`, `useCreateContactMutation`, `useUpdateContactMutation`, `useDeleteContactMutation` | `GET/POST/PATCH/DELETE /contacts`, `GET /contacts/{id}/properties` (LOCK-DIRECTORIO-02) |
+| `me-contact.ts` | `useMeContactQuery`, `useUpdateMeContactMutation` | `GET/PATCH /me/contact` (LOCK-DIRECTORIO-02) |
+| `property-occupants.ts` | `usePropertyOccupantsQuery`, `useAssignOccupantMutation`, `useUpdatePropertyOccupantMutation`, `useUnassignOccupantMutation` | `GET/POST /properties/{id}/occupants`, `PATCH/DELETE /property-occupants/{id}` (LOCK-DIRECTORIO-03) |
+
 El detalle de qué endpoints existen y su forma exacta vive en `api/endpoints/<FEATURE>.md` y en
 `_state/contracts/CONTRACT_LOCKS.md` — este documento es solo la convención de cómo Web habla con la
 API, no un índice de endpoints.

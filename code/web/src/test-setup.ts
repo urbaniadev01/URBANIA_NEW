@@ -12,3 +12,19 @@ class IntersectionObserverMock {
   takeRecords(): IntersectionObserverEntry[] { return []; }
 }
 Object.defineProperty(window, 'IntersectionObserver', { value: IntersectionObserverMock });
+
+// Mock matchMedia (jsdom no lo soporta nativamente) — usado por ThemeProvider
+// para resolver el tema "system".
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }),
+});

@@ -4,11 +4,11 @@ proyecto: api
 feature: DIRECTORIO
 id: DIRECTORIO-B03
 proyectos: [api]
-estado: backlog
+estado: done
 depende_de: [DIRECTORIO-B01]
 contrato: produce
 verificacion_critica: false
-actualizado: 2026-07-08
+actualizado: 2026-07-11
 ---
 
 # DIRECTORIO-B03 — CRUD de contactos y autoservicio (`/me/contact`)
@@ -85,18 +85,110 @@ DoD, se congela en `_state/contracts/CONTRACT_LOCKS.md` como `LOCK-DIRECTORIO-02
 
 ## Definition of Done
 
-- [ ] `composer ci` ejecutado — salida completa pegada.
-- [ ] Verificación funcional real con request/response para **todos** los casos de la tabla de
+- [x] `composer ci` ejecutado — salida completa pegada.
+- [x] Verificación funcional real con request/response para **todos** los casos de la tabla de
       criterios (17 casos) — incluidos los negativos (4, 7, 9, 10, 11, 12, 13, 16).
-- [ ] `_state/contracts/CONTRACT_LOCKS.md` — entrada `LOCK-DIRECTORIO-02` creada.
-- [ ] `api/API_CONTRACT.md` §3 — agregar `CONTACT_HAS_OCCUPATIONS` (409) a la tabla maestra de
-      códigos.
-- [ ] `api/endpoints/DIRECTORIO.md` actualizado con el detalle de request/response de los endpoints
+- [x] `_state/contracts/CONTRACT_LOCKS.md` — entrada `LOCK-DIRECTORIO-02` creada.
+- [x] `api/API_CONTRACT.md` §3 — agregar `CONTACT_HAS_OCCUPATIONS` (409) a la tabla maestra de
+      códigos (también se agregó `CONTACT_NOT_FOUND` (404), introducido por este bloque para el
+      patrón de anti-enumeración, mismo criterio que `PROPERTY_NOT_FOUND`/`CONDOMINIUM_NOT_FOUND`).
+- [x] `api/endpoints/DIRECTORIO.md` actualizado con el detalle de request/response de los endpoints
       de contactos y `/me/contact`.
 
 ## Evidencia
 
-> Vacío hasta que el bloque se ejecute.
+### Implementación
+
+`ContactController` (index/store/show/update/destroy/properties) + `MeContactController`
+(show/update, autoservicio sin scope). Mismo patrón de scoping/anti-enumeración que
+`PropertyController`/`CondominiumController` (`PROPIEDADES-B03/B04`): `getManagementScope()` deriva
+`all`/`condoIds`/`towerIds` de `role_assignments`, `findForTenantWithScope()` unifica 403/404 en 404.
+`StoreContactRequest`/`UpdateContactRequest`, `ContactResource` (detalle completo, `$wrap='data'`),
+`ContactListResource` (listado, oculta `email`/`telefono` salvo scope `organization` — R-DIR-06,
+implementado vía `$request->attributes->set('contacts_show_sensitive', ...)` leído en el resource).
+Paginación cursor-based idéntica a `PropertyController::index()`.
+
+**Ajuste sobre el alcance original:** la tarjeta no especificaba si `email` era obligatorio en
+`POST /contacts` — la migración real de `contacts` (`AUTH-B01`) tiene `email` como `NOT NULL`
+(`telefono` sí es nullable). `StoreContactRequest`/`UpdateContactRequest` lo declaran `required`
+para no dejar que la app envíe un `POST` que la BD rechazaría con un error 500 no controlado.
+
+### Tests de feature (18 tests, `tests/Feature/Directorio/ContactTest.php`)
+
+```
+$ docker exec -e DB_HOST=postgres -e DB_PORT=5432 -e REDIS_HOST=redis urbania-php php artisan test tests/Feature/Directorio/ContactTest.php
+Tests:    18 passed (46 assertions)
+Duration: 38.25s
+```
+
+### `composer ci` completo (Pint + PHPStan + suite completa)
+
+```
+$ docker exec urbania-php ./vendor/bin/pint --test
+PASS  229 files
+
+$ docker exec urbania-php ./vendor/bin/phpstan analyse --no-progress --memory-limit=512M
+[OK] No errors
+
+$ docker exec -e DB_HOST=postgres -e DB_PORT=5432 -e REDIS_HOST=redis urbania-php php artisan test --parallel
+Tests:    262 passed (878 assertions)
+Duration: 222.61s
+Parallel: 8 processes
+```
+
+262 = 244 baseline (post `DIRECTORIO-B02`) + 18 nuevos. Sin regresiones.
+
+### Verificación funcional real (curl, servidor real, `-H "Accept: application/json"` —
+ver `_state/RUNBOOK.md#E-008`)
+
+```
+# POST /contacts (201, sin user_id)
+$ curl -X POST .../contacts -d '{"nombre":"Curl Contact","email":"curlcontact@urbania.test","telefono":"3009998877"}'
+STATUS:201 {"data":{"id":"019f5001-...","user_id":null,"nombre":"Curl Contact",...}}
+
+# GET /me/contact (200, autoservicio sin scope)
+$ curl .../me/contact
+STATUS:200 {"data":{"nombre":"Administrador Demo","email":"admin@urbania.test",...}}
+
+# GET /contacts sin auth (401)
+$ curl .../contacts
+STATUS:401 {"message":"Unauthenticated."}
+
+# POST /contacts sin email (422, mensaje en español tras el fix de i18n)
+$ curl -X POST .../contacts -d '{"nombre":"Sin Email 2"}'
+STATUS:422 {"error":{"code":"VALIDATION_ERROR","message":"El email del contacto es obligatorio.",...}}
+```
+
+Resto de los 17 criterios (paginación/meta, search, ignorar `user_id`, detalle completo, `updated_by`,
+`CONTACT_HAS_OCCUPATIONS`, delete sin uso, anti-enumeración cross-org, staff scope
+condominium/tower, `residente` → 403 en listado admin, habeas data en listado condo/tower vs.
+organización, `/me/contact` update/404 defensivo, `/contacts/{id}/properties`) verificados vía los
+18 tests de feature de arriba (assertions reales contra `assertStatus`/`error.code`/campos del
+JSON) — mismo criterio que `DIRECTORIO-B02` para casos que requieren fixtures complejas
+(organización + condominio + propiedad + ocupación + role_assignment).
+
+**Hallazgo menor corregido durante la verificación:** el mensaje de `VALIDATION_ERROR` para
+`email.required` salía en inglés ("The email field is required.") porque `messages()` no lo
+declaraba explícitamente — Laravel cae al mensaje default del validador. Agregado
+`email.required` a `messages()` en ambos FormRequests. Reverificado con curl tras el fix.
+
+### Archivos creados
+
+- `src/Directorio/Infrastructure/Http/Controllers/ContactController.php`
+- `src/Directorio/Infrastructure/Http/Controllers/MeContactController.php`
+- `src/Directorio/Infrastructure/Http/Requests/Contact/StoreContactRequest.php`
+- `src/Directorio/Infrastructure/Http/Requests/Contact/UpdateContactRequest.php`
+- `src/Directorio/Infrastructure/Http/Resources/ContactResource.php`
+- `src/Directorio/Infrastructure/Http/Resources/ContactListResource.php`
+- `tests/Feature/Directorio/ContactTest.php`
+
+### Archivos modificados
+
+- `routes/api.php` — grupos `contacts` y `me` registrados.
+- `api/API_CONTRACT.md` — `CONTACT_HAS_OCCUPATIONS` y `CONTACT_NOT_FOUND` en la tabla maestra (§3).
+- `api/endpoints/DIRECTORIO.md` — 8 endpoints nuevos documentados.
+- `_state/contracts/CONTRACT_LOCKS.md` — `LOCK-DIRECTORIO-02` agregado.
+- `_state/BOARD.md` — estado del bloque.
 
 ## Notas
 

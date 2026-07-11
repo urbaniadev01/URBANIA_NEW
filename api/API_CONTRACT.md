@@ -81,6 +81,12 @@ reversiona `/api/v1` completo por un solo endpoint.
 | `COEFFICIENT_INVALID_TYPE` | 422 | El tipo de coeficiente no pertenece al set cerrado (R-06-bis: `copropiedad`, `parqueadero`, `deposito`, `mantenimiento`) |
 | `PROPERTY_NOT_IN_CONDOMINIUM` | 422 | La unidad especificada no pertenece al condominio del path |
 | `COEFFICIENT_SUM_MISMATCH` | — | Warning no bloqueante en `200`: la suma de coeficientes de copropiedad no es 1.0 (R-06). Ver §4-bis. |
+| `OCCUPANT_TYPE_NAME_DUPLICATE` | 409 | Ya existe un tipo de ocupante con ese nombre en la misma organización |
+| `OCCUPANT_TYPE_IN_USE` | 409 | El tipo de ocupante está referenciado por ocupantes (`property_occupants`) activos y no puede eliminarse |
+| `OCCUPANT_TYPE_NOT_FOUND` | 404 | El tipo de ocupante no existe o pertenece a otra organización |
+| `CONTACT_HAS_OCCUPATIONS` | 409 | El contacto tiene ocupaciones activas (`property_occupants`) y no puede eliminarse |
+| `CONTACT_NOT_FOUND` | 404 | El contacto no existe, pertenece a otra organización, o está fuera del scope del actor |
+| `OCCUPANT_ASSIGNMENT_DUPLICATE` | 409 | Ya existe una asignación activa para el mismo `(contact_id, property_id, occupant_type_id)` |
 
 ## 4. Paginación (para endpoints de listado)
 
