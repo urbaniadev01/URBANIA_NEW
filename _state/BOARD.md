@@ -84,9 +84,9 @@ actualizado: 2026-07-11
 | DIRECTORIO-B02 | api         | **done** | DIRECTORIO-B01                           | [[../features/DIRECTORIO/blocks/DIRECTORIO-B02-crud-tipos-ocupante]]           |
 | DIRECTORIO-B03 | api         | **done** | DIRECTORIO-B01                           | [[../features/DIRECTORIO/blocks/DIRECTORIO-B03-crud-contactos]]                |
 | DIRECTORIO-B04 | api         | **done** | DIRECTORIO-B01                           | [[../features/DIRECTORIO/blocks/DIRECTORIO-B04-asignacion-ocupantes]]          |
-| DIRECTORIO-B05 | web         | **verifying** | DIRECTORIO-B02 (lock), WEB_BOOTSTRAP-B01 | [[../features/DIRECTORIO/blocks/DIRECTORIO-B05-pantalla-tipos-ocupante]]       |
-| DIRECTORIO-B06 | web         | **verifying** | DIRECTORIO-B03 (lock), WEB_BOOTSTRAP-B01 | [[../features/DIRECTORIO/blocks/DIRECTORIO-B06-pantalla-directorio-contactos]] |
-| DIRECTORIO-B07 | web         | **verifying** | DIRECTORIO-B04 (lock), WEB_BOOTSTRAP-B01 | [[../features/DIRECTORIO/blocks/DIRECTORIO-B07-pantalla-asignacion-ocupantes]] |
+| DIRECTORIO-B05 | web         | **done** | DIRECTORIO-B02 (lock), WEB_BOOTSTRAP-B01 | [[../features/DIRECTORIO/blocks/DIRECTORIO-B05-pantalla-tipos-ocupante]]       |
+| DIRECTORIO-B06 | web         | **done** | DIRECTORIO-B03 (lock), WEB_BOOTSTRAP-B01 | [[../features/DIRECTORIO/blocks/DIRECTORIO-B06-pantalla-directorio-contactos]] |
+| DIRECTORIO-B07 | web         | **done** | DIRECTORIO-B04 (lock), WEB_BOOTSTRAP-B01 | [[../features/DIRECTORIO/blocks/DIRECTORIO-B07-pantalla-asignacion-ocupantes]] |
 
 > **Nota (2026-07-10) â€” cierre de DoD de `DIRECTORIO-B01`:** `composer ci` limpio en `code/api`
 > (Pint, PHPStan 0 errores, 230/230 tests incluyendo 25 nuevos: `DirectorioMigrationTest` y
@@ -130,8 +130,12 @@ actualizado: 2026-07-11
 > deduplicación, causaba `500` intermitente en `/auth/refresh` por `jti` duplicado — probable causa
 > de fondo de `E-007`). Ambos con test de regresión y suite completa re-verificada (PHP 276/276,
 > frontend 161/161, `tsc --noEmit` limpio). Evidencia y detalle por pantalla en la sección Notas de
-> cada tarjeta (`DIRECTORIO-B05/B06/B07`). Las 3 cards permanecen en `estado: verifying` — la
-> transición a `done` sigue siendo decisión del usuario (ver `CLAUDE.md`), no cambiada acá.
+> cada tarjeta (`DIRECTORIO-B05/B06/B07`).
+>
+> **Actualizado (2026-07-11) — usuario autorizó el pase a `done`:** las 3 tarjetas
+> (`DIRECTORIO-B05/B06/B07`) pasan de `verifying` a `done` con la evidencia ya pegada (verificación
+> visual real vía Playwright MCP + suites completas en verde). Cierra la feature `DIRECTORIO` — sus 7
+> bloques (`B01`-`B07`) quedan todos en `done`.
 
 ## Bloques â€” DASHBOARD
 
@@ -349,14 +353,14 @@ actualizado: 2026-07-11
 
 | ID | Proyecto(s) | Estado | Depende de | Tarjeta |
 |---|---|---|---|---|
-| COBRANZA-B01 | api | **ready** | PROPIEDADES-B01, DIRECTORIO-B01 | [[../features/COBRANZA/blocks/COBRANZA-B01-migraciones-modelos-seeders]] |
-| COBRANZA-B02 | api | **backlog** | COBRANZA-B01 | [[../features/COBRANZA/blocks/COBRANZA-B02-crud-conceptos-cobro]] |
-| COBRANZA-B03 | api | **backlog** | COBRANZA-B02 | [[../features/COBRANZA/blocks/COBRANZA-B03-periodos-facturacion]] |
-| COBRANZA-B04 | api | **backlog** | COBRANZA-B03 | [[../features/COBRANZA/blocks/COBRANZA-B04-cuentas-cobro]] |
+| COBRANZA-B01 | api | **done** | PROPIEDADES-B01, DIRECTORIO-B01 | [[../features/COBRANZA/blocks/COBRANZA-B01-migraciones-modelos-seeders]] |
+| COBRANZA-B02 | api | **done** | COBRANZA-B01 | [[../features/COBRANZA/blocks/COBRANZA-B02-crud-conceptos-cobro]] |
+| COBRANZA-B03 | api | **done** | COBRANZA-B02 | [[../features/COBRANZA/blocks/COBRANZA-B03-periodos-facturacion]] |
+| COBRANZA-B04 | api | **ready** | COBRANZA-B03 | [[../features/COBRANZA/blocks/COBRANZA-B04-cuentas-cobro]] |
 | COBRANZA-B05 | api | **backlog** | COBRANZA-B04 | [[../features/COBRANZA/blocks/COBRANZA-B05-pagos]] |
 | COBRANZA-B06 | api | **backlog** | COBRANZA-B05 | [[../features/COBRANZA/blocks/COBRANZA-B06-paz-y-salvo]] |
-| COBRANZA-B07 | web | **backlog** | COBRANZA-B02 (lock), WEB_BOOTSTRAP-B01 | [[../features/COBRANZA/blocks/COBRANZA-B07-pantallas-conceptos-cobro]] |
-| COBRANZA-B08 | web | **backlog** | COBRANZA-B03 (lock), WEB_BOOTSTRAP-B01 | [[../features/COBRANZA/blocks/COBRANZA-B08-pantallas-periodos-facturacion]] |
+| COBRANZA-B07 | web | **ready** | COBRANZA-B02 (lock), WEB_BOOTSTRAP-B01 | [[../features/COBRANZA/blocks/COBRANZA-B07-pantallas-conceptos-cobro]] |
+| COBRANZA-B08 | web | **ready** | COBRANZA-B03 (lock), WEB_BOOTSTRAP-B01 | [[../features/COBRANZA/blocks/COBRANZA-B08-pantallas-periodos-facturacion]] |
 | COBRANZA-B09 | web | **backlog** | COBRANZA-B04 (lock), WEB_BOOTSTRAP-B01 | [[../features/COBRANZA/blocks/COBRANZA-B09-pantalla-cuentas-cobro]] |
 | COBRANZA-B10 | web | **backlog** | COBRANZA-B05 (lock), WEB_BOOTSTRAP-B01 | [[../features/COBRANZA/blocks/COBRANZA-B10-pantalla-pagos]] |
 | COBRANZA-B11 | web | **backlog** | COBRANZA-B06 (lock), WEB_BOOTSTRAP-B01 | [[../features/COBRANZA/blocks/COBRANZA-B11-pantalla-paz-y-salvo]] |
@@ -368,6 +372,105 @@ actualizado: 2026-07-11
 > respectivamente), igual que `COBRANZA-B11` (Ãºltimo bloque del feature). Ver
 > [[../features/COBRANZA/BLOCKS]] para el detalle de la cadena y la acciÃ³n pendiente cross-feature
 > con `DASHBOARD`.
+>
+> **Actualizado (2026-07-11) — `COBRANZA-B01` implementado, pasa a `verifying`:** las 8 tablas del
+> dominio de facturación (`charge_concepts`, `billing_periods`, `billing_runs`, `invoices`,
+> `invoice_items`, `payment_receipts`, `payment_allocations`, `peace_certificates`) con sus modelos
+> Eloquent (`src/Billing/`, R-COB-30) y el catálogo de permisos RBAC creados y verificados:
+> reversibilidad de las 8 migraciones confirmada, `composer ci` limpio (Pint, PHPStan 0 errores,
+> 297/297 tests — 21 nuevos). Dos hallazgos reales corregidos durante la implementación (detalle
+> completo en `COBRANZA-B01#Evidencia`): (1) el permiso `billing.ver` no existía realmente en el
+> backend pese a que el panorama asumía que sí (`DASHBOARD` nunca tuvo bloque API) —
+> `CobranzaPermissionsSeeder` lo crea idempotentemente; (2) agregar las 8 migraciones nuevas rompió
+> `DirectorioMigrationTest` (dependía de `--step=3` asumiendo ser "las últimas 3 migraciones" del
+> directorio plano) — corregido con `--path` explícito, inmune a migraciones futuras de cualquier
+> feature. Tarjeta en `estado: verifying` — la transición a `done` sigue siendo decisión del usuario
+> (ver `CLAUDE.md`).
+>
+> **Actualizado (2026-07-11) — usuario autorizó el pase a `done`:** `COBRANZA-B01` pasa de `verifying`
+> a `done`. Desbloquea `COBRANZA-B02` (única dependencia satisfecha), que pasa a `ready`.
+>
+> **Actualizado (2026-07-11) — `COBRANZA-B02` implementado, pasa a `verifying`:** CRUD completo de
+> `charge_concepts` (5 endpoints, `LOCK-COBRANZA-02`), permisos `cobranza.conceptos.ver`/`.gestionar`
+> asignados a `admin`/`manager`, warning `FONDO_IMPREVISTOS_VALIDACION_PENDIENTE` (R-COB-18).
+> `composer ci` limpio (310/310 tests, 13 nuevos) + verificación funcional real con curl para los 10
+> criterios de aceptación. Un bug real encontrado y corregido (`POST` devolvía `activo: null` por
+> faltar `->fresh()`, con test de regresión). Una desviación documentada del criterio original: 409
+> en vez de 422 para nombre duplicado, por consistencia con el resto del API (detalle en
+> `COBRANZA-B02#Evidencia` y `LOCK-COBRANZA-02`). Tarjeta en `estado: verifying` — la transición a
+> `done` sigue siendo decisión del usuario (ver `CLAUDE.md`).
+>
+> **Actualizado (2026-07-11) — usuario autorizó el pase a `done`:** `COBRANZA-B02` pasa de
+> `verifying` a `done` — confirmó además el criterio `409` (no `422`) para duplicados de nombre como
+> estándar a seguir en el resto de la cadena (`B03`-`B06`). Desbloquea `COBRANZA-B03` (única
+> dependencia satisfecha), que pasa a `ready`. `COBRANZA-B03` lleva `verificacion_critica: true`
+> (cálculo financiero de facturación) — requiere `verify-council` antes de `done`, no solo el
+> verificador implementador. También desbloquea `COBRANZA-B07` (web) contra `LOCK-COBRANZA-02`.
+>
+> **Actualizado (2026-07-11) — `COBRANZA-B03` implementado, pasa a `verifying`:** el motor de cálculo
+> financiero del feature — 9 endpoints (`LOCK-COBRANZA-03`), corrida de facturación asíncrona
+> (`RunBillingPeriodJob`) con el patrón **202 + polling** documentado como convención general nueva
+> en `api/API_CONTRACT.md` §4-ter (primera vez que el API la necesita, R-COB-22), prorrateo por
+> coeficiente vigente con `resumen` de éxito parcial, y el endpoint de cartera que `DASHBOARD`
+> consumirá. `composer ci` limpio (324/324 tests, 14 nuevos) + verificación funcional real de los 11
+> criterios con **cola Redis real** (`LLEN=1` antes del worker, `RunBillingPeriodJob ... DONE`,
+> `LLEN=0` después — no `sync` simulando asincronía). Incluye el caso que la nota de
+> `verificacion_critica` exigía: coeficientes que **no** suman 1.0000 — cada unidad se factura por el
+> suyo, el faltante no se redistribuye silenciosamente.
+>
+> Tres hallazgos reales (detalle en `COBRANZA-B03#Evidencia`): (1) `failed_jobs` no existía pese a que
+> el panorama la daba por hecha desde `API_BOOTSTRAP` — este es el primer bloque del vault que encola
+> un Job, migración agregada; (2) la migración nueva rompió `BillingMigrationTest`, que usaba
+> `--step=8` — **la misma trampa que ya había aparecido en `DirectorioMigrationTest`**, confirmando
+> que cualquier test de migración con `--step` relativo se va a romper con la próxima feature que
+> agregue tablas (corregido con `--path`); (3) `billing.ver` existía como permiso pero ningún rol lo
+> tenía, así que el widget de cartera de DASHBOARD habría sido inaccesible para todo usuario.
+>
+> **Actualizado (2026-07-11) — `verify-council` corrido sobre `COBRANZA-B03`: veredicto inicial ❌
+> BLOQUEANTE, hallazgos corregidos.** Los 3 revisores (`sec`/`perf`/`code`) convergieron de forma
+> independiente en un **crítico de doble facturación**: `billing_runs.estado` se usaba como guard de
+> no-duplicación pero se escribía **fuera** de la transacción que commitea las facturas, así que el
+> `UNIQUE` parcial que `COBRANZA-B01` había creado justamente para eso disparaba *después* del commit
+> y no revertía nada. El peer review destapó que tenía **tres rutas** — dos POST concurrentes; un
+> fallo tras el commit (sin concurrencia: dejaba las facturas escritas con el run en `fallido`, y un
+> run `fallido` no bloquea uno nuevo → el operador redisparaba); y la **redelivery del job** por un
+> worker muerto, que re-prorrateaba entero. Ninguna estaba cubierta por los 324 tests en verde ni por
+> la verificación con curl: `QUEUE_CONNECTION=sync` colapsa la ventana donde vive el bug, así que
+> **ningún test con `sync` podía encontrarlo**. El mecanismo que lo enmascaraba era la propia
+> numeración de facturas (correlativo global del condominio → el segundo prorrateo numeraba a
+> continuación en vez de colisionar).
+>
+> Fixes: `UNIQUE(billing_period_id, property_id)` en `invoices` (la invariante real: una unidad, una
+> factura por periodo — cierra las tres rutas y protege a escritores futuros como `COBRANZA-B04`);
+> prorrateo + transición de estado + `resumen` en una sola transacción; re-chequeo bajo
+> `lockForUpdate`; dispatch atómico; hook `failed()` (sin él, un worker muerto dejaba el periodo
+> **imposible de facturar para siempre**); eliminación del N+1 (que era la *mecha* de ese bloqueo: a
+> ~2.000 unidades el runtime cruzaba el timeout de 60s del worker — el condominio más grande era el
+> que se rompía, y se rompía por ser grande); índices faltantes (el endpoint del DASHBOARD hacía Seq
+> Scan — el código era fiel al `PANORAMA.md` §4, pero el panorama no coincidía con las queries
+> reales); `resumen.conceptos_omitidos[]` para hacer auditable la sub-facturación silenciosa de
+> `por_area` sin `area_m2`; y sanitización de `resumen.error` (filtraba SQL con bindings por API).
+> **R-COB-05 quedó resuelta con decisión del usuario:** "unidad activa" = no eliminada; el
+> `property_status` no exime de facturación (Ley 675).
+>
+> Re-verificado: `composer ci` limpio, **333/333 tests** (9 nuevos de regresión, validados con prueba
+> de mutación — fallan contra el código vulnerable con `4 is identical to 2`, o sea el condominio
+> facturado dos veces), y la race probada contra la cola Redis real con dos POST en paralelo (uno
+> `202`, otro `409`; una sola corrida, 2 facturas). Detalle completo en la sección "Verificación
+> (verify-council)" de la tarjeta.
+>
+> **Actualizado (2026-07-11) — usuario autorizó el pase a `done`:** `COBRANZA-B03` pasa de `verifying`
+> a `done` con el `verify-council` cumplido y todos sus hallazgos bloqueantes corregidos. Desbloquea
+> `COBRANZA-B04` (api, cuentas de cobro) y `COBRANZA-B08` (web, contra `LOCK-COBRANZA-03`), ambos a
+> `ready`.
+>
+> **Deuda explícita heredada de B03 (no corregida, decisión consciente):** la selección del
+> coeficiente de copropiedad ignora `vigente_desde` y la fecha del periodo — facturar un periodo
+> pasado usa el coeficiente *vigente hoy*, no el que regía en ese mes. Es auditable a posteriori
+> (`invoice_items.base_calculo` guarda el snapshot), pero es un error de cálculo real en ese
+> escenario. No se corrigió dentro de B03 porque cambia la semántica de selección de coeficientes y
+> afecta también a `COBRANZA-B04`. **Pendiente de decisión: bloque propio o corrección dentro de
+> B04.**
 
 ## Bloques â€” COMUNICACIONES
 

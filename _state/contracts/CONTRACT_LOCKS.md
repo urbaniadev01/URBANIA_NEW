@@ -6,11 +6,14 @@ actualizado: 2026-07-10
 
 # CONTRACT_LOCKS — Contratos de API congelados
 
-> **Estado actual (2026-07-11):** 13 locks implementados (AUTH-01 a AUTH-05, AUTH-08, AUTH-09, AUTH-10, PROPIEDADES-01, PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04, DIRECTORIO-01, DIRECTORIO-02, DIRECTORIO-03).
-> Todos los productores en `done`. Consumidores web: B10, B11, B12, B13 en `done`; **B06, B07, B08,
-> B09 en `verifying`** desde el 2026-07-10 — DoD cerrado con `pnpm ci` limpio y tests de componente
-> nuevos, pendiente solo de verificación visual Playwright bloqueada por un bug de entorno (ver
-> `_state/RUNBOOK.md#E-005`). DASHBOARD-B02 consume locks PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04.
+> **Estado actual (2026-07-11):** 15 locks implementados (AUTH-01 a AUTH-05, AUTH-08, AUTH-09, AUTH-10, PROPIEDADES-01, PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04, DIRECTORIO-01, DIRECTORIO-02, DIRECTORIO-03, COBRANZA-02, COBRANZA-03).
+> Todos los productores en `done`, salvo `COBRANZA-B03` (`verifying` — `verificacion_critica: true`,
+> requiere `verify-council`). Consumidores web: B10, B11, B12, B13 en `done`;
+> DIRECTORIO-B05/B06/B07 en `done`. `PROPIEDADES-B06/B07/B08/B09` en `verifying` desde el 2026-07-10
+> — DoD cerrado con `pnpm ci` limpio y tests de componente nuevos, pendiente solo de verificación
+> visual Playwright bloqueada por un bug de entorno (ver `_state/RUNBOOK.md#E-005`). DASHBOARD-B02
+> consume locks PROPIEDADES-02, PROPIEDADES-03, PROPIEDADES-04. `COBRANZA-B07` (web) ya está `ready`
+> contra `LOCK-COBRANZA-02`; `COBRANZA-B08` queda pendiente de que `COBRANZA-B03` llegue a `done`.
 
 > Registro de contratos de endpoint congelados para que un bloque de cliente pueda construir contra
 > ellos. Formato y reglas completas en [[../../_system/04_CROSS_PROJECT]] §4–§5. Una entrada es
@@ -21,6 +24,71 @@ actualizado: 2026-07-10
 > puede pasar a `ready` sin una entrada aquí que lo respalde.
 
 ## Locks activos
+
+### LOCK-COBRANZA-03 — Endpoints de periodos y corridas de facturación {#LOCK-COBRANZA-03}
+
+- **Bloque productor:** [[../../features/COBRANZA/blocks/COBRANZA-B03-periodos-facturacion]]
+- **Estado:** Implementado (COBRANZA-B03 en `done` — `verificacion_critica: true`, `verify-council` corrido: encontró un crítico de doble facturación, corregido y re-verificado; ver la sección "Verificación" de la tarjeta).
+- **Endpoints:**
+  - `GET /api/v1/condominiums/{condominium}/billing-periods` — listar periodos del condominio
+  - `POST /api/v1/condominiums/{condominium}/billing-periods` — abrir periodo (`anio`+`mes`)
+  - `GET /api/v1/billing-periods/{billing_period}` — ver periodo
+  - `PATCH /api/v1/billing-periods/{billing_period}` — cerrar periodo (`{estado: cerrado}`)
+  - `POST /api/v1/billing-periods/{billing_period}/billing-runs` — **disparar corrida → `202`** (R-COB-22)
+  - `GET /api/v1/billing-periods/{billing_period}/billing-runs` — listar corridas del periodo
+  - `GET /api/v1/billing-runs/{billing_run}` — **detalle de corrida (endpoint de polling)**, incluye `resumen`
+  - `GET /api/v1/condominiums/{condominium}/billing-periods/active/summary` — **panel de cartera del periodo activo** ← *este es el endpoint que `DASHBOARD` necesita para su widget "Cuotas Pendientes"*
+  - `GET /api/v1/billing-periods/{billing_period}/summary` — panel de cartera de un periodo específico
+- **Request/Response:** Ver detalle en [[../../api/endpoints/COBRANZA]]
+- **Errores documentados:** `BILLING_PERIOD_DUPLICATE` (409), `BILLING_PERIOD_NOT_FOUND` (404), `BILLING_PERIOD_ALREADY_CLOSED` (409), `BILLING_RUN_ALREADY_EXISTS` (409), `BILLING_RUN_NOT_FOUND` (404), `CONDOMINIUM_NOT_FOUND` (404), `PERMISSION_DENIED` (403), `VALIDATION_ERROR` (422)
+- **Warnings documentados:** `BILLING_PERIOD_HAS_PENDING_INVOICES` (200 no bloqueante, R-COB-08-bis — cerrar un periodo con facturas pendientes **no** devuelve 409)
+- **Patrón asíncrono (nuevo, convención general):** `POST .../billing-runs` responde `202` de inmediato con el run en `en_proceso` y encola `RunBillingPeriodJob`; el cliente hace polling sobre `GET /billing-runs/{id}` hasta `completado`/`fallido`. Documentado como convención reusable en [[../../api/API_CONTRACT]] §4-ter — no es una excepción de COBRANZA.
+- **`resumen` (éxito parcial):** JSONB expuesto solo cuando `estado != en_proceso`: `{unidades_facturadas, unidades_omitidas, detalle_omitidas: [{property_id, motivo}], conceptos_omitidos: [{property_id, charge_concept_id, motivo}]}`. Sin él, `completado` no distinguiría "todas las unidades" de "completado, pero N unidades omitidas". `detalle_omitidas.motivo` ∈ {`sin coeficiente vigente`, `sin conceptos de cobro aplicables`}; `conceptos_omitidos.motivo` ∈ {`la unidad no tiene área registrada`, `el concepto no aplica a esta unidad`} — este último campo hace auditable la sub-facturación de una unidad que sí recibió factura pero a la que un concepto no se aplicó (antes era indistinguible por query).
+- **`estado = fallido` garantiza cero facturas escritas.** El prorrateo, la transición de estado y el `resumen` viven en una sola transacción; un fallo revierte todo. El `error` del `resumen` es `{code, trace_id}` — nunca el mensaje crudo de la excepción (un `QueryException` incluiría el SQL con valores monetarios).
+- **No-duplicación (garantía de BD, no solo de aplicación):** `UNIQUE(billing_period_id, property_id) WHERE deleted_at IS NULL` sobre `invoices` — **una unidad, una factura por periodo**. Es el invariante que cierra las tres rutas de doble facturación que encontró el `verify-council` (dos POST concurrentes; un fallo tras el commit; la redelivery del job por un worker muerto), y protege también a cualquier escritor futuro de `invoices` (`COBRANZA-B04` con ítems manuales, backfills, scripts de soporte), no solo a este Job.
+- **Autorización:** `auth:api` + scope `organization`/`condominium` (R-COB-02, `tower`/`unit` nunca bastan para datos financieros). Permisos por acción:
+  - `cobranza.periodos.ver` — listar/ver periodos, listar/ver corridas, summary de un periodo específico.
+  - `cobranza.facturacion.ejecutar` — abrir periodo, cerrar periodo, **disparar corrida** (segregado de solo-ver: es la acción de mayor impacto del feature).
+  - `billing.ver` — **solo** `.../billing-periods/active/summary`. Deliberadamente el permiso más laxo: es el que `DASHBOARD` ya usa para gatear su nav/widgets, y exigir `cobranza.periodos.ver` ahí bloquearía el widget de cartera para usuarios que sí deben verlo.
+- **Reglas de negocio:**
+  - R-COB-04 (Ley 675): prorrateo por `property_coefficients` vigente de tipo `copropiedad`. Una unidad sin coeficiente vigente **no se factura** — se omite y se registra el motivo en `resumen.detalle_omitidas`, nunca se le asigna un coeficiente por defecto.
+  - R-COB-05: "unidad activa" = **no eliminada** (soft-delete). El `property_status` **no exime de facturación** — bajo Ley 675 el propietario paga su cuota aunque la unidad esté vacía, en remodelación o "fuera de servicio". El diseño nunca definió "activa"; el `verify-council` lo levantó como ambigüedad y el usuario fijó esta interpretación.
+  - R-COB-06: `invoice_items.base_calculo` es snapshot inmutable del coeficiente usado (solo para conceptos con `metodo_calculo = coeficiente`).
+  - R-COB-07: los conceptos `manual` **no** entran en la corrida — se agregan a mano vía `POST /invoices/{id}/items` (COBRANZA-B04). Los conceptos inactivos tampoco.
+  - R-COB-09: un solo `billing_run` `completado` por periodo — validado en aplicación (409 `BILLING_RUN_ALREADY_EXISTS`, que además cubre el caso `en_proceso`) y reforzado por el UNIQUE parcial de BD de COBRANZA-B01.
+  - R-COB-10: `abierto → facturado → cerrado`. La corrida completada deja el periodo en `facturado`.
+  - R-COB-08: `invoices.estado` **no se almacena** — este bloque escribe `saldo = valor_total` al emitir; el `estado` derivado (`pendiente`/`parcial`/`pagada`/`vencida`) lo expone COBRANZA-B04. Los agregados de `summary` se calculan sobre los hechos subyacentes (`saldo`, `valor_total`, `fecha_vencimiento`), no sobre un campo almacenado.
+- **Sin reintento automático:** `RunBillingPeriodJob` corre con `$tries = 1` — reintentar una corrida a medio camino podría duplicar facturas. Un `fallido` se resuelve disparando una corrida nueva.
+- **Numeración de facturas:** `FAC-{anio}{mes}-{correlativo}` (`UNIQUE(condominium_id, numero)`), correlativo por condominio.
+- **Rate limiting:** `POST .../billing-runs` lleva `throttle:10,1`.
+- **Desviación documentada del criterio de aceptación original:** la tarjeta pedía `422` para periodo duplicado; se implementó `409 BILLING_PERIOD_DUPLICATE`, criterio confirmado por el usuario al cerrar `COBRANZA-B02` (409 para conflictos de unicidad de recurso, 422 reservado a formato/campos faltantes).
+- **Detalle completo:** [[../../api/endpoints/COBRANZA]]
+- **Congelado:** 2026-07-11
+- **Consumido por:** [[../../features/COBRANZA/blocks/COBRANZA-B08-pantallas-periodos-facturacion]] y — vía `.../billing-periods/active/summary` — el widget de cartera de [[../../features/DASHBOARD/PANORAMA]] (ver la acción pendiente cross-feature en [[../../features/COBRANZA/BLOCKS]]: el panorama de DASHBOARD referencia hoy `GET /billing-periods/active/summary` sin condominio; la ruta real es la condominio-scoped de este lock).
+
+### LOCK-COBRANZA-02 — Endpoints de conceptos de cobro {#LOCK-COBRANZA-02}
+
+- **Bloque productor:** [[../../features/COBRANZA/blocks/COBRANZA-B02-crud-conceptos-cobro]]
+- **Estado:** Implementado (COBRANZA-B02 en `verifying`).
+- **Endpoints:**
+  - `GET /api/v1/condominiums/{condominium}/charge-concepts` — listar conceptos de cobro del condominio
+  - `POST /api/v1/condominiums/{condominium}/charge-concepts` — crear concepto de cobro
+  - `GET /api/v1/charge-concepts/{charge_concept}` — ver concepto individual
+  - `PATCH /api/v1/charge-concepts/{charge_concept}` — actualizar concepto
+  - `DELETE /api/v1/charge-concepts/{charge_concept}` — desactivar (soft delete + `activo=false`)
+- **Request/Response:** Ver detalle en [[../../api/endpoints/COBRANZA]]
+- **Errores documentados:** `CHARGE_CONCEPT_NAME_DUPLICATE` (409), `CHARGE_CONCEPT_NOT_FOUND` (404), `CONDOMINIUM_NOT_FOUND` (404), `PERMISSION_DENIED` (403), `VALIDATION_ERROR` (422)
+- **Warnings documentados:** `FONDO_IMPREVISTOS_VALIDACION_PENDIENTE` (200/201 no bloqueante, API_CONTRACT §4-bis) — emitido cuando `tipo = fondo_imprevistos` (R-COB-18, validación real diferida)
+- **Autorización:** `auth:api` + permisos `cobranza.conceptos.ver` (lectura) / `cobranza.conceptos.gestionar` (escritura), resueltos a mano en el controller (no vía middleware `require_permission`, ver nota abajo) contra scope `organization` o `condominium` (R-COB-02) — scope `tower`/`unit` nunca basta para datos financieros, a diferencia de `LOCK-PROPIEDADES-03`.
+- **Nota de arquitectura:** no se usó el middleware genérico `require_permission` porque `CheckPermissionUseCase` exige coincidencia exacta de `scope_type` (no expande un scope `organization` a `condominium` pese a lo que su propio docblock afirma) — mismo motivo por el que `PropertyController` (`LOCK-PROPIEDADES-03`) ya resolvía su scope a mano. `ChargeConceptController` sigue ese mismo patrón, agregando el filtro por nombre de permiso.
+- **Desviación documentada del criterio de aceptación original:** la tarjeta de `COBRANZA-B02` pedía `422` para nombre duplicado; se implementó `409 CHARGE_CONCEPT_NAME_DUPLICATE` por consistencia con el resto del API (`PROPERTY_TYPE_NAME_DUPLICATE`, `CONDOMINIUM_NAME_DUPLICATE`, etc. — 409 para conflictos de unicidad de recurso, 422 reservado para formato/campos faltantes). Ver evidencia de la tarjeta.
+- **Reglas de negocio:**
+  - R-COB-01: Tenant isolation vía `condominium_id`.
+  - R-COB-02: Staff scoping — solo `organization`/`condominium` habilitan acceso a datos financieros.
+  - R-COB-18: Warning no bloqueante `FONDO_IMPREVISTOS_VALIDACION_PENDIENTE` en creación/edición de conceptos `fondo_imprevistos`.
+- **Detalle completo:** [[../../api/endpoints/COBRANZA]]
+- **Congelado:** 2026-07-11
+- **Consumido por:** [[../../features/COBRANZA/blocks/COBRANZA-B07-pantallas-conceptos-cobro]]
 
 ### LOCK-PROPIEDADES-04 — Endpoints de coeficientes y tree {#LOCK-PROPIEDADES-04}
 

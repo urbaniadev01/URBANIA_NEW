@@ -40,21 +40,23 @@ pagos, sin pagos (saldo cero) no hay paz y salvo. No se paraleliza dentro de API
 
 | ID | Proyecto | Depende de | Estado | Tarjeta |
 |---|---|---|---|---|
-| COBRANZA-B01 | api | PROPIEDADES-B01, DIRECTORIO-B01 | backlog | [[blocks/COBRANZA-B01-migraciones-modelos-seeders]] |
-| COBRANZA-B02 | api | COBRANZA-B01 | backlog | [[blocks/COBRANZA-B02-crud-conceptos-cobro]] |
-| COBRANZA-B03 | api | COBRANZA-B02 | backlog | [[blocks/COBRANZA-B03-periodos-facturacion]] |
-| COBRANZA-B04 | api | COBRANZA-B03 | backlog | [[blocks/COBRANZA-B04-cuentas-cobro]] |
+| COBRANZA-B01 | api | PROPIEDADES-B01, DIRECTORIO-B01 | done | [[blocks/COBRANZA-B01-migraciones-modelos-seeders]] |
+| COBRANZA-B02 | api | COBRANZA-B01 | done | [[blocks/COBRANZA-B02-crud-conceptos-cobro]] |
+| COBRANZA-B03 | api | COBRANZA-B02 | done | [[blocks/COBRANZA-B03-periodos-facturacion]] |
+| COBRANZA-B04 | api | COBRANZA-B03 | ready | [[blocks/COBRANZA-B04-cuentas-cobro]] |
 | COBRANZA-B05 | api | COBRANZA-B04 | backlog | [[blocks/COBRANZA-B05-pagos]] |
 | COBRANZA-B06 | api | COBRANZA-B05 | backlog | [[blocks/COBRANZA-B06-paz-y-salvo]] |
-| COBRANZA-B07 | web | COBRANZA-B02 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/COBRANZA-B07-pantallas-conceptos-cobro]] |
-| COBRANZA-B08 | web | COBRANZA-B03 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/COBRANZA-B08-pantallas-periodos-facturacion]] |
+| COBRANZA-B07 | web | COBRANZA-B02 (lock), WEB_BOOTSTRAP-B01 | ready | [[blocks/COBRANZA-B07-pantallas-conceptos-cobro]] |
+| COBRANZA-B08 | web | COBRANZA-B03 (lock), WEB_BOOTSTRAP-B01 | ready | [[blocks/COBRANZA-B08-pantallas-periodos-facturacion]] |
 | COBRANZA-B09 | web | COBRANZA-B04 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/COBRANZA-B09-pantalla-cuentas-cobro]] |
 | COBRANZA-B10 | web | COBRANZA-B05 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/COBRANZA-B10-pantalla-pagos]] |
 | COBRANZA-B11 | web | COBRANZA-B06 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/COBRANZA-B11-pantalla-paz-y-salvo]] |
 
-> Ningún bloque arranca en `ready` todavía: `COBRANZA-B01` depende de `DIRECTORIO-B01`, que hoy está
-> `ready` pero no `done`. En cuanto `DIRECTORIO-B01` llegue a `done`, `COBRANZA-B01` pasa a `ready`
-> (mecánico — actualizar su fila aquí y en `_state/BOARD.md`).
+> `COBRANZA-B01`, `B02` y `B03` llegaron a `done` — `B03` con su `verify-council` cumplido (encontró
+> un crítico de doble facturación, corregido; ver la sección "Verificación" de su tarjeta). Quedan
+> `ready`: `COBRANZA-B04` (api, cuentas de cobro), `COBRANZA-B07` (web, conceptos, contra
+> `LOCK-COBRANZA-02`) y `COBRANZA-B08` (web, periodos/facturación, contra `LOCK-COBRANZA-03`). El
+> resto de la cadena API (`B05`-`B06`) sigue en `backlog` hasta que su predecesor llegue a `done`.
 >
 > Los bloques API (B02-B06) **producen** contrato — al llegar a `done`, se crea un lock en
 > `_state/contracts/CONTRACT_LOCKS.md`. Los bloques Web (B07-B11) **consumen** contrato — no pueden

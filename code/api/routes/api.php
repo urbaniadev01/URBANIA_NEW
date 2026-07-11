@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\Route;
 use Urbania\Auth\Infrastructure\Http\Controllers\AuthController;
 use Urbania\Auth\Infrastructure\Http\Controllers\PasswordResetController;
 use Urbania\Authorization\Infrastructure\Http\Controllers\AdminController;
+use Urbania\Billing\Infrastructure\Http\Controllers\BillingPeriodController;
+use Urbania\Billing\Infrastructure\Http\Controllers\BillingRunController;
+use Urbania\Billing\Infrastructure\Http\Controllers\BillingSummaryController;
+use Urbania\Billing\Infrastructure\Http\Controllers\ChargeConceptController;
 use Urbania\Directorio\Infrastructure\Http\Controllers\ContactController;
 use Urbania\Directorio\Infrastructure\Http\Controllers\MeContactController;
 use Urbania\Directorio\Infrastructure\Http\Controllers\OccupantTypeController;
@@ -177,5 +181,48 @@ Route::prefix('v1')->group(function () {
     Route::prefix('property-occupants')->middleware('auth:api')->group(function () {
         Route::patch('/{property_occupant}', [PropertyOccupantController::class, 'update']);
         Route::delete('/{property_occupant}', [PropertyOccupantController::class, 'destroy']);
+    });
+
+    // Billing bounded context — COBRANZA-B02
+    // Charge concepts nested under condominiums (index, store)
+    Route::prefix('condominiums')->middleware('auth:api')->group(function () {
+        Route::get('/{condominium}/charge-concepts', [ChargeConceptController::class, 'index']);
+        Route::post('/{condominium}/charge-concepts', [ChargeConceptController::class, 'store']);
+    });
+
+    // Charge concepts (non-nested endpoints for show/update/destroy)
+    Route::prefix('charge-concepts')->middleware('auth:api')->group(function () {
+        Route::get('/{charge_concept}', [ChargeConceptController::class, 'show']);
+        Route::patch('/{charge_concept}', [ChargeConceptController::class, 'update']);
+        Route::delete('/{charge_concept}', [ChargeConceptController::class, 'destroy']);
+    });
+
+    // Billing bounded context — COBRANZA-B03
+    // Billing periods + cartera, nested under condominiums.
+    // La ruta `/billing-periods/active/summary` va ANTES que las de `/billing-periods/{id}`
+    // de abajo por precedencia — `active` no es un UUID, pero declararla primero deja
+    // explícito que es un segmento literal, no un parámetro.
+    Route::prefix('condominiums')->middleware('auth:api')->group(function () {
+        Route::get('/{condominium}/billing-periods/active/summary', [BillingSummaryController::class, 'active']);
+        Route::get('/{condominium}/billing-periods', [BillingPeriodController::class, 'index']);
+        Route::post('/{condominium}/billing-periods', [BillingPeriodController::class, 'store']);
+    });
+
+    // Billing periods (non-nested) + sus corridas de facturación
+    Route::prefix('billing-periods')->middleware('auth:api')->group(function () {
+        Route::get('/{billing_period}', [BillingPeriodController::class, 'show']);
+        Route::patch('/{billing_period}', [BillingPeriodController::class, 'update']);
+        Route::get('/{billing_period}/summary', [BillingSummaryController::class, 'show']);
+        Route::get('/{billing_period}/billing-runs', [BillingRunController::class, 'index']);
+
+        // R-COB-22: 202 + polling. Throttle defensivo — es la acción de mayor impacto
+        // del feature (genera todas las facturas de un periodo).
+        Route::post('/{billing_period}/billing-runs', [BillingRunController::class, 'store'])
+            ->middleware('throttle:10,1');
+    });
+
+    // Billing runs (endpoint de polling, R-COB-22)
+    Route::prefix('billing-runs')->middleware('auth:api')->group(function () {
+        Route::get('/{billing_run}', [BillingRunController::class, 'show']);
     });
 });

@@ -4,7 +4,7 @@ proyecto: web
 feature: DIRECTORIO
 id: DIRECTORIO-B07
 proyectos: [web]
-estado: verifying
+estado: done
 depende_de: [DIRECTORIO-B04, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false

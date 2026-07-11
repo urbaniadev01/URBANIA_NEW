@@ -307,3 +307,164 @@ Partial unique indexes:
 `PropertyController::destroy` (PROPIEDADES-B04) consulta esta tabla directamente para la regla R-03
 ("no eliminar unidad con ocupantes activos") — el guard clause temporal que asumía "sin ocupantes"
 se reemplazó por la consulta real en esta misma sesión.
+
+### Tablas de COBRANZA (COBRANZA-B01)
+
+> Solo estructura (migraciones + modelos + seeders de permisos) — sin endpoints ni lógica de negocio
+> todavía (eso llega en `COBRANZA-B02` en adelante). Bounded context de código: `src/Billing/`
+> (R-COB-30, nomenclatura en inglés, consistente con `Auth`/`Authorization`/`Mfa`/`Properties`).
+> Dinero en `NUMERIC(15,2)` COP; coeficiente/base de cálculo en `NUMERIC(5,4)`. `Invoice → property`
+> y `PaymentReceipt → property`/`→ contact` son lecturas cross-bounded-context de solo lectura, ver
+> [[../shared/adr/ADR-002-lectura-cross-context-modulo-monolito]].
+
+#### `charge_concepts`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `condominium_id` | `uuid` | FK → `condominiums.id`, NOT NULL, CASCADE ON DELETE |
+| `nombre` | `text` | NOT NULL |
+| `tipo` | `text` | NOT NULL, CHECK IN (`administracion`, `fondo_imprevistos`, `multa`, `extraordinaria`) |
+| `metodo_calculo` | `text` | NOT NULL, CHECK IN (`coeficiente`, `fijo`, `por_area`, `manual`) |
+| `valor_base` | `numeric(15,2)` | NOT NULL |
+| `activo` | `boolean` | NOT NULL, DEFAULT `true` |
+| `created_by` / `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` / `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+`UNIQUE (condominium_id, nombre) WHERE deleted_at IS NULL`. Sin nivel de catálogo compartido —
+`condominium_id` directo y `NOT NULL` (decisión 3 de `PANORAMA.md` §4).
+
+#### `billing_periods`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `condominium_id` | `uuid` | FK → `condominiums.id`, NOT NULL, CASCADE ON DELETE |
+| `anio` | `integer` | NOT NULL |
+| `mes` | `integer` | NOT NULL, CHECK entre 1 y 12 |
+| `estado` | `text` | NOT NULL, DEFAULT `abierto`, CHECK IN (`abierto`, `facturado`, `cerrado`) |
+| `created_by` / `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` / `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+`UNIQUE (condominium_id, anio, mes) WHERE deleted_at IS NULL`.
+
+#### `billing_runs`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `billing_period_id` | `uuid` | FK → `billing_periods.id`, NOT NULL, CASCADE ON DELETE |
+| `ejecutado_por` | `uuid` | FK → `users.id`, NOT NULL, RESTRICT ON DELETE — actor obligatorio (decisión 4) |
+| `fecha` | `timestamptz` | NOT NULL |
+| `estado` | `text` | NOT NULL, CHECK IN (`en_proceso`, `completado`, `fallido`) |
+| `resumen` | `jsonb` | nullable — `{unidades_facturadas, unidades_omitidas, detalle_omitidas[]}` (decisión 8) |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` / `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+`UNIQUE (billing_period_id) WHERE estado = 'completado' AND deleted_at IS NULL` — constraint de BD,
+no solo verificación de aplicación (endurece R-COB-09, decisión 7).
+
+#### `invoices`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `condominium_id` | `uuid` | FK → `condominiums.id`, NOT NULL, CASCADE ON DELETE |
+| `property_id` | `uuid` | FK → `properties.id`, NOT NULL, CASCADE ON DELETE — cross-context (ADR-002) |
+| `billing_period_id` | `uuid` | FK → `billing_periods.id`, NOT NULL, CASCADE ON DELETE |
+| `billing_run_id` | `uuid` | FK → `billing_runs.id`, NOT NULL, CASCADE ON DELETE (decisión 7) |
+| `numero` | `text` | NOT NULL |
+| `fecha_emision` | `date` | NOT NULL |
+| `fecha_vencimiento` | `date` | NOT NULL |
+| `valor_total` | `numeric(15,2)` | NOT NULL |
+| `saldo` | `numeric(15,2)` | NOT NULL |
+| `created_by` / `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` / `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete |
+
+`UNIQUE (condominium_id, numero)`. Índices: `property_id`, `(condominium_id, billing_period_id)`,
+`fecha_vencimiento`. **`estado` no es columna** — derivado en lectura (R-COB-08): `pendiente` /
+`parcial` / `pagada` / `vencida`, calculado en el backend al serializar (`COBRANZA-B04`).
+
+#### `invoice_items`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `invoice_id` | `uuid` | FK → `invoices.id`, NOT NULL, CASCADE ON DELETE |
+| `charge_concept_id` | `uuid` | FK → `charge_concepts.id`, NOT NULL, RESTRICT ON DELETE |
+| `descripcion` | `text` | nullable |
+| `valor` | `numeric(15,2)` | NOT NULL |
+| `base_calculo` | `numeric(5,4)` | nullable — snapshot inmutable (R-COB-06) |
+| `created_by` / `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` / `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — soft delete. Edición/eliminación solo si `metodo_calculo = manual` y sin `payment_allocations` (R-COB-24) |
+
+Índice: `invoice_id`.
+
+#### `payment_receipts`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `condominium_id` | `uuid` | FK → `condominiums.id`, NOT NULL, CASCADE ON DELETE |
+| `property_id` | `uuid` | FK → `properties.id`, NOT NULL, CASCADE ON DELETE — cross-context (ADR-002) |
+| `contact_id` | `uuid` | FK → `contacts.id`, NOT NULL, RESTRICT ON DELETE — cross-context, party nunca `user_id` (ADR-001 §3) |
+| `valor` | `numeric(15,2)` | NOT NULL |
+| `fecha` | `date` | NOT NULL |
+| `medio` | `text` | NOT NULL, CHECK IN (`efectivo`, `banco`) — R-COB-15, sin `transaction_id` (eliminada, decisión 6) |
+| `referencia` | `text` | nullable — dato sensible, no se loguea en texto plano (R-COB-26) |
+| `soporte_url` | `text` | nullable |
+| `created_by` | `uuid` | FK → `users.id`, NOT NULL, RESTRICT ON DELETE — quién registró (R-COB-13) |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE — quién anuló/corrigió |
+| `created_at` / `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — anulación (R-COB-13) |
+
+#### `payment_allocations`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `payment_receipt_id` | `uuid` | FK → `payment_receipts.id`, NOT NULL, CASCADE ON DELETE |
+| `invoice_id` | `uuid` | FK → `invoices.id`, NOT NULL, CASCADE ON DELETE |
+| `valor_aplicado` | `numeric(15,2)` | NOT NULL — suma exacta al 100% del recibo (R-COB-23) |
+| `created_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE |
+| `created_at` / `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — inmutable en la práctica (R-COB-14) |
+
+Sin `updated_by` — a diferencia del resto de tablas, esta es inmutable por diseño. Índice:
+`invoice_id`.
+
+#### `peace_certificates`
+
+| Columna | Tipo | Constraints |
+|---|---|---|
+| `id` | `uuid` | PK, UUID v7 |
+| `condominium_id` | `uuid` | FK → `condominiums.id`, NOT NULL, CASCADE ON DELETE |
+| `property_id` | `uuid` | FK → `properties.id`, NOT NULL, CASCADE ON DELETE — cross-context (ADR-002) |
+| `emitido_por` | `uuid` | FK → `users.id`, NOT NULL, RESTRICT ON DELETE — actor obligatorio (decisión 4) |
+| `numero` | `text` | NOT NULL |
+| `fecha` | `date` | NOT NULL |
+| `vigente_hasta` | `date` | nullable — `NULL` = sin vencimiento definido |
+| `pdf_url` | `text` | nullable — poblado sincrónicamente antes de responder (decisión 9) |
+| `updated_by` | `uuid` | FK → `users.id`, nullable, SET NULL ON DELETE — revocación (R-COB-28) |
+| `created_at` / `updated_at` | `timestamptz` | |
+| `deleted_at` | `timestamptz` | nullable — revocado (R-COB-28, reutiliza soft-delete existente, sin campo de estado nuevo) |
+
+`UNIQUE (condominium_id, numero)`.
+
+### Permisos RBAC de COBRANZA (`CobranzaPermissionsSeeder`)
+
+10 permisos nuevos (`cobranza.conceptos.ver`/`.gestionar`, `cobranza.periodos.ver`,
+`cobranza.facturacion.ejecutar`, `cobranza.facturas.ver`/`.gestionar`, `pagos.registrar`/`.anular`,
+`cobranza.paz_salvo.generar`/`.revocar`) — catálogo completo en `PANORAMA.md` §5.
+
+`billing.ver` — **hallazgo real de esta sesión**: el `PANORAMA.md` de COBRANZA (§5) asumía que ya
+existía, creado por `DASHBOARD`. En la práctica `DASHBOARD-B01/B02/B03` son los tres `proyecto: web`
+— nunca hubo un bloque API que persistiera el permiso, solo se referenciaba client-side
+(`QuickLinksWidget.tsx`). `CobranzaPermissionsSeeder` lo crea idempotentemente
+(`firstOrCreate`) junto con los 10 nuevos, cerrando el gap real sin duplicar si algún proceso futuro
+también lo siembra.

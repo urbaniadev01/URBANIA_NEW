@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             PropertyTypeSeeder::class,
             PropertyStatusSeeder::class,
             OccupantTypeSeeder::class,
+            CobranzaPermissionsSeeder::class,
             DemoUserSeeder::class,
             MfaDemoSeeder::class,
         ]);

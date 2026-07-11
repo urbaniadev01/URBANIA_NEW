@@ -4,7 +4,7 @@ proyecto: api
 feature: COBRANZA
 id: COBRANZA-B04
 proyectos: [api]
-estado: backlog
+estado: ready
 depende_de: [COBRANZA-B03]
 contrato: null
 verificacion_critica: false

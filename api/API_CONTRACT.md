@@ -87,6 +87,16 @@ reversiona `/api/v1` completo por un solo endpoint.
 | `CONTACT_HAS_OCCUPATIONS` | 409 | El contacto tiene ocupaciones activas (`property_occupants`) y no puede eliminarse |
 | `CONTACT_NOT_FOUND` | 404 | El contacto no existe, pertenece a otra organización, o está fuera del scope del actor |
 | `OCCUPANT_ASSIGNMENT_DUPLICATE` | 409 | Ya existe una asignación activa para el mismo `(contact_id, property_id, occupant_type_id)` |
+| `CHARGE_CONCEPT_NAME_DUPLICATE` | 409 | Ya existe un concepto de cobro con ese nombre en el mismo condominio |
+| `CHARGE_CONCEPT_NOT_FOUND` | 404 | El concepto de cobro no existe, pertenece a otra organización, o está fuera del scope del usuario |
+| `PERMISSION_DENIED` | 403 | El usuario no tiene el permiso requerido para esta acción (o su scope no cubre el recurso) |
+| `FONDO_IMPREVISTOS_VALIDACION_PENDIENTE` | — | Warning no bloqueante en `200`/`201`: la validación del mínimo legal (1%) para fondo de imprevistos no está implementada en esta fase (R-COB-18). Ver §4-bis. |
+| `BILLING_PERIOD_DUPLICATE` | 409 | Ya existe un periodo de facturación para ese año y mes en el mismo condominio |
+| `BILLING_PERIOD_NOT_FOUND` | 404 | El periodo de facturación no existe, pertenece a otra organización, o está fuera del scope del usuario |
+| `BILLING_PERIOD_ALREADY_CLOSED` | 409 | El periodo ya está cerrado — no se puede cerrar de nuevo ni facturar sobre él |
+| `BILLING_RUN_ALREADY_EXISTS` | 409 | Ya hay una corrida de facturación `en_proceso` o `completado` para este periodo (R-COB-09) |
+| `BILLING_RUN_NOT_FOUND` | 404 | La corrida de facturación no existe, pertenece a otra organización, o está fuera del scope del usuario |
+| `BILLING_PERIOD_HAS_PENDING_INVOICES` | — | Warning no bloqueante en `200`: el periodo se cerró con facturas pendientes o parciales (R-COB-08-bis). Ver §4-bis. |
 
 ## 4. Paginación (para endpoints de listado)
 
@@ -119,6 +129,56 @@ mostrarle al usuario sin bloquear el guardado (ej. R-06 de `PROPIEDADES`: suma d
 - `detail`: objeto libre por `code`, documentado en `api/endpoints/<FEATURE>.md` junto con el
   endpoint que lo emite.
 - Un endpoint que nunca tiene advertencias no necesita incluir el campo `warnings` en absoluto.
+
+## 4-ter. Operaciones asíncronas: `202` + polling
+
+Cuando una operación es demasiado lenta para resolverse dentro de una request HTTP (procesa cientos
+de filas, genera documentos, llama a un tercero), **no se bloquea la respuesta**: el endpoint encola
+el trabajo y responde `202 Accepted` de inmediato con el recurso que representa la ejecución, en un
+estado "en curso". El cliente hace polling sobre ese recurso hasta que termine.
+
+Convención general, introducida por `COBRANZA-B03` (R-COB-22, corrida de facturación) y reutilizable
+por cualquier feature futura — no es una excepción puntual de Cobranza.
+
+**1. Disparo — `POST /<recurso-padre>/{id}/<ejecuciones>` → `202`:**
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "estado": "en_proceso",
+    "resumen": null
+  }
+}
+```
+
+**2. Polling — `GET /<ejecuciones>/{id}` → `200`**, hasta que `estado` deje de ser `en_proceso`:
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "estado": "completado",
+    "resumen": { "unidades_facturadas": 8, "unidades_omitidas": 2, "detalle_omitidas": [...] }
+  }
+}
+```
+
+Reglas:
+
+- El recurso de ejecución es **una entidad real y persistida** (no un "job id" opaco): tiene su
+  propia tabla, su actor (`ejecutado_por`), su timestamp y su historial consultable. Un `GET` del
+  listado (`GET /<recurso-padre>/{id}/<ejecuciones>`) devuelve todas las ejecuciones pasadas.
+- `estado` es un enum cerrado con al menos: `en_proceso` → `completado` | `fallido`.
+- **Éxito parcial:** el resultado nunca es solo binario. Un campo `resumen` (JSONB) explica qué se
+  procesó y qué se omitió *y por qué* — sin esto, `completado` no distingue "todo bien" de "terminó,
+  pero se salteó la mitad". Se expone únicamente cuando `estado != en_proceso`.
+- **Sin reintento automático** por defecto: reintentar una operación de escritura masiva a medio
+  camino puede duplicar datos. Un `fallido` se resuelve disparando una ejecución nueva, no
+  reintentando la vieja (`$tries = 1` en el Job).
+- El endpoint de disparo valida **antes** de encolar (permisos, estado del padre, ejecuciones
+  concurrentes) y devuelve el error correspondiente (`403`/`409`) sin llegar a `202`.
+- Es responsabilidad del cliente no hacer polling agresivo; el endpoint de disparo lleva throttle.
 
 ## 5. Rate limiting
 

@@ -4,7 +4,7 @@ proyecto: web
 feature: COBRANZA
 id: COBRANZA-B08
 proyectos: [web]
-estado: backlog
+estado: ready
 depende_de: [COBRANZA-B03, WEB_BOOTSTRAP-B01]
 contrato: consume
 verificacion_critica: false

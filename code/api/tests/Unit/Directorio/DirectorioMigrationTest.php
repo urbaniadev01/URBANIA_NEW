@@ -12,6 +12,18 @@ use function Pest\Laravel\artisan;
 // so we can test migrate → rollback → migrate cycle explicitly,
 // including the corrective migration on `contacts` (a table already SHIPPED by AUTH-B01).
 
+// The 3 migration files this block (DIRECTORIO-B01) added. Targeted explicitly via
+// --path instead of a relative `--step=3` — a flat `database/migrations/` directory
+// means any later feature (e.g. COBRANZA-B01) that adds its own migrations shifts what
+// "the last 3 migrations" means after a full `migrate:fresh`, silently breaking a
+// step-based rollback. --path pins this test to its own 3 files regardless of how many
+// migrations exist after them (found while implementing COBRANZA-B01).
+const DIRECTORIO_B01_MIGRATION_PATHS = [
+    'database/migrations/2026_07_10_000021_fix_contacts_organization_id_and_user_id_nullable.php',
+    'database/migrations/2026_07_10_000022_create_occupant_types_table.php',
+    'database/migrations/2026_07_10_000023_create_property_occupants_table.php',
+];
+
 beforeEach(function (): void {
     // Isolated per-process database — see useIsolatedMigrationTestDatabase() in tests/Pest.php
     useIsolatedMigrationTestDatabase('directorio');
@@ -25,7 +37,7 @@ beforeEach(function (): void {
 test('contacts backfill leaves zero rows with null organization_id', function (): void {
     // Roll back to just before the 3 DIRECTORIO-B01 migrations, so contacts
     // still has its original AUTH-B01 shape (no organization_id column).
-    artisan('migrate:rollback', ['--force' => true, '--step' => 3])->assertSuccessful();
+    artisan('migrate:rollback', ['--force' => true, '--path' => DIRECTORIO_B01_MIGRATION_PATHS])->assertSuccessful();
 
     $orgId = (string) Str::orderedUuid();
     DB::table('organizations')->insert([
@@ -68,7 +80,7 @@ test('contacts backfill leaves zero rows with null organization_id', function ()
 // ---------------------------------------------------------------
 test('rollback of the 3 DIRECTORIO-B01 migrations removes their structures', function (): void {
     // Roll back the 3 migrations added by this block (property_occupants, occupant_types, contacts fix)
-    artisan('migrate:rollback', ['--force' => true, '--step' => 3])->assertSuccessful();
+    artisan('migrate:rollback', ['--force' => true, '--path' => DIRECTORIO_B01_MIGRATION_PATHS])->assertSuccessful();
 
     expect(Schema::hasTable('property_occupants'))->toBeFalse();
     expect(Schema::hasTable('occupant_types'))->toBeFalse();
@@ -77,7 +89,7 @@ test('rollback of the 3 DIRECTORIO-B01 migrations removes their structures', fun
 });
 
 test('re-migrating after rollback restores the 3 DIRECTORIO-B01 migrations', function (): void {
-    artisan('migrate:rollback', ['--force' => true, '--step' => 3])->assertSuccessful();
+    artisan('migrate:rollback', ['--force' => true, '--path' => DIRECTORIO_B01_MIGRATION_PATHS])->assertSuccessful();
     artisan('migrate', ['--force' => true])->assertSuccessful();
 
     expect(Schema::hasTable('property_occupants'))->toBeTrue();
@@ -193,7 +205,7 @@ test('rollback fails loudly when a contact has user_id IS NULL', function (): vo
         'updated_at' => now(),
     ]);
 
-    expect(fn () => artisan('migrate:rollback', ['--force' => true, '--step' => 3])->run())
+    expect(fn () => artisan('migrate:rollback', ['--force' => true, '--path' => DIRECTORIO_B01_MIGRATION_PATHS])->run())
         ->toThrow(RuntimeException::class, 'Cannot roll back: 1 contact(s) have user_id IS NULL');
 
     // The migration itself is still applied — the guard threw before altering anything.

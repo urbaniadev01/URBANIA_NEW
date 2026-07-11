@@ -30,13 +30,13 @@ DIRECTORIO-B04 ──lock──> DIRECTORIO-B07 (web, pantalla asignación de oc
 
 | ID | Proyecto | Depende de | Estado | Tarjeta |
 |---|---|---|---|---|
-| DIRECTORIO-B01 | api | AUTH-B01, PROPIEDADES-B01 | ready | [[blocks/DIRECTORIO-B01-fundacion-contactos-ocupantes]] |
-| DIRECTORIO-B02 | api | DIRECTORIO-B01 | backlog | [[blocks/DIRECTORIO-B02-crud-tipos-ocupante]] |
-| DIRECTORIO-B03 | api | DIRECTORIO-B01 | backlog | [[blocks/DIRECTORIO-B03-crud-contactos]] |
-| DIRECTORIO-B04 | api | DIRECTORIO-B01 | backlog | [[blocks/DIRECTORIO-B04-asignacion-ocupantes]] |
-| DIRECTORIO-B05 | web | DIRECTORIO-B02 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/DIRECTORIO-B05-pantalla-tipos-ocupante]] |
-| DIRECTORIO-B06 | web | DIRECTORIO-B03 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/DIRECTORIO-B06-pantalla-directorio-contactos]] |
-| DIRECTORIO-B07 | web | DIRECTORIO-B04 (lock), WEB_BOOTSTRAP-B01 | backlog | [[blocks/DIRECTORIO-B07-pantalla-asignacion-ocupantes]] |
+| DIRECTORIO-B01 | api | AUTH-B01, PROPIEDADES-B01 | done | [[blocks/DIRECTORIO-B01-fundacion-contactos-ocupantes]] |
+| DIRECTORIO-B02 | api | DIRECTORIO-B01 | done | [[blocks/DIRECTORIO-B02-crud-tipos-ocupante]] |
+| DIRECTORIO-B03 | api | DIRECTORIO-B01 | done | [[blocks/DIRECTORIO-B03-crud-contactos]] |
+| DIRECTORIO-B04 | api | DIRECTORIO-B01 | done | [[blocks/DIRECTORIO-B04-asignacion-ocupantes]] |
+| DIRECTORIO-B05 | web | DIRECTORIO-B02 (lock), WEB_BOOTSTRAP-B01 | done | [[blocks/DIRECTORIO-B05-pantalla-tipos-ocupante]] |
+| DIRECTORIO-B06 | web | DIRECTORIO-B03 (lock), WEB_BOOTSTRAP-B01 | done | [[blocks/DIRECTORIO-B06-pantalla-directorio-contactos]] |
+| DIRECTORIO-B07 | web | DIRECTORIO-B04 (lock), WEB_BOOTSTRAP-B01 | done | [[blocks/DIRECTORIO-B07-pantalla-asignacion-ocupantes]] |
 
 > Los bloques API (B02-B04) **producen** contrato — al llegar a `done`, se crea un lock en
 > `_state/contracts/CONTRACT_LOCKS.md`. Los bloques Web (B05-B07) **consumen** contrato — no pueden

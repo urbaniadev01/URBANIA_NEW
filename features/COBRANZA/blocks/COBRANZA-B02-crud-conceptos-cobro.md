@@ -4,7 +4,7 @@ proyecto: api
 feature: COBRANZA
 id: COBRANZA-B02
 proyectos: [api]
-estado: backlog
+estado: done
 depende_de: [COBRANZA-B01]
 contrato: null
 verificacion_critica: false
@@ -70,16 +70,148 @@ Este bloque **produce** contrato — al llegar a `done`, se crea `LOCK-COBRANZA-
 
 ## Definition of Done
 
-- [ ] `composer ci` ejecutado — salida completa pegada.
-- [ ] Verificación funcional real (curl/httpie) cubriendo los 10 criterios de aceptación, incluidos
+- [x] `composer ci` ejecutado — salida completa pegada.
+- [x] Verificación funcional real (curl/httpie) cubriendo los 10 criterios de aceptación, incluidos
       los negativos (#4-8) — request/response reales pegados.
-- [ ] `LOCK-COBRANZA-02` creado en `_state/contracts/CONTRACT_LOCKS.md`.
-- [ ] `api/API_CONTRACT.md` actualizado con los 5 endpoints nuevos.
-- [ ] `api/endpoints/COBRANZA.md` creado con el detalle request/response de estos 5 endpoints.
+- [x] `LOCK-COBRANZA-02` creado en `_state/contracts/CONTRACT_LOCKS.md`.
+- [x] `api/API_CONTRACT.md` actualizado con los 5 endpoints nuevos (+ 4 códigos de error + 1 warning).
+- [x] `api/endpoints/COBRANZA.md` creado con el detalle request/response de estos 5 endpoints.
 
 ## Evidencia
 
-> Vacío hasta que el bloque se ejecute.
+### Implementación
+
+- **Modelos/migraciones:** reutiliza `EloquentChargeConcept` de `COBRANZA-B01` (sin cambios de
+  esquema).
+- **`ChargeConceptController`** (`src/Billing/Infrastructure/Http/Controllers/`): 5 acciones
+  (index/store/show/update/destroy). Autorización resuelta a mano (`hasChargeConceptsPermission()`)
+  en vez del middleware genérico `require_permission` — `CheckPermissionUseCase` exige coincidencia
+  exacta de `scope_type` (no expande `organization` a `condominium` pese a lo que su propio docblock
+  afirma), mismo motivo por el que `PropertyController` (`LOCK-PROPIEDADES-03`) ya resuelve su scope
+  a mano en vez de usar ese middleware. `ChargeConceptController` sigue el mismo patrón.
+- **FormRequests**: `StoreChargeConceptRequest`/`UpdateChargeConceptRequest` — validan `tipo`/
+  `metodo_calculo` contra el set cerrado (defensa de aplicación; la BD ya lo garantiza vía CHECK de
+  `COBRANZA-B01`).
+- **`ChargeConceptResource`**: wrap `data`, incluye `activo` (bool) y `valor_base` (float).
+- **`CobranzaPermissionsSeeder`** extendido: asigna `cobranza.conceptos.ver`/`.gestionar` a los roles
+  `admin` y `manager` (`syncWithoutDetaching`, idempotente) — mismo criterio que `admin.access` en
+  `RbacDemoSeeder`, donde ambos roles reciben los mismos permisos operativos.
+- **Rutas**: `GET/POST /condominiums/{condominium}/charge-concepts` (anidadas) +
+  `GET/PATCH/DELETE /charge-concepts/{charge_concept}` (planas) — mismo patrón que
+  `properties`/`property-occupants`.
+
+### Tests de feature (13 tests, `tests/Feature/Billing/ChargeConceptTest.php`)
+
+```
+$ php artisan test tests/Feature/Billing/ChargeConceptTest.php
+PASS  Tests\Feature\Billing\ChargeConceptTest
+✓ list charge concepts returns 200 scoped to the condominium
+✓ create charge concept returns 201
+✓ create fondo_imprevistos charge concept returns warnings
+✓ duplicate charge concept name returns 409
+✓ charge concept with tipo outside the closed set returns 422
+✓ user without cobranza.conceptos.ver gets 403 on list
+✓ user with only cobranza.conceptos.ver gets 403 on create
+✓ user scoped to a different condominium gets 403
+✓ delete charge concept returns 204 and deactivates it
+✓ deactivated concept does not appear in the default listing
+✓ show and update work for a concept within the same organization
+✓ charge concept from another organization returns 404
+✓ unauthenticated access returns 401
+
+Tests: 13 passed (39 assertions)
+```
+
+Cubre los 10 criterios de aceptación de la tarjeta (CA1-CA10) más 2 casos adicionales (tenant
+isolation en `show`, autenticación).
+
+### `composer ci` completo
+
+```
+$ composer ci
+{"tool":"pint","result":"passed"}
+[OK] No errors (PHPStan, 223 archivos)
+Tests: 310 passed (1034 assertions)
+```
+
+310 = 297 previos (post `COBRANZA-B01`) + 13 nuevos. Sin regresiones.
+
+### Verificación funcional real (curl, servidor Docker real — `admin@urbania.test` + usuarios ad-hoc)
+
+```
+=== CA1: GET listado (200, scopeado) ===
+HTTP:200 — {"data":[...]}
+
+=== CA2: POST administracion (201, activo:true) ===
+HTTP:201 — {"data":{"nombre":"Administracion Curl 2",...,"activo":true,...}}
+
+=== CA3: POST fondo_imprevistos (201 + warnings) ===
+HTTP:201 — {"data":{...},"warnings":[{"code":"FONDO_IMPREVISTOS_VALIDACION_PENDIENTE",...}]}
+
+=== CA4: POST nombre duplicado (409) ===
+HTTP:409 — {"error":{"code":"CHARGE_CONCEPT_NAME_DUPLICATE",...}}
+
+=== CA5: POST tipo invalido (422) ===
+HTTP:422 — {"error":{"code":"VALIDATION_ERROR","message":"El tipo debe ser uno de: ..."}}
+
+=== CA6: usuario sin cobranza.conceptos.ver -> GET listado (403) ===
+HTTP:403 — {"error":{"code":"PERMISSION_DENIED",...}}
+
+=== CA7: usuario con .ver (sin .gestionar) -> POST (403); GET (200) ===
+HTTP:403 — {"error":{"code":"PERMISSION_DENIED","message":"No tiene permisos para gestionar..."}}
+HTTP:200 — (el mismo usuario sí puede listar)
+
+=== CA8: manager escopeado a otro condominio (403); propio condominio (200) ===
+HTTP:403 — {"error":{"code":"PERMISSION_DENIED",...}}
+HTTP:200 — (control: en su propio condominio sí puede)
+
+=== CA9: DELETE (204); GET posterior (404) ===
+HTTP:204
+HTTP:404 — {"error":{"code":"CHARGE_CONCEPT_NOT_FOUND",...}}
+
+=== CA10: listado tras desactivar uno (no aparece) ===
+HTTP:200 — {"data":[...]} (2 de 3 creados, el desactivado no aparece)
+```
+
+Datos de prueba (usuarios/roles ad-hoc, conceptos de prueba) limpiados de la BD de desarrollo tras la
+verificación.
+
+### Bug real encontrado y corregido durante la verificación
+
+**`POST` devolvía `activo: null` en vez de `true`.** El controller retornaba el modelo recién creado
+sin refrescarlo (`$concept->save()` seguido de `new ChargeConceptResource($concept)`), así que el
+`DEFAULT true` de la columna `activo` (aplicado por Postgres al insertar) nunca se reflejaba en el
+objeto PHP en memoria — un `GET` inmediatamente después sí mostraba `activo: true` correctamente.
+Corregido devolviendo `$concept->fresh()` en `store()` (mismo patrón que `update()` ya usaba). Test de
+regresión agregado (`create charge concept returns 201` ahora afirma `activo === true`).
+
+### Hallazgo de entorno (no es un bug de este bloque)
+
+Las requests HTTP sin header `Accept: application/json` (ej. `curl` sin ese header) contra **cualquier**
+endpoint `auth:api` sin token disparan `RouteNotFoundException: Route [login] not defined` (Laravel
+intenta redirigir a una ruta `login` que no existe en esta API-only app) en vez de un `401` limpio —
+confirmado también en `/property-types` (endpoint preexistente, ajeno a este bloque). Con
+`Accept: application/json` responde `401` limpio e instantáneo, que es como se comporta el frontend
+real (siempre envía ese header) y como lo verifica el test automatizado (`getJson()` de Pest ya lo
+envía). No se corrigió por estar fuera de alcance de `COBRANZA-B02` — es un comportamiento transversal
+de toda la API, no específico de `charge-concepts`.
+
+### Archivos creados
+
+- `src/Billing/Infrastructure/Http/Controllers/ChargeConceptController.php`
+- `src/Billing/Infrastructure/Http/Requests/ChargeConcept/StoreChargeConceptRequest.php`
+- `src/Billing/Infrastructure/Http/Requests/ChargeConcept/UpdateChargeConceptRequest.php`
+- `src/Billing/Infrastructure/Http/Resources/ChargeConceptResource.php`
+- `tests/Feature/Billing/ChargeConceptTest.php`
+- `api/endpoints/COBRANZA.md`
+
+### Archivos modificados
+
+- `routes/api.php` — 5 endpoints nuevos.
+- `database/seeders/CobranzaPermissionsSeeder.php` — asignación de permisos a roles `admin`/`manager`.
+- `_state/contracts/CONTRACT_LOCKS.md` — `LOCK-COBRANZA-02` creado.
+- `api/API_CONTRACT.md` — 4 códigos de error + 1 warning nuevos.
+- `_state/BOARD.md` — estado del bloque.
 
 ## Notas
 
