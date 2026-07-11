@@ -2,7 +2,7 @@
 tipo: estado
 proyecto: shared
 creado: 2026-07-06
-actualizado: 2026-07-10
+actualizado: 2026-07-11
 ---
 
 # RUNBOOK â€” Errores conocidos y soluciones
@@ -282,3 +282,23 @@ equest.post + sessionStorage.setItem para evitar el formulario React por complet
 - **Solucion:** Agregar siempre el header Accept: application/json a cualquier curl de verificacion manual contra un endpoint protegido - con ese header, el 401 responde en milisegundos como JSON limpio, igual que ya hacen los tests de Pest (getJson() lo setea automaticamente, por eso los tests nunca mostraron el problema). Si el entorno ya quedo colgado: reiniciar los contenedores urbania-php y urbania-nginx lo recupera en unos segundos.
 - **Prevencion:** Toda verificacion funcional real con curl en este proyecto debe incluir el header Accept: application/json en cada request, incluidos los casos negativos de sin auth - no solo por prolijidad de la respuesta, sino porque omitirlo puede tumbar el entorno de desarrollo completo para el resto de la sesion.
 - **Tags:** #curl #laravel #debug-mode #auth #timeout #nginx #php-fpm #verificacion-funcional
+
+### E-009: `ContactListResource` omitía `user_id` — el listado de Contactos marcaba a todos como "Con cuenta"
+
+- **Fecha:** 2026-07-11
+- **Agente/Sesión:** urbania (verificación visual real con Playwright MCP de `DIRECTORIO-B05/B06/B07`, primera sesión con navegador real disponible tras resolver el bloqueo de `E-005`)
+- **Causa raíz:** `ContactListResource.php` (`code/api/src/Directorio/Infrastructure/Http/Resources/`) nunca incluía `user_id` en el array serializado del listado — ni en los campos base ni en el bloque condicional `$showSensitive` (ese bloque solo cubre `email`/`telefono`, el dato que sí protege R-DIR-06). El frontend (`hasAccount(contact)` en `code/web/src/features/directorio/types/index.ts`) evalúa `contact.user_id !== null` — con la clave ausente del JSON, `contact.user_id` es `undefined` en JavaScript, y `undefined !== null` es `true`. Resultado: todo contacto se pintaba con el badge "Con cuenta" en `/directorio/contactos`, sin importar el valor real en base de datos.
+- **Síntoma:** Creé un contacto explícitamente "sin cuenta de usuario" desde el propio formulario de la UI y apareció en la tabla con el badge "Con cuenta". Confirmado contra la base de datos real (`user_id` vacío) y contra el body real de `GET /api/v1/contacts` (la clave `user_id` no aparecía en ningún elemento del array). Los tests de PHP existentes (`ContactTest.php`) nunca lo detectaron porque ninguno afirmaba la presencia de `user_id` en el listado — mismo patrón que `E-006`.
+- **Solución:** Se agregó `'user_id' => $this->resource->user_id` al array base de `ContactListResource::toArray()` (fuera del bloque `$showSensitive` — la distinción con/sin cuenta no es un dato protegido por R-DIR-06, es funcionalidad central de R-DIR-02). Test de regresión nuevo: `list contacts includes user_id to distinguish con/sin cuenta` en `ContactTest.php`, que crea un contacto vinculado y uno sin vincular y afirma el valor exacto de `user_id` en cada uno. Re-verificado en el navegador real tras el fix: el badge quedó correcto (solo "Administrador Demo", el único contacto realmente vinculado a un `user`, muestra "Con cuenta").
+- **Prevención:** Cuando un campo booleano/derivado del frontend depende de la presencia u ausencia de una clave (no solo su valor), el test de contrato debe afirmar la clave explícitamente (`toHaveKey`) además del valor — un campo faltante y un campo `null` son casos distintos en JS y ambos deben cubrirse.
+- **Tags:** #directorio #contactos #json-resource #contrato #bug-real #dod #habeas-data
+
+### E-010: `tryRefresh()` sin deduplicación — llamadas concurrentes a `/auth/refresh` rotaban el mismo token y colisionaban en `jti`
+
+- **Fecha:** 2026-07-11
+- **Agente/Sesión:** urbania (misma sesión que `E-009`)
+- **Causa raíz:** `tryRefresh()` (`code/web/src/services/api-client.ts`) disparaba un `fetch` nuevo a `POST /auth/refresh` en cada invocación, sin ningún mecanismo de deduplicación. `RequireAuth.tsx` la llama en un `useEffect` al montar — en dev, React StrictMode monta/desmonta/remonta cada componente, y aunque la función de limpieza marca `cancelled = true`, no cancela el `fetch` ya en vuelo, así que el segundo montaje dispara una segunda llamada real. Dos `POST /auth/refresh` concurrentes leen la misma cookie `refresh_token` (aún válida) y ambos intentan rotarla, generando un `refresh_tokens.jti` duplicado en el backend (`RefreshTokenUseCase` → `EloquentRefreshTokenRepository::create()`).
+- **Síntoma:** `POST /api/v1/auth/refresh` respondía `500` con `PDOException` (`SQLSTATE[23505]: duplicate key value violates unique constraint "refresh_tokens_jti_unique"`) de forma intermitente en cada carga completa de página. La mayoría de las veces un segundo intento (retry) recuperaba la sesión silenciosamente, pero en al menos una ocasión el fallo no se recuperó y la app redirigió a `/login` pese a que la cookie de sesión seguía siendo válida. Esta es, con alta probabilidad, la causa raíz de fondo de la hipótesis ya documentada en `E-007` ("race condition en RequireAuth" / login intermitente en Playwright headless).
+- **Solución:** `tryRefresh()` ahora memoiza la promesa en vuelo en una variable de módulo (`refreshPromise`) — todo llamador concurrente recibe la misma promesa en vez de disparar una request nueva; se limpia en `finally` para permitir una nueva rotación real una vez la anterior se resuelve. Tests de regresión nuevos en `code/web/src/services/api-client.test.ts`: 3 llamadas concurrentes producen exactamente 1 `fetch`, y una llamada posterior (tras resolverse la anterior) sí dispara una nueva. Re-verificado en el navegador real: navegación completa repetida a `/condominios` sin el 500 ni redirección a `/login`, consola sin errores.
+- **Prevención:** Cualquier función que dispare una request de red desde un `useEffect` de un componente que pueda montarse más de una vez concurrentemente (RequireAuth-like guards, StrictMode, o múltiples componentes reaccionando al mismo evento de 401) necesita deduplicar la promesa en vuelo, no solo cancelar el efecto del lado del componente.
+- **Tags:** #auth #refresh-token #race-condition #concurrencia #frontend #bug-real #e-007

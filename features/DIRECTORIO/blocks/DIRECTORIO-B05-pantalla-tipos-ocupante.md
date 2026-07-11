@@ -162,3 +162,10 @@ actualizó en esa sesión). Corregido el assert; sin cambios de comportamiento e
 
 > Mismo patrón exacto que `PROPIEDADES-B06` — si esa pantalla ya definió un componente reusable de
 > "tabla de catálogo con badge de sistema", este bloque debe reutilizarlo en vez de reconstruirlo.
+
+> **Verificación visual real (2026-07-11) — Playwright MCP, navegador real, sin mocks.** Login real
+> (`admin@urbania.test`), navegación a `/catalogos/tipos-ocupante`: tabla con los 4 tipos de sistema
+> (Arrendatario, Familiar, Propietario, Residente — badge "Sistema", solo lectura) y un tipo
+> personalizado con acciones Editar/Eliminar. Sin errores de consola en esta pantalla. Evidencia:
+> `directorio-b05-tipos-ocupante.png`. Screen queda con su verificación visual real completa — la
+> transición a `done` sigue siendo decisión del usuario (ver `CLAUDE.md`).

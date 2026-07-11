@@ -205,6 +205,48 @@ test('list contacts returns org contacts with pagination meta', function () {
 });
 
 // ---------------------------------------------------------------
+// CASE 1-bis: GET /contacts — user_id presente en el listado (con y sin cuenta)
+// Regresión: ContactListResource omitía 'user_id' del array base, causando que
+// el frontend (hasAccount(): user_id !== null) marcara TODO contacto como "Con
+// cuenta" porque la clave ni siquiera existía en el JSON (undefined !== null).
+// Encontrado en verificación visual real de DIRECTORIO-B06 (Playwright MCP).
+// ---------------------------------------------------------------
+test('list contacts includes user_id to distinguish con/sin cuenta', function () {
+    $auth = createContactB03AdminUser();
+    $linkedUser = createContactB03TestUser($auth['org'], 'con-cuenta-b03@urbania.test');
+
+    $withAccount = new EloquentContact([
+        'organization_id' => $auth['org']->id,
+        'user_id' => $linkedUser->id,
+        'nombre' => 'Con Cuenta Test',
+        'email' => 'con-cuenta-b03@urbania.test',
+        'created_by' => $auth['user']->id,
+    ]);
+    $withAccount->save();
+
+    $withoutAccount = new EloquentContact([
+        'organization_id' => $auth['org']->id,
+        'nombre' => 'Sin Cuenta Test',
+        'email' => 'sin-cuenta-b03@urbania.test',
+        'created_by' => $auth['user']->id,
+    ]);
+    $withoutAccount->save();
+
+    $response = getJson('/api/v1/contacts', createContactB03AuthHeader($auth['token']));
+
+    $response->assertOk();
+    $data = collect($response->json('data'));
+
+    $with = $data->firstWhere('nombre', 'Con Cuenta Test');
+    expect($with)->toHaveKey('user_id');
+    expect($with['user_id'])->toBe($linkedUser->id);
+
+    $without = $data->firstWhere('nombre', 'Sin Cuenta Test');
+    expect($without)->toHaveKey('user_id');
+    expect($without['user_id'])->toBeNull();
+});
+
+// ---------------------------------------------------------------
 // CASE 2: search filter
 // ---------------------------------------------------------------
 test('list contacts filters by search', function () {

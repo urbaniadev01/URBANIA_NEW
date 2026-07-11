@@ -118,6 +118,21 @@ actualizado: 2026-07-11
 > `tests/Pest.php` (`useIsolatedMigrationTestDatabase()`) que aÃ­sla cada suite de este tipo en su
 > propia base de datos por proceso paralelo. Detalle completo en la secciÃ³n Notas de la tarjeta.
 
+> **Actualizado (2026-07-11) — verificación visual real completada para DIRECTORIO-B05/B06/B07**
+> con un MCP de navegador (Playwright) recién habilitado en esta sesión de Claude Code, desbloqueando
+> lo que antes dependía de revisión manual del usuario (`RUNBOOK.md#E-005`, runner de Playwright
+> roto en este repo — sigue sin resolverse, pero ya no es un bloqueante gracias al MCP). Las 3
+> pantallas se ejercitaron de punta a punta contra el backend real, sin mocks: catálogo de tipos de
+> ocupante, alta de contacto, y el ciclo completo de asignar/desasignar un ocupante a una unidad.
+> Dos bugs reales encontrados y corregidos durante la verificación — detalle completo en
+> `RUNBOOK.md#E-009` (API: `ContactListResource` omitía `user_id`, rompiendo el badge "Con
+> cuenta"/"Sin cuenta" para todo contacto) y `RUNBOOK.md#E-010` (Web: `tryRefresh()` sin
+> deduplicación, causaba `500` intermitente en `/auth/refresh` por `jti` duplicado — probable causa
+> de fondo de `E-007`). Ambos con test de regresión y suite completa re-verificada (PHP 276/276,
+> frontend 161/161, `tsc --noEmit` limpio). Evidencia y detalle por pantalla en la sección Notas de
+> cada tarjeta (`DIRECTORIO-B05/B06/B07`). Las 3 cards permanecen en `estado: verifying` — la
+> transición a `done` sigue siendo decisión del usuario (ver `CLAUDE.md`), no cambiada acá.
+
 ## Bloques â€” DASHBOARD
 
 | ID | Proyecto(s) | Estado | Depende de | Tarjeta |

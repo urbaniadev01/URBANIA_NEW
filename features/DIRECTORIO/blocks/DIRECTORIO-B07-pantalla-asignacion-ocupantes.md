@@ -184,3 +184,19 @@ no solo `tsc --noEmit` suelto.
 > `PROPIEDADES-B08` es una nota operativa para quien ejecute este bloque, no algo que
 > `_state/contracts/CONTRACT_LOCKS.md` pueda expresar (esa tabla solo rastrea contratos de API, no
 > orden de pantallas Web).
+
+> **Verificación visual real (2026-07-11) — Playwright MCP, navegador real, sin mocks.** Login real
+> (`admin@urbania.test`), navegación a `/condominios/{id}?tab=unidades`, ciclo completo de punta a
+> punta sobre la unidad 101: abrir modal "Ocupantes de 101" (vacío) → "Asignar ocupante" → búsqueda
+> con autocomplete de contacto por nombre → selección de tipo de ocupante → checkbox de ocupante
+> principal → Asignar (toast "Ocupante asignado.", aparece en la lista con su tipo) → Desasignar
+> (diálogo de confirmación de acción destructiva, correcto según `WEB_VISUAL_STANDARDS.md` §6) →
+> confirmado, vuelve a lista vacía. Sin errores de consola en ninguno de los pasos. Encontrado y
+> corregido, durante esta misma sesión de verificación (no específico de esta pantalla, sino de una
+> condición de carrera transversal de sesión): `tryRefresh()` sin deduplicación causaba `500` por
+> `jti` duplicado en `POST /auth/refresh` ante navegación concurrente — ver
+> `_state/RUNBOOK.md#E-010` para causa raíz, fix (promesa en vuelo memoizada) y tests de regresión
+> nuevos en `code/web/src/services/api-client.test.ts` (161/161 tests de frontend pasando tras el
+> fix, `tsc --noEmit` limpio). Evidencia: `directorio-b07-asignacion-ocupante.png`. Screen queda con
+> su verificación visual real completa — la transición a `done` sigue siendo decisión del usuario
+> (ver `CLAUDE.md`).

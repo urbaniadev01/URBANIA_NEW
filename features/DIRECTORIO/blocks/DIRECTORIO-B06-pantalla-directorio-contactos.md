@@ -179,3 +179,16 @@ $ npx vite build
 > "Mi perfil" y el directorio administrativo comparten este bloque porque ambos consumen el mismo
 > lock (`LOCK-DIRECTORIO-02`) y son pantallas pequeñas — separarlas en dos bloques hubiera sido
 > partición artificial sin un gate de contrato distinto entre ellas.
+
+> **Verificación visual real (2026-07-11) — Playwright MCP, navegador real, sin mocks.** Login real
+> (`admin@urbania.test`), navegación a `/directorio/contactos`, creación de un contacto de punta a
+> punta (formulario → toast de confirmación → fila en tabla), apertura del modal de detalle
+> ("Ver unidades"). Encontrado y corregido un bug real durante esta verificación (no un problema de
+> esta pantalla en sí, sino del contrato que consume): **`ContactListResource` (API) omitía
+> `user_id` del listado**, causando que el badge "Con cuenta"/"Sin cuenta" mostrara "Con cuenta" para
+> todo contacto sin importar su valor real — ver `_state/RUNBOOK.md#E-009` para causa raíz, fix y
+> test de regresión (`ContactTest.php`, 276/276 tests pasando tras el fix). Re-verificado en el
+> navegador tras el fix: el badge quedó correcto. Evidencia: capturas de pantalla adjuntas a la
+> sesión (`directorio-b06-contactos.png`, `directorio-b06-contacto-creado.png`,
+> `directorio-b06-contactos-fix-verificado.png`). Screen queda con su verificación visual real
+> completa — la transición a `done` sigue siendo decisión del usuario (ver `CLAUDE.md`).

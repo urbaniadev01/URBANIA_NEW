@@ -31,6 +31,7 @@ final class ContactListResource extends JsonResource
         $data = [
             'id' => $this->resource->id,
             'organization_id' => $this->resource->organization_id,
+            'user_id' => $this->resource->user_id,
             'nombre' => $this->resource->nombre,
             'created_by' => $this->resource->created_by,
             'updated_by' => $this->resource->updated_by,

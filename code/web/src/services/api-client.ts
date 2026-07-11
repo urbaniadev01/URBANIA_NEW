@@ -91,24 +91,39 @@ async function request<T>(url: string, options: RequestOptions): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+// Llamadores concurrentes (ej. RequireAuth remontado dos veces por React
+// StrictMode en dev, o varias queries recibiendo 401 a la vez) comparten esta
+// misma promesa en vez de disparar POST /auth/refresh en paralelo — dos
+// refresh simultáneos rotan el mismo refresh_token cookie a la vez y el
+// backend puede generar un jti duplicado (ver RUNBOOK.md#E-007).
+let refreshPromise: Promise<boolean> | null = null;
+
 export async function tryRefresh(): Promise<boolean> {
-  try {
-    const response = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-      },
-      credentials: "include",
-    });
+  if (refreshPromise) return refreshPromise;
 
-    if (!response.ok) return false;
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+        },
+        credentials: "include",
+      });
 
-    const data: { access_token: string } = await response.json();
-    useAuthStore.getState().setAccessToken(data.access_token);
-    return true;
-  } catch {
-    return false;
-  }
+      if (!response.ok) return false;
+
+      const data: { access_token: string } = await response.json();
+      useAuthStore.getState().setAccessToken(data.access_token);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
 async function parseError(response: Response): Promise<ApiError> {
